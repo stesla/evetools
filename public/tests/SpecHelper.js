@@ -10,15 +10,20 @@ var fixture = fetch('/index.html')
     div.classList.add('fixture');
     div.setAttribute('style', 'display: none;');
     div.appendChild(main);
-    document.querySelector('body').append(div);
-    return div
+    let body = document.querySelector('body');
+    return function() {
+      let oldNode = body.querySelector('.fixture');
+      let newNode = div.cloneNode('true');
+      if (oldNode) {
+        body.replaceChild(newNode, oldNode);
+      } else {
+        body.append(newNode);
+      }
+    };
   });
 
 beforeEach(function(done) {
-  fixture.then(function(div) {
-    let body = document.querySelector('body');
-    let oldNode = body.querySelector('.fixture');
-    let newNode = div.cloneNode(true);
-    body.replaceChild(newNode, oldNode);
+  fixture.then(function(reload) {
+    reload();
   }).then(done, fail);
 });
