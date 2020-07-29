@@ -7,6 +7,8 @@ import (
 	"net/http/httptest"
 	"testing"
 
+	"github.com/gorilla/sessions"
+	"github.com/spf13/viper"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -16,6 +18,7 @@ type failHandler struct {
 
 func init() {
 	gob.Register(map[string]interface{}{})
+	store = sessions.NewCookieStore([]byte{})
 }
 
 func (h *failHandler) ServeHTTP(http.ResponseWriter, *http.Request) {
@@ -39,7 +42,7 @@ func TestCurrentUserUnauthenticated(t *testing.T) {
 
 func TestCurrentUserAuthenticated(t *testing.T) {
 	req := &http.Request{}
-	session, err := store.Get(req, sessionName)
+	session, err := store.Get(req, viper.GetString("httpd.session.name"))
 	assert.NoError(t, err)
 	expected := map[string]interface{}{
 		"foo": "bar",
