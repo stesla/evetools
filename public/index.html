@@ -8,15 +8,33 @@
   <
   <style>
     body { margin-top: 30px; }
-    nav { border-bottom: 1px solid black; }
-    .branding { font-size: 5rem; }
+    nav { 
+      border-bottom: 1px solid black;
+      height: 7rem;
+    }
+    .branding { 
+      font-size: 5rem;
+    }
+    .landing-view {
+      margin-top: 5rem;
+      text-align: center;
+    }
+    .login-button {
+      margin-top: 2.5rem;
+    }
   </style>
 </head>
 <body>
   <section class='main container'>
-    <nav>
+    <nav class='row'>
       <span class='branding'>evetools</span>
     </nav>
+    <section class='view-container container'>
+      <article class='landing-view'>
+        <h3>Do things in eve! From a website!</h3>
+        <a class="button button-primary login-button" href="/login">Sign in with EVE</a>
+      </article>
+    </section>
   </section>
 </body>
 </html>
