@@ -5,7 +5,8 @@
   <link href='//fonts.googleapis.com/css?family=Raleway:400,300,600' rel='stylesheet' type='text/css'>
   <link rel='stylesheet' href='https://cdnjs.cloudflare.com/ajax/libs/normalize/3.0.2/normalize.min.css'>
   <link rel='stylesheet' href='https://cdnjs.cloudflare.com/ajax/libs/skeleton/2.0.4/skeleton.min.css'>
-  <
+  <link rel="icon" href="data:;base64,iVBORw0KGgo=">
+  <script src='/app.js'></script>
   <style>
     body { margin-top: 30px; }
     nav { 
@@ -15,12 +16,16 @@
     .branding { 
       font-size: 5rem;
     }
+    .hidden { display: none; }
     .landing-view {
       margin-top: 5rem;
       text-align: center;
     }
     .login-button {
       margin-top: 2.5rem;
+    }
+    .profile-view {
+      text-align: center;
     }
   </style>
 </head>
@@ -30,11 +35,20 @@
       <span class='branding'>evetools</span>
     </nav>
     <section class='view-container container'>
+    </section>
+    <section class='templates hidden'>
       <article class='landing-view'>
-        <h3>Do things in eve! From a website!</h3>
-        <a class="button button-primary login-button" href="/login">Sign in with EVE</a>
+        <h2>Do things in EVE! From a website!</h2>
+        <a class='button button-primary login-button' href='/login'>Sign in with EVE</a>
+      </article>
+
+      <article class='profile-view'>
+        <h2 class='name'>Name</h2>
       </article>
     </section>
   </section>
+  <script type='text/javascript'>
+    window.addEventListener('DOMContentLoaded', evetools.appOnReady);
+  </script>
 </body>
 </html>
