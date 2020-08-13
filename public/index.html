@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta http-equiv="X-UA-Compatible" content="IE=edge">
-  <meta name="viewport" content="weidth=device-width, initial-scale=1">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>evetools</title>
   <link rel='stylesheet' href='/styles.css'>
   <link rel="icon" href="data:;base64,iVBORw0KGgo=">
@@ -12,26 +12,46 @@
     .hidden { display: none; }
   </style>
 </head>
-<body>
-  <section class='main section hidden'>
-    <div class='container'>
-      <h1 class="title">evetools</h1>
-      <main class='view-container container'>
-      </main>
+<body class="hidden">
+  <nav class='navbar is-dark' role='navigation' aria-label='main navigation'>
+    <div class='navbar-brand'>
+      <a class='navbar-item' href='/'>evetools</a>
+      <a role='button' class='navbar-burger burger' aria-label='menu' aria-expanded='false' data-target='navbarMenu'>
+        <span aria-hidden='true'></span>
+        <span aria-hidden='true'></span>
+        <span aria-hidden='true'></span>
+      </a>
+    </div>
+    <div id='navbarMenu' class='navbar-menu'>
+    </div>
+  </nav>
+
+  <main class="container view-container">
+    <div class="view-login">
+      <h2 class="subtitle">Do things in EVE! From a website!</h2>
+      <a class='button is-primary' href='/login'>Sign in with EVE</a>
+    </div>
+  </main>
+
+  <section class='templates hidden'>
+    <div class='view-home'>
+      <h2 class='name subtitle'>Name</h2>
+    </div>
+
+    <div class='navbar-end'>
+      <div class='navbar-item has-dropdown is-hoverable'>
+        <a class="navbar-link">
+          <figure class='image is-32x32'>
+            <img class='avatar'>
+          </figure>
+        </a>
+        <div class="navbar-dropdown is-right">
+          <a class="navbar-item" href="/logout">Logout</a>
+        </div>
+      </div>
     </div>
   </section>
 
-  <section class='templates hidden'>
-    <article class='view-login'>
-      <h2 class="subtitle">Do things in EVE! From a website!</h2>
-      <a class='button is-primary' href='/login'>Sign in with EVE</a>
-    </article>
-
-    <article class='view-home'>
-      <h2 class='name subtitle'>Name</h2>
-      <img class='portrait'>
-    </article>
-  </section>
   <script type='text/javascript'>
     window.addEventListener('DOMContentLoaded', evetools.appOnReady);
   </script>

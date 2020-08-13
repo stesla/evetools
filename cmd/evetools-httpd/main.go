@@ -108,6 +108,7 @@ func NewServer(static http.Handler) *Server {
 	s := &Server{mux: mux.NewRouter()}
 	s.mux.Methods("GET").Path("/login").HandlerFunc(s.Login)
 	s.mux.Methods("GET").Path("/login/callback").HandlerFunc(s.LoginCallback)
+	s.mux.Methods("GET").Path("/logout").HandlerFunc(s.Logout)
 	s.mux.Methods("GET").Path("/api/v1/currentUser").HandlerFunc(s.CurrentUser)
 	// this needs to be last
 	s.mux.PathPrefix("/").Handler(static)
@@ -255,4 +256,14 @@ func (s *Server) LoginCallback(w http.ResponseWriter, r *http.Request) {
 		next = str
 	}
 	http.Redirect(w, r, next, http.StatusFound)
+}
+
+func (s *Server) Logout(w http.ResponseWriter, r *http.Request) {
+	session, err := store.Get(r, viper.GetString("httpd.session.name"))
+	if err != nil {
+		return
+	}
+	session.Options.MaxAge = -1
+	session.Save(r, w)
+	http.Redirect(w, r, "/", http.StatusFound)
 }

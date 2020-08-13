@@ -10,6 +10,7 @@ import (
 	"net/url"
 	"os"
 	"testing"
+	"time"
 
 	"github.com/gorilla/securecookie"
 	"github.com/gorilla/sessions"
@@ -131,6 +132,22 @@ func TestLoginCallback(t *testing.T) {
 					assert.Equal(string(compact), session.Values["token"].(oauth2.Token).AccessToken)
 				}
 			}
+		}
+	}
+}
+
+func TestLogout(t *testing.T) {
+	assert := assert.New(t)
+
+	req, _ := http.NewRequest("GET", "/logout", nil)
+	resp := handleRequest(t, req)
+
+	if assert.Equal(http.StatusFound, resp.StatusCode) {
+		assert.Equal("/", resp.Header.Get("Location"))
+		if cookies := resp.Cookies(); assert.Equal(1, len(cookies)) {
+			c := cookies[0]
+			assert.Equal(-1, c.MaxAge)
+			assert.True(c.Expires.Before(time.Now()))
 		}
 	}
 }

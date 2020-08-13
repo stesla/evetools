@@ -4,12 +4,12 @@ var fixture = fetch('/index.html')
     let parser = new DOMParser();
     return parser.parseFromString(text, 'text/html')
   })
-  .then(html => html.querySelector('section.main.container'))
-  .then(function(main) {
+  .then(function(html) {
     let div = document.createElement('div');
     div.classList.add('fixture');
     div.setAttribute('style', 'display: none;');
-    div.appendChild(main);
+    div.appendChild(html.querySelector('main'));
+    div.appendChild(html.querySelector('section.templates'));
     let body = document.querySelector('body');
     return function() {
       let oldNode = body.querySelector('.fixture');
