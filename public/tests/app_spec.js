@@ -1,5 +1,5 @@
 describe('evetools', function() {
-  var viewContainer;
+  let viewContainer;
   beforeEach(function() {
     viewContainer = document.querySelector('.view-container');
   });
@@ -8,13 +8,20 @@ describe('evetools', function() {
     expect(document.querySelectorAll('.branding').length).toEqual(1);
   });
 
-  it('can show the landing view', function() {
+  it('can unhide the main section', function() {
+    let main = document.querySelector('section.main');
+    expect(main.classList).toContain("hidden");
     evetools.showView('');
-    expect(viewContainer.querySelectorAll('.landing-view').length).toEqual(1);
+    expect(main.classList).not.toContain("hidden");
   });
 
-  it('can show the profile view', function() {
+  it('can show the login view', function() {
+    evetools.showView('');
+    expect(viewContainer.querySelectorAll('.view-login').length).toEqual(1);
+  });
+
+  it('can show the home view', function() {
     evetools.showView('', {});
-    expect(viewContainer.querySelectorAll('.profile-view').length).toEqual(1);
+    expect(viewContainer.querySelectorAll('.view-home').length).toEqual(1);
   });
 });

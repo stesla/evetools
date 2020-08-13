@@ -18,11 +18,10 @@ evetools.appOnReady = function() {
 
 evetools.showView = function(hash, user) {
   var viewFn;
-  console.log(user);
   if (user) {
-    viewFn = evetools.profileView
+    viewFn = evetools.homeView
   } else {
-    viewFn = evetools.landingView
+    viewFn = evetools.loginView
   }
   if (viewFn) {
     let viewContainer = document.querySelector('.view-container');
@@ -31,18 +30,20 @@ evetools.showView = function(hash, user) {
     }
     viewContainer.append(viewFn(user));
   }
+  document.querySelector('section.main').classList.remove('hidden');
 }
 
 evetools.template = function(name) {
   return document.querySelector('.templates .' + name).cloneNode(true);
 }
 
-evetools.landingView = function() {
-  return evetools.template('landing-view');
+evetools.loginView = function() {
+  return evetools.template('view-login');
 }
 
-evetools.profileView = function(user) {
-  let view = evetools.template('profile-view');
-  view.querySelector('.name').innerText = user.characterName;
+evetools.homeView = function(user) {
+  let view = evetools.template('view-home');
+  view.querySelector('.name').textContent = user.characterName;
+  view.querySelector('.portrait').src = 'https://imageserver.eveonline.com/Character/' + user.characterID + '_512.jpg';
   return view;
 }
