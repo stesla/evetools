@@ -5,14 +5,12 @@ import (
 	"crypto/rsa"
 	"encoding/gob"
 	"encoding/json"
-	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"net/url"
 	"os"
 	"testing"
 
-	"github.com/gorilla/mux"
 	"github.com/gorilla/securecookie"
 	"github.com/gorilla/sessions"
 	"github.com/lestrrat-go/jwx/jwa"
@@ -31,20 +29,12 @@ func init() {
 }
 
 func TestMain(m *testing.M) {
-	initializeOAuthFixture()
-	os.Exit(m.Run())
-}
-
-func initializeOAuthFixture(basePath ...string) {
-	if len(basePath) > 0 {
-		viper.Set("oauth.basePath", basePath[0])
-	} else {
-		viper.Set("oauth.basePath", "https://esi")
-	}
+	viper.Set("oauth.basePath", "https://esi")
 	viper.Set("oauth.clientId", "CLIENT_ID")
 	viper.Set("oauth.clientSecret", "CLIENT_SECRET")
 	viper.Set("oauth.redirectURL", "REDIRECT_URL")
 	initOAuthConfig()
+	os.Exit(m.Run())
 }
 
 func TestCurrentUserUnauthenticated(t *testing.T) {
@@ -79,37 +69,36 @@ func TestLogin(t *testing.T) {
 	}
 }
 
-func mockOAuth() (*httptest.Server, string) {
-	r := mux.NewRouter()
-	server := httptest.NewServer(r)
+func TestLoginCallback(t *testing.T) {
+	assert := assert.New(t)
 
-	r.Methods("GET").Path("/.well-known/oauth-authorization-server").
-		HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	mrt.AddHandler("https://esi/.well-known/oauth-authorization-server",
+		http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			w.Header().Set("Content-Type", "application/json")
 			json.NewEncoder(w).Encode(map[string]interface{}{
-				"issuer":   server.URL,
-				"jwks_uri": fmt.Sprintf("%s/oauth/jwks", server.URL),
+				"issuer":   "https://esi",
+				"jwks_uri": "https://esi/oauth/jwks",
 			})
-		})
+		}))
 
 	privrsa, _ := rsa.GenerateKey(rand.Reader, 2048)
 	privKey, _ := jwk.New(privrsa)
 	pubKey, _ := jwk.New(privrsa.PublicKey)
 	pubKey.Set(jwk.KeyUsageKey, string(jwk.ForSignature))
 	pubKey.Set(jwk.KeyIDKey, "JWT-Signature-Key")
-	r.Methods("GET").Path("/oauth/jwks").
-		HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	mrt.AddHandler("https://esi/oauth/jwks",
+		http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			w.Header().Set("Content-Type", "application/json")
 			json.NewEncoder(w).Encode(jwk.Set{Keys: []jwk.Key{pubKey}})
-		})
+		}))
 
 	token := jwt.New()
 	headers := jws.NewHeaders()
 	headers.Set(jwk.KeyIDKey, pubKey.KeyID())
-	headers.Set(jwt.IssuerKey, server.URL)
+	headers.Set(jwt.IssuerKey, "https://esi")
 	compact, _ := jwt.Sign(token, jwa.RS256, privKey, jwt.WithHeaders(headers))
-	r.Methods("POST").Path("/v2/oauth/token").
-		HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	mrt.AddHandler("https://esi/v2/oauth/token",
+		http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			w.Header().Set("Content-Type", "application/json")
 			json.NewEncoder(w).Encode(map[string]interface{}{
 				"access_token":  string(compact),
@@ -117,19 +106,7 @@ func mockOAuth() (*httptest.Server, string) {
 				"token_type":    "Bearer",
 				"refresh_token": "REFRESH_TOKEN",
 			})
-		})
-
-	return server, string(compact)
-}
-
-func TestLoginCallback(t *testing.T) {
-	assert := assert.New(t)
-	server, token := mockOAuth()
-	initializeOAuthFixture(server.URL)
-	defer func() {
-		initializeOAuthFixture()
-		server.Close()
-	}()
+		}))
 
 	req, _ := http.NewRequest("GET", "/login/callback", nil)
 	q := req.URL.Query()
@@ -151,7 +128,7 @@ func TestLoginCallback(t *testing.T) {
 			if assert.NoError(err) {
 				tok := session.Values["token"]
 				if assert.IsType(tok, oauth2.Token{}) {
-					assert.Equal(token, session.Values["token"].(oauth2.Token).AccessToken)
+					assert.Equal(string(compact), session.Values["token"].(oauth2.Token).AccessToken)
 				}
 			}
 		}
@@ -207,8 +184,10 @@ func (h *failHandler) ServeHTTP(http.ResponseWriter, *http.Request) {
 
 func handleRequest(t *testing.T, r *http.Request) *http.Response {
 	w := httptest.NewRecorder()
-	h := makeHandler(&failHandler{t})
-	h.ServeHTTP(w, r)
+	s := NewServer(&failHandler{t})
+	s.client.Transport = mrt
+	s.ServeHTTP(w, r)
+	mrt.Reset()
 	return w.Result()
 }
 
@@ -223,4 +202,30 @@ func setSessionCookie(r *http.Request, vals values) {
 	rec := httptest.NewRecorder()
 	session.Save(req, rec)
 	r.AddCookie(rec.Result().Cookies()[0])
+}
+
+type mockRoundTripper struct {
+	handlers map[string]http.Handler
+}
+
+var mrt = &mockRoundTripper{handlers: make(map[string]http.Handler)}
+
+func (m *mockRoundTripper) AddHandler(url string, handler http.Handler) {
+	m.handlers[url] = handler
+}
+
+func (m *mockRoundTripper) RoundTrip(req *http.Request) (*http.Response, error) {
+	recorder := httptest.NewRecorder()
+	if h := m.handlers[req.URL.String()]; h != nil {
+		h.ServeHTTP(recorder, req)
+	} else {
+		http.NotFound(recorder, req)
+	}
+	return recorder.Result(), nil
+}
+
+func (m *mockRoundTripper) Reset() {
+	for k := range m.handlers {
+		delete(m.handlers, k)
+	}
 }

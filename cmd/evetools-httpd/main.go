@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"crypto/rand"
 	"encoding/base64"
 	"encoding/gob"
@@ -68,7 +69,7 @@ func main() {
 	store = sessions.NewCookieStore([]byte(viper.GetString("httpd.session.auth_key")))
 
 	staticFiles := http.Dir(viper.GetString("httpd.static.dir"))
-	var handler http.Handler = makeHandler(http.FileServer(staticFiles))
+	var handler http.Handler = NewServer(http.FileServer(staticFiles))
 	handler = handlers.LoggingHandler(os.Stdout, handler)
 	handler = handlers.ProxyHeaders(handler)
 
@@ -98,17 +99,27 @@ func initOAuthConfig() error {
 	return nil
 }
 
-func makeHandler(static http.Handler) http.Handler {
-	r := mux.NewRouter()
-	r.Methods("GET").Path("/login").HandlerFunc(Login)
-	r.Methods("GET").Path("/login/callback").HandlerFunc(LoginCallback)
-	r.Methods("GET").Path("/api/v1/currentUser").HandlerFunc(CurrentUser)
-	// this needs to be last
-	r.PathPrefix("/").Handler(static)
-	return r
+type Server struct {
+	client http.Client
+	mux    *mux.Router
 }
 
-func CurrentUser(w http.ResponseWriter, r *http.Request) {
+func NewServer(static http.Handler) *Server {
+	s := &Server{mux: mux.NewRouter()}
+	s.mux.Methods("GET").Path("/login").HandlerFunc(s.Login)
+	s.mux.Methods("GET").Path("/login/callback").HandlerFunc(s.LoginCallback)
+	s.mux.Methods("GET").Path("/api/v1/currentUser").HandlerFunc(s.CurrentUser)
+	// this needs to be last
+	s.mux.PathPrefix("/").Handler(static)
+	return s
+}
+
+func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	ctx := context.WithValue(r.Context(), oauth2.HTTPClient, &s.client)
+	s.mux.ServeHTTP(w, r.WithContext(ctx))
+}
+
+func (s *Server) CurrentUser(w http.ResponseWriter, r *http.Request) {
 	w.Header().Add("Content-Type", "application/json")
 
 	session, err := store.Get(r, viper.GetString("httpd.session.name"))
@@ -166,7 +177,7 @@ func CurrentUser(w http.ResponseWriter, r *http.Request) {
 	})
 }
 
-func Login(w http.ResponseWriter, r *http.Request) {
+func (s *Server) Login(w http.ResponseWriter, r *http.Request) {
 	session, _ := store.Get(r, viper.GetString("httpd.session.name"))
 	b := make([]byte, 16)
 	rand.Read(b)
@@ -185,7 +196,7 @@ func internalServerError(w http.ResponseWriter, tag string, err error) {
 	http.Error(w, err.Error(), http.StatusInternalServerError)
 }
 
-func LoginCallback(w http.ResponseWriter, r *http.Request) {
+func (s *Server) LoginCallback(w http.ResponseWriter, r *http.Request) {
 	session, err := store.Get(r, viper.GetString("httpd.session.name"))
 	if err != nil {
 		internalServerError(w, "store.Get", err)
@@ -205,7 +216,7 @@ func LoginCallback(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	resp, err := http.Get(fmt.Sprintf("%s/.well-known/oauth-authorization-server",
+	resp, err := s.client.Get(fmt.Sprintf("%s/.well-known/oauth-authorization-server",
 		viper.GetString("oauth.basePath")))
 	if err != nil {
 		internalServerError(w, "GET metadata", err)
@@ -221,7 +232,7 @@ func LoginCallback(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	keyset, err := jwk.Fetch(meta.URI)
+	keyset, err := jwk.Fetch(meta.URI, jwk.WithHTTPClient(&s.client))
 	if err != nil {
 		internalServerError(w, "fetch jwks", err)
 		return
