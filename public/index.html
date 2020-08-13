@@ -1,52 +1,36 @@
 <!DOCTYPE HTML>
 <html>
 <head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="weidth=device-width, initial-scale=1">
   <title>evetools</title>
-  <link href='//fonts.googleapis.com/css?family=Raleway:400,300,600' rel='stylesheet' type='text/css'>
-  <link rel='stylesheet' href='https://cdnjs.cloudflare.com/ajax/libs/normalize/3.0.2/normalize.min.css'>
-  <link rel='stylesheet' href='https://cdnjs.cloudflare.com/ajax/libs/skeleton/2.0.4/skeleton.min.css'>
+  <link rel='stylesheet' href='/styles.css'>
   <link rel="icon" href="data:;base64,iVBORw0KGgo=">
   <script src='/app.js'></script>
   <style>
-    body { margin-top: 30px; }
-    nav { 
-      border-bottom: 1px solid black;
-      height: 7rem;
-    }
-    .branding { 
-      font-size: 5rem;
-    }
     .hidden { display: none; }
-    .login-button {
-      margin-top: 2.5rem;
-    }
-    .view-home {
-      text-align: center;
-    }
-    .view-login {
-      margin-top: 5rem;
-      text-align: center;
-    }
   </style>
 </head>
 <body>
-  <section class='main container hidden'>
-    <nav class='row'>
-      <span class='branding'>evetools</span>
-    </nav>
-    <section class='view-container container'>
-    </section>
-    <section class='templates hidden'>
-      <article class='view-login'>
-        <h2>Do things in EVE! From a website!</h2>
-        <a class='button button-primary login-button' href='/login'>Sign in with EVE</a>
-      </article>
+  <section class='main section hidden'>
+    <div class='container'>
+      <h1 class="title">evetools</h1>
+      <main class='view-container container'>
+      </main>
+    </div>
+  </section>
 
-      <article class='view-home'>
-        <h2 class='name'>Name</h2>
-        <img class='portrait'>
-      </article>
-    </section>
+  <section class='templates hidden'>
+    <article class='view-login'>
+      <h2 class="subtitle">Do things in EVE! From a website!</h2>
+      <a class='button is-primary' href='/login'>Sign in with EVE</a>
+    </article>
+
+    <article class='view-home'>
+      <h2 class='name subtitle'>Name</h2>
+      <img class='portrait'>
+    </article>
   </section>
   <script type='text/javascript'>
     window.addEventListener('DOMContentLoaded', evetools.appOnReady);
