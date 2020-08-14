@@ -22,6 +22,7 @@ evetools.appOnReady = function() {
     let navEnd = evetools.template('navbar-end');
     let avatarUrl = 'https://imageserver.eveonline.com/Character/' + user.characterID + '_32.jpg';
     navEnd.querySelector('.avatar').src = avatarUrl;
+    navEnd.querySelector('.name').textContent = user.characterName;
     document.querySelector('.navbar-menu').appendChild(navEnd);
     return user
   }).then(function(user) {
