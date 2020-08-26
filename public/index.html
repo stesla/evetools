@@ -43,7 +43,7 @@
     </div>
   </nav>
 
-  <template x-if="!loggedIn">
+  <template x-if="currentView === 'login'">
     <main>
       <div class="hero is-dark is-fullheight">
         <div class="hero-body has-text-centered">
@@ -57,7 +57,7 @@
     </main>
   </template>
 
-  <template x-if="loggedIn">
+  <template x-if="currentView === 'home'">
     <main>
     </main>
   </template>

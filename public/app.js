@@ -6,6 +6,14 @@ evetools.globalState = function() {
     loggedIn: false,
     user: null,
 
+    get currentView() {
+      if (!this.loggedIn) {
+        return 'login'
+      } else {
+        return 'home'
+      }
+    },
+
     fetchCurrentUser() {
       fetch('/api/v1/currentUser').
         then(resp => {
