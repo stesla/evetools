@@ -7,58 +7,59 @@
   <title>evetools</title>
   <link rel='stylesheet' href='/styles.css'>
   <link rel="icon" href="data:;base64,iVBORw0KGgo=">
-  <script src='/app.js'></script>
   <style>
-    .hidden { display: none; }
+    [x-cloak] { display: none; }
   </style>
+  <script src='/alpine.js'></script>
+  <script src='/app.js'></script>
 </head>
-<body class="hidden">
+<body x-data="evetools.globalState()" x-init="fetchCurrentUser()" x-cloak>
   <nav class='navbar is-dark' role='navigation' aria-label='main navigation'>
     <div class='navbar-brand'>
       <p class='navbar-item is-size-3' href='/'>evetools</p>
-      <a role='button' class='navbar-burger burger' aria-label='menu' aria-expanded='false' data-target='navbarMenu'>
+      <a role='button' class='navbar-burger burger' aria-label='menu' aria-expanded='false'
+        @click="burgerOpen = !burgerOpen" x-show="loggedIn">
         <span aria-hidden='true'></span>
         <span aria-hidden='true'></span>
         <span aria-hidden='true'></span>
       </a>
     </div>
-    <div id='navbarMenu' class='navbar-menu'>
+    <div class='navbar-menu' :class="{'is-active': burgerOpen}">
+      <div class='navbar-end'>
+        <template x-if="loggedIn">
+          <div class='navbar-item has-dropdown is-hoverable'>
+            <a class="navbar-link">
+              <figure class='image is-32x32'>
+                <img class="avatar" :src="user.avatarURL" :alt="user.characterName">
+              </figure>
+              <span class="ml-2" x-text="user.characterName"></span>
+            </a>
+            <div class="navbar-dropdown is-right">
+              <a class="navbar-item" href="/logout">Logout</a>
+            </div>
+          </div>
+        </template>
+      </div>
     </div>
   </nav>
 
-  <main class="view-container">
-    <div class="view-login hero is-dark is-fullheight">
-      <div class="hero-body has-text-centered">
-        <div class="container">
-          <h1 class="title">Do things in EVE!<h1>
-          <h2 class="subtitle">From a website!</h2>
-          <a class='button is-primary' href='/login'>Sign in with EVE</a>
+  <template x-if="!loggedIn">
+    <main>
+      <div class="hero is-dark is-fullheight">
+        <div class="hero-body has-text-centered">
+          <div class="container">
+            <h1 class="title">Do things in EVE!<h1>
+            <h2 class="subtitle">From a website!</h2>
+            <a class='button is-primary' href='/login'>Sign in with EVE</a>
+          </div>
         </div>
       </div>
-    </div>
-  </main>
+    </main>
+  </template>
 
-  <section class='templates hidden'>
-    <div class='view-home'>
-    </div>
-
-    <div class='navbar-end'>
-      <div class='navbar-item has-dropdown is-hoverable'>
-        <a class="navbar-link">
-          <figure class='image is-32x32'>
-            <img class='avatar'>
-          </figure>
-          <span class="name ml-2"></span>
-        </a>
-        <div class="navbar-dropdown is-right">
-          <a class="navbar-item" href="/logout">Logout</a>
-        </div>
-      </div>
-    </div>
-  </section>
-
-  <script type='text/javascript'>
-    window.addEventListener('DOMContentLoaded', evetools.appOnReady);
-  </script>
+  <template x-if="loggedIn">
+    <main>
+    </main>
+  </template>
 </body>
 </html>
