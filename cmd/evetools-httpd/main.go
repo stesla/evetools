@@ -106,12 +106,14 @@ type Server struct {
 
 func NewServer(static http.Handler) *Server {
 	s := &Server{mux: mux.NewRouter()}
+	s.mux.NotFoundHandler = static
 	s.mux.Methods("GET").Path("/login").HandlerFunc(s.Login)
 	s.mux.Methods("GET").Path("/login/callback").HandlerFunc(s.LoginCallback)
 	s.mux.Methods("GET").Path("/logout").HandlerFunc(s.Logout)
-	s.mux.Methods("GET").Path("/api/v1/currentUser").HandlerFunc(s.CurrentUser)
-	// this needs to be last
-	s.mux.PathPrefix("/").Handler(static)
+
+	api := s.mux.PathPrefix("/api").Subrouter()
+	api.Methods("GET").Path("/v1/currentUser").HandlerFunc(s.CurrentUser)
+
 	return s
 }
 
