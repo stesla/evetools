@@ -4,9 +4,10 @@
   "description": "",
   "main": "sass/styles.scss",
   "scripts": {
+    "backend": "modd",
+    "frontend": "livereloadx -l -p 8080 ./public/ --proxy http://localhost:8081",
     "css-build": "node-sass --omit-source-map-url sass/styles.scss public/styles.css",
-    "css-watch": "npm run css-build -- --watch",
-    "start": "npm run css-watch"
+    "css-watch": "npm run css-build -- --watch"
   },
   "repository": {
     "type": "git",
@@ -21,6 +22,7 @@
   "devDependencies": {
     "alpinejs": "^2.6.0",
     "bulma": "^0.9.0",
+    "livereloadx": "^0.3.10",
     "node-sass": "^4.14.1"
   }
 }
