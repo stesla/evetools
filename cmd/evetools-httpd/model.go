@@ -21,7 +21,8 @@ type MarketType struct {
 
 func GetMarketTypes(filter string) ([]*MarketType, error) {
 	var query = `SELECT typeID, typeName FROM invTypes 
-			       WHERE marketGroupID IS NOT NULL
+			       WHERE published=1
+				     AND marketGroupID IS NOT NULL
 			         AND typeName LIKE ?
                    ORDER BY typeName ASC`
 
