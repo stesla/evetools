@@ -2,7 +2,7 @@ var evetools = {}
 
 evetools.globalState = function() {
   return {
-    burgerOpen: false,
+    avatarMenuOpen: false,
     loggedIn: false,
     user: null,
 
@@ -25,10 +25,16 @@ evetools.globalState = function() {
         then(user => {
           console.log(user);
           this.user = user
-          this.user.avatarURL = 'https://imageserver.eveonline.com/Character/' + user.characterID + '_32.jpg';
+          this.user.avatarURL = 'https://imageserver.eveonline.com/Character/' + user.characterID + '_128.jpg';
           this.loggedIn = true;
         }).catch(() => {});
     },
+
+    handleEscape(e) {
+      if (e.key === 'Esc' || e.key === 'Escape') {
+        this.avatarMenuOpen = false;
+      }
+    }
   }
 }
 

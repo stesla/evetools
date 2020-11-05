@@ -5,7 +5,7 @@
   <meta http-equiv="X-UA-Compatible" content="IE=edge">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>evetools</title>
-  <link rel='stylesheet' href='/styles.css'>
+  <link rel='stylesheet' href='/css/styles.css'>
   <link rel="icon" href="data:;base64,iVBORw0KGgo=">
   <style>
     [x-cloak] { display: none; }
@@ -13,46 +13,39 @@
   <script src='/alpine.js'></script>
   <script src='/app.js'></script>
 </head>
-<body x-data="evetools.globalState()" x-init="fetchCurrentUser()" x-cloak>
-  <nav class='navbar is-dark' role='navigation' aria-label='main navigation'>
-    <div class='navbar-brand'>
-      <p class='navbar-item is-size-3' href='/'>evetools</p>
-      <a role='button' class='navbar-burger burger' aria-label='menu' aria-expanded='false'
-        @click="burgerOpen = !burgerOpen" x-show="loggedIn">
-        <span aria-hidden='true'></span>
-        <span aria-hidden='true'></span>
-        <span aria-hidden='true'></span>
-      </a>
+<body class="bg-gray-300 text-gray-900"
+      x-data="evetools.globalState()"
+      x-init="fetchCurrentUser()"
+      x-cloak>
+
+  <nav class="flex items-center justify-between px-4 py-2 bg-gray-900 text-gray-300">
+    <div>
+      <p class="text-2xl">evetools</p>
     </div>
-    <div class='navbar-menu' :class="{'is-active': burgerOpen}">
-      <div class='navbar-end'>
-        <template x-if="loggedIn">
-          <div class='navbar-item has-dropdown is-hoverable'>
-            <a class="navbar-link">
-              <figure class='image is-32x32'>
-                <img class="avatar" :src="user.avatarURL" :alt="user.characterName">
-              </figure>
-              <span class="ml-2" x-text="user.characterName"></span>
-            </a>
-            <div class="navbar-dropdown is-right">
-              <a class="navbar-item" href="/logout">Logout</a>
-            </div>
+    <template x-if="loggedIn">
+      <div class="relative" @keydown.window="handleEscape($event)">
+        <button @click="avatarMenuOpen = !avatarMenuOpen"
+                class="h-12 w-12 rounded-full overflow-hidden border-2 border-gray-700 focus:outline-none focus:border-gray-500">
+          <img class="h-full w-full object-cover" :src="user.avatarURL" :alt="user.characterName">
+        </button>
+        <template x-if="avatarMenuOpen">
+          <button @click="avatarMenuOpen = false" tabindex="-1" class="fixed inset-0 h-full w-full bg-transparent cursor-default"></button>
+        </template>
+        <template x-if="avatarMenuOpen">
+          <div class="absolute right-0 mt-2 py-2 w-32 bg-white rounded-lg shadow-xl">
+            <a class="block px-4 py-2 text-gray-900 hover:bg-indigo-500 hover:text-white" href="/logout">Logout</a>
           </div>
         </template>
       </div>
-    </div>
+    </template>
   </nav>
 
   <template x-if="currentView === 'login'">
-    <main>
-      <div class="hero is-dark is-fullheight">
-        <div class="hero-body has-text-centered">
-          <div class="container">
-            <h1 class="title">Do things in EVE!<h1>
-            <h2 class="subtitle">From a website!</h2>
-            <a class='button is-primary' href='/login'>Sign in with EVE</a>
-          </div>
-        </div>
+    <main class="mt-64 text-center max-w-xs mx-auto">
+      <h1 class="text-4xl">Do things in EVE!<h1>
+      <h2 class="mt-4 text-2xl">From a website!</h2>
+      <div class="mt-10 px-5 py-3 rounded-lg bg-blue-600">
+        <a class="text-lg text-gray-300 font-semibold uppercase tracking-wider" href="/login">Sign in with EVE</a>
       </div>
     </main>
   </template>
