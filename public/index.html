@@ -33,7 +33,7 @@
         </template>
         <template x-if="avatarMenuOpen">
           <div class="absolute right-0 mt-2 py-2 w-32 bg-white rounded-lg shadow-xl">
-            <a class="block px-4 py-2 text-gray-900 hover:bg-indigo-500 hover:text-white" href="/logout">Logout</a>
+            <a class="block px-4 py-2 text-gray-900 hover:bg-blue-500 hover:text-gray-100" href="/logout">Logout</a>
           </div>
         </template>
       </div>
@@ -51,7 +51,26 @@
   </template>
 
   <template x-if="currentView === 'home'">
-    <main>
+    <main class="mt-10 max-w-lg mx-auto"
+          x-data="evetools.marketTypes()"
+          x-init="initMarketTypes()">
+
+      <form @submit="fetchMarketTypes(); $event.preventDefault()">
+        <div class="flex items-center rounded-md overflow-hidden">
+          <input x-model="filter" class="px-4 py-2 w-full bg-gray-100 focus:outline-none"
+                 placeholder="Type your search filter here...">
+          <button class="px-4 py-2 bg-blue-500 text-gray-100"
+                  @click="fetchMarketTypes()">
+            Search
+          </button>
+        </div>
+      </form>
+      <template x-for="type in marketTypes">
+        <div class="mt-4 px-4 py-2 rounded-xl flex items-center justify-between bg-gray-100">
+          <span class="font-semibold" x-text="type.name"></span>
+          <img class="h-12 w-12" :src="imgURL(type)">
+        </div>
+      </template>
     </main>
   </template>
 </body>

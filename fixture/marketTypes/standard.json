@@ -1,0 +1,266 @@
+[
+  {
+    "id": 21730,
+    "name": "Angel Standard Trigger Mechanism"
+  },
+  {
+    "id": 21230,
+    "name": "Blood Standard L"
+  },
+  {
+    "id": 21214,
+    "name": "Blood Standard M"
+  },
+  {
+    "id": 21200,
+    "name": "Blood Standard S"
+  },
+  {
+    "id": 21246,
+    "name": "Blood Standard XL"
+  },
+  {
+    "id": 10221,
+    "name": "Cybernetic Subprocessor - Standard"
+  },
+  {
+    "id": 21294,
+    "name": "Dark Blood Standard L"
+  },
+  {
+    "id": 21278,
+    "name": "Dark Blood Standard M"
+  },
+  {
+    "id": 21262,
+    "name": "Dark Blood Standard S"
+  },
+  {
+    "id": 21310,
+    "name": "Dark Blood Standard XL"
+  },
+  {
+    "id": 54656,
+    "name": "Expired Standard Serenity Cerebral Accelerator"
+  },
+  {
+    "id": 23113,
+    "name": "Imperial Navy Standard L"
+  },
+  {
+    "id": 23097,
+    "name": "Imperial Navy Standard M"
+  },
+  {
+    "id": 23079,
+    "name": "Imperial Navy Standard S"
+  },
+  {
+    "id": 22760,
+    "name": "Imperial Special Ops Field Enhancer - Standard"
+  },
+  {
+    "id": 3296,
+    "name": "Large Standard Container"
+  },
+  {
+    "id": 32861,
+    "name": "Large Standard Container Blueprint"
+  },
+  {
+    "id": 3293,
+    "name": "Medium Standard Container"
+  },
+  {
+    "id": 32860,
+    "name": "Medium Standard Container Blueprint"
+  },
+  {
+    "id": 10208,
+    "name": "Memory Augmentation - Standard"
+  },
+  {
+    "id": 10212,
+    "name": "Neural Boost - Standard"
+  },
+  {
+    "id": 10216,
+    "name": "Ocular Filter - Standard"
+  },
+  {
+    "id": 25237,
+    "name": "Pure Standard Blue Pill Booster"
+  },
+  {
+    "id": 25242,
+    "name": "Pure Standard Crash Booster"
+  },
+  {
+    "id": 25330,
+    "name": "Pure Standard Drop Booster"
+  },
+  {
+    "id": 25331,
+    "name": "Pure Standard Exile Booster"
+  },
+  {
+    "id": 25252,
+    "name": "Pure Standard Frentix Booster"
+  },
+  {
+    "id": 25332,
+    "name": "Pure Standard Mindflood Booster"
+  },
+  {
+    "id": 25334,
+    "name": "Pure Standard Sooth Sayer Booster"
+  },
+  {
+    "id": 25333,
+    "name": "Pure Standard X-Instinct Booster"
+  },
+  {
+    "id": 20024,
+    "name": "Sanshas Standard L"
+  },
+  {
+    "id": 20016,
+    "name": "Sanshas Standard M"
+  },
+  {
+    "id": 19984,
+    "name": "Sanshas Standard S"
+  },
+  {
+    "id": 20032,
+    "name": "Sanshas Standard XL"
+  },
+  {
+    "id": 3297,
+    "name": "Small Standard Container"
+  },
+  {
+    "id": 32859,
+    "name": "Small Standard Container Blueprint"
+  },
+  {
+    "id": 10225,
+    "name": "Social Adaptation Chip - Standard"
+  },
+  {
+    "id": 50030,
+    "name": "Standard 'Ardour' Cerebral Accelerator Blueprint Crate"
+  },
+  {
+    "id": 9950,
+    "name": "Standard Blue Pill Booster"
+  },
+  {
+    "id": 46230,
+    "name": "Standard Blue Pill Booster Reaction Formula"
+  },
+  {
+    "id": 9947,
+    "name": "Standard Crash Booster"
+  },
+  {
+    "id": 46231,
+    "name": "Standard Crash Booster Reaction Formula"
+  },
+  {
+    "id": 15466,
+    "name": "Standard Drop Booster"
+  },
+  {
+    "id": 46223,
+    "name": "Standard Drop Booster Reaction Formula"
+  },
+  {
+    "id": 15479,
+    "name": "Standard Exile Booster"
+  },
+  {
+    "id": 46224,
+    "name": "Standard Exile Booster Reaction Formula"
+  },
+  {
+    "id": 15460,
+    "name": "Standard Frentix Booster"
+  },
+  {
+    "id": 46222,
+    "name": "Standard Frentix Booster Reaction Formula"
+  },
+  {
+    "id": 258,
+    "name": "Standard L"
+  },
+  {
+    "id": 1173,
+    "name": "Standard L Blueprint"
+  },
+  {
+    "id": 250,
+    "name": "Standard M"
+  },
+  {
+    "id": 1165,
+    "name": "Standard M Blueprint"
+  },
+  {
+    "id": 15463,
+    "name": "Standard Mindflood Booster"
+  },
+  {
+    "id": 46225,
+    "name": "Standard Mindflood Booster Reaction Formula"
+  },
+  {
+    "id": 242,
+    "name": "Standard S"
+  },
+  {
+    "id": 1157,
+    "name": "Standard S Blueprint"
+  },
+  {
+    "id": 10164,
+    "name": "Standard Sooth Sayer Booster"
+  },
+  {
+    "id": 46227,
+    "name": "Standard Sooth Sayer Booster Reaction Formula"
+  },
+  {
+    "id": 15457,
+    "name": "Standard X-Instinct Booster"
+  },
+  {
+    "id": 46226,
+    "name": "Standard X-Instinct Booster Reaction Formula"
+  },
+  {
+    "id": 17690,
+    "name": "Standard XL"
+  },
+  {
+    "id": 17691,
+    "name": "Standard XL Blueprint"
+  },
+  {
+    "id": 20887,
+    "name": "True Sanshas Standard L"
+  },
+  {
+    "id": 20871,
+    "name": "True Sanshas Standard M"
+  },
+  {
+    "id": 20855,
+    "name": "True Sanshas Standard S"
+  },
+  {
+    "id": 20903,
+    "name": "True Sanshas Standard XL"
+  }
+]

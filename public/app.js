@@ -23,9 +23,8 @@ evetools.globalState = function() {
           return resp.json();
         }).
         then(user => {
-          console.log(user);
           this.user = user
-          this.user.avatarURL = 'https://imageserver.eveonline.com/Character/' + user.characterID + '_128.jpg';
+          this.user.avatarURL = 'https://images.evetech.net/characters/' + user.characterID + '/portrait?tenant=tranquility&size=128';
           this.loggedIn = true;
         }).catch(() => {});
     },
@@ -38,3 +37,32 @@ evetools.globalState = function() {
   }
 }
 
+evetools.marketTypes = function() {
+  const urlParams = new URLSearchParams(window.location.search);
+  return {
+    filter: urlParams.get('q'),
+    marketTypes: [],
+
+    fetchMarketTypes() {
+      fetch('/api/v1/marketTypes/' + this.filter).
+        then(resp => {
+          if (!resp.ok) {
+            throw new Error('error fetching market types');
+          }
+          return resp.json();
+        }).
+        then(types => {
+          this.marketTypes = types;
+        });
+    },
+
+    initMarketTypes() {
+      if (this.filter)
+        this.fetchMarketTypes();
+    },
+
+    imgURL(type) {
+      return 'https://images.evetech.net/types/' + type.id + '/icon?tenant=tranquility&size=128'
+    }
+  }
+}

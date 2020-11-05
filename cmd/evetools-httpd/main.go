@@ -35,6 +35,7 @@ func init() {
 	viper.BindPFlag("httpd.static.dir", pflag.Lookup("dir"))
 	viper.SetDefault("httpd.session.auth_key", securecookie.GenerateRandomKey(64))
 	viper.SetDefault("httpd.session.name", "evetools")
+	viper.SetDefault("model.database", "./eve-sde.sqlite3")
 	viper.SetDefault("oauth.basePath", "https://login.eveonline.com")
 
 	gob.Register(oauth2.Token{})
@@ -60,6 +61,10 @@ func main() {
 	viper.AddConfigPath("$HOME")
 	if err := viper.ReadInConfig(); err != nil {
 		log.Fatalf("error loading config file: %s", err)
+	}
+
+	if err := initDatabase(); err != nil {
+		log.Fatalf("error initializing database: %s", err)
 	}
 
 	if err := initOAuthConfig(); err != nil {
@@ -113,6 +118,7 @@ func NewServer(static http.Handler) *Server {
 
 	api := s.mux.PathPrefix("/api").Subrouter()
 	api.Methods("GET").Path("/v1/currentUser").HandlerFunc(s.CurrentUser)
+	api.Methods("GET").Path("/v1/marketTypes/{filter}").HandlerFunc(s.MarketTypes)
 
 	return s
 }
@@ -268,4 +274,17 @@ func (s *Server) Logout(w http.ResponseWriter, r *http.Request) {
 	session.Options.MaxAge = -1
 	session.Save(r, w)
 	http.Redirect(w, r, "/", http.StatusFound)
+}
+
+func (s *Server) MarketTypes(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+
+	items, err := GetMarketTypes(vars["filter"])
+	if err != nil {
+		internalServerError(w, "GetMarketTypes", err)
+		return
+	}
+
+	w.Header().Add("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(items)
 }
