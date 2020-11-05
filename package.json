@@ -4,8 +4,8 @@
   "description": "",
   "main": "sass/styles.scss",
   "scripts": {
-    "backend": "modd",
-    "frontend": "livereloadx -l -p 8080 ./public/ --proxy http://localhost:8081",
+    "server:api": "modd",
+    "server:ui": "live-server public --port 8080 --middleware=../../fixture/middleware.js --mount=/api/v1:fixture",
     "css-build": "node-sass --omit-source-map-url sass/styles.scss public/styles.css",
     "css-watch": "npm run css-build -- --watch"
   },
@@ -20,9 +20,9 @@
   },
   "homepage": "https://github.com/stesla/evetools#readme",
   "devDependencies": {
-    "alpinejs": "^2.6.0",
-    "bulma": "^0.9.0",
-    "livereloadx": "^0.3.10",
+    "alpinejs": "^2.7.3",
+    "bulma": "^0.9.1",
+    "live-server": "^1.2.1",
     "node-sass": "^4.14.1"
   }
 }
