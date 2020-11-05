@@ -18,15 +18,18 @@
       x-init="fetchCurrentUser()"
       x-cloak>
 
-  <nav class="flex items-center justify-between px-4 py-2 bg-gray-900 text-gray-300">
+  <nav class="px-4 py-2 flex items-center justify-between h-16 bg-gray-900 text-gray-300">
+
     <div>
       <p class="text-2xl">evetools</p>
     </div>
     <template x-if="loggedIn">
       <div class="relative" @keydown.window="handleEscape($event)">
-        <button @click="avatarMenuOpen = !avatarMenuOpen"
-                class="h-12 w-12 rounded-full overflow-hidden border-2 border-gray-700 focus:outline-none focus:border-gray-500">
+        <button class="p-1 flex items-center" @click="avatarMenuOpen = !avatarMenuOpen">
+        <span class="mx-2 font-semibold" x-text="user.characterName"></span>
+        <figure class="h-12 w-12 rounded-full overflow-hidden border-2 border-gray-700 focus:outline-none focus:border-gray-500">
           <img class="h-full w-full object-cover" :src="user.avatarURL" :alt="user.characterName">
+        </figure>
         </button>
         <template x-if="avatarMenuOpen">
           <button @click="avatarMenuOpen = false" tabindex="-1" class="fixed inset-0 h-full w-full bg-transparent cursor-default"></button>
