@@ -106,8 +106,14 @@ evetools.typeInfo = function() {
           }
           return resp.json();
         }).
-        then(result => {
-          this.marketInfo = result;
+        then(obj => {
+          obj.history = obj.history.map(d => {
+            return {
+              date: Date.parse(d.date),
+              average: +d.average,
+            }
+          });
+          this.marketInfo = obj;
         });
 
       const observer = new MutationObserver(() => {
@@ -165,8 +171,8 @@ window.renderChart = function(data, width) {
   var line = d3.line()
     .curve(d3.curveStep)
     .defined(d => !isNaN(+d.average))
-    .x(d => x(Date.parse(d.date)))
-    .y(d => y(+d.average));
+    .x(d => x(d.date))
+    .y(d => y(d.average));
 
   var yAxis = g => g
     .attr('transform', `translate(${margin.left},0)`)
@@ -183,11 +189,11 @@ window.renderChart = function(data, width) {
     .call(d3.axisBottom(x).ticks(3).tickSizeOuter(0));
 
   var y = d3.scaleLinear()
-          .domain([0, d3.max(data, d => +d.average)]).nice()
+          .domain([0, d3.max(data, d => d.average)]).nice()
           .range([height - margin.bottom, margin.top]);
   
   var x = d3.scaleUtc()
-          .domain(d3.extent(data, d => Date.parse(d.date)))
+          .domain(d3.extent(data, d => d.date))
           .range([margin.left, width - margin.right]);
 
   var callout = function(g, value) {
@@ -242,8 +248,8 @@ window.renderChart = function(data, width) {
 
   svg.on('touchmove mousemove', function(event) {
     const day = bisect(d3.pointer(event, this)[0]);
-    const date = new Date(Date.parse(day.date));
-    const value = +day.average;
+    const date = new Date(day.date);
+    const value = day.average;
 
     tooltip
       .attr("transform", `translate(${x(date)},${y(value)})`)
