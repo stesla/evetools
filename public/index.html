@@ -10,8 +10,6 @@
   <style>
     [x-cloak] { display: none; }
   </style>
-  <script src='/js/alpine.js'></script>
-  <script src='/js/app.js'></script>
 </head>
 <body class="bg-gray-300 text-gray-900"
       x-data="evetools.globalState()"
@@ -97,51 +95,56 @@
         </a>
       </div>
       <template x-if="type">
-        <div class="px-4 py-4 w-full mt-4 mx-auto rounded-xl shadow-xl bg-gray-100">
-          <div class="flex justify-between items-start">
+        <div class="py-4 w-full mt-4 mx-auto rounded-xl shadow-xl bg-gray-100">
+          <div class="px-4 flex justify-between items-start">
             <div class="mr-2">
               <h1 class="text-4xl font-bold" x-text="type.name"></h1>
               <p class="mt-4" x-text="type.description"></p>
             </div>
             <img class="float-right" :src="imgURL(type)">
           </div>
-          <div class="mt-4">
+          <div class="mt-4 border-t-2 pt-4">
             <template x-if="!marketInfo">
               <p class="text-center italic text-gray-500">Fetching market info...</p>
             </template>
             <template x-if="marketInfo">
-              <div class="mx-auto w-3/5">
-                <div class="flex justify-between">
-                  <div>
-                    <dt class="font-bold">Margin</dt>
-                    <dd class="font-semibold text-center" x-text="(marketInfo.margin).toLocaleString('en') + '%'"></dd>
+              <div x-show="marketInfo">
+                <div class="mx-auto w-3/5">
+                  <div class="flex justify-between">
+                    <div>
+                      <dt class="font-bold">Margin</dt>
+                      <dd class="font-semibold text-center" x-text="formatNumber(marketInfo.margin) + '%'"></dd>
+                    </div>
+                    <div>
+                      <dt class="font-bold">Volume</dt>
+                      <dd class="font-semibold text-center" x-text="formatNumber(marketInfo.volume)"></dd>
+                    </div>
+                    <div>
+                      <dt class="font-bold">Jita Buy</dt>
+                      <dd class="font-semibold text-center text-red-500" x-text="formatNumber(marketInfo.buy)">
+                    </div>
+                    <div>
+                      <dt class="font-bold">Jita Sell</dt>
+                      <dd class="font-semibold text-center text-green-500" x-text="formatNumber(marketInfo.sell)">
+                    </div>
                   </div>
-                  <div>
-                    <dt class="font-bold">Volume</dt>
-                    <dd class="font-semibold text-center" x-text="(marketInfo.volume).toLocaleString('en')"></dd>
-                  </div>
-                  <div>
-                    <dt class="font-bold">Jita Buy</dt>
-                    <dd class="font-semibold text-center text-red-500" x-text="(marketInfo.buy).toLocaleString('en')">
-                  </div>
-                  <div>
-                    <dt class="font-bold">Jita Sell</dt>
-                    <dd class="font-semibold text-center text-green-500" x-text="(marketInfo.sell).toLocaleString('en')">
+                  <div class="mt-4 flex justify-between">
+                    <div>
+                      <dd class="font-bold">Lowest</dt>
+                      <dd class="font-semibold text-center" x-text="formatNumber(marketInfo.lowest)"></dd>
+                    </div>
+                    <div>
+                      <dd class="font-bold">Average</dt>
+                      <dd class="font-semibold text-center" x-text="formatNumber(marketInfo.average)"></dd>
+                    </div>
+                    <div>
+                      <dd class="font-bold">Highest</dt>
+                      <dd class="font-semibold text-center" x-text="formatNumber(marketInfo.highest)"></dd>
+                    </div>
                   </div>
                 </div>
-                <div class="mt-4 flex justify-between">
-                  <div>
-                    <dd class="font-bold">Lowest</dt>
-                    <dd class="font-semibold text-center" x-text="(marketInfo.lowest).toLocaleString('en')"></dd>
-                  </div>
-                  <div>
-                    <dd class="font-bold">Average</dt>
-                    <dd class="font-semibold text-center" x-text="(marketInfo.average).toLocaleString('en')"></dd>
-                  </div>
-                  <div>
-                    <dd class="font-bold">Highest</dt>
-                    <dd class="font-semibold text-center" x-text="(marketInfo.highest).toLocaleString('en')"></dd>
-                  </div>
+                <div id="chart" class="mt-4 border-t-2 pt-4">
+                  <h3 class="text-center font-bold text-md">Average price for the last twelve months</h3>
                 </div>
               </div>
             </template>
@@ -150,5 +153,9 @@
       </template>
     </main>
   </template>
+
+  <script src='/js/alpine.js'></script>
+  <script src='/js/d3.v6.min.js'></script>
+  <script src='/js/app.js'></script>
 </body>
 </html>

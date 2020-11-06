@@ -2,7 +2,9 @@ package main
 
 import (
 	"context"
+	"encoding/json"
 	"net/http"
+	"time"
 
 	"github.com/antihax/optional"
 	"github.com/stesla/evetools/esi"
@@ -26,34 +28,65 @@ func NewESIClient(client *http.Client) *ESIClient {
 	}
 }
 
-func (e *ESIClient) JitaHistory(ctx context.Context, typeID int) (volume, lowest, average, highest int, err error) {
-	days, _, err := e.api.MarketApi.GetMarketsRegionIdHistory(ctx, regionTheForge, int32(typeID), nil)
-	if err != nil {
-		return
-	}
-
-	for _, day := range days {
-		volume += int(day.Volume)
-		lowest += int(day.Lowest)
-		average += int(day.Average)
-		highest += int(day.Highest)
-	}
-	volume /= len(days)
-	lowest /= len(days)
-	average /= len(days)
-	highest /= len(days)
-	return
+type Date struct {
+	time.Time
 }
 
-func (e *ESIClient) JitaPrices(ctx context.Context, typeID int) (buy, sell float64, err error) {
+func (d Date) MarshalJSON() ([]byte, error) {
+	str := d.Format("2006-01-02")
+	return json.Marshal(str)
+}
+
+type HistoryDay struct {
+	Date       Date    `json:"date"`
+	Lowest     float64 `json:"lowest"`
+	Average    float64 `json:"average"`
+	Highest    float64 `json:"highest"`
+	OrderCount int64   `json:"order_count"`
+	Volume     int64   `json:"volume"`
+}
+
+func (e *ESIClient) JitaHistory(ctx context.Context, typeID int) ([]HistoryDay, error) {
+	days, _, err := e.api.MarketApi.GetMarketsRegionIdHistory(ctx, regionTheForge, int32(typeID), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	result := make([]HistoryDay, len(days))
+	for i, day := range days {
+		hd := &result[i]
+		t, _ := time.Parse("2006-01-02", day.Date)
+		hd.Date = Date{t}
+		hd.Lowest = day.Lowest
+		hd.Average = day.Average
+		hd.Highest = day.Highest
+		hd.OrderCount = day.OrderCount
+		hd.Volume = day.Volume
+	}
+	return result, nil
+}
+
+type Price struct {
+	Buy, Sell float64
+}
+
+func (p Price) Margin() float64 {
+	if p.Buy == p.Sell {
+		return 0
+	}
+	return p.Sell - p.Buy
+}
+
+func (e *ESIClient) JitaPrices(ctx context.Context, typeID int) (*Price, error) {
 	opts := esi.MarketApiGetMarketsRegionIdOrdersOpts{
 		TypeId: optional.NewInt32(int32(typeID)),
 	}
 	orders, _, err := e.api.MarketApi.GetMarketsRegionIdOrders(ctx, "all", regionTheForge, &opts)
 	if err != nil {
-		return 0, 0, err
+		return nil, err
 	}
 
+	var buy, sell float64
 	for _, order := range orders {
 		if order.LocationId != locationJitaTradeHub {
 			continue
@@ -64,5 +97,5 @@ func (e *ESIClient) JitaPrices(ctx context.Context, typeID int) (buy, sell float
 			sell = order.Price
 		}
 	}
-	return
+	return &Price{Buy: buy, Sell: sell}, nil
 }
