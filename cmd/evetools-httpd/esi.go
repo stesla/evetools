@@ -26,6 +26,25 @@ func NewESIClient(client *http.Client) *ESIClient {
 	}
 }
 
+func (e *ESIClient) JitaHistory(ctx context.Context, typeID int) (volume, lowest, average, highest int, err error) {
+	days, _, err := e.api.MarketApi.GetMarketsRegionIdHistory(ctx, regionTheForge, int32(typeID), nil)
+	if err != nil {
+		return
+	}
+
+	for _, day := range days {
+		volume += int(day.Volume)
+		lowest += int(day.Lowest)
+		average += int(day.Average)
+		highest += int(day.Highest)
+	}
+	volume /= len(days)
+	lowest /= len(days)
+	average /= len(days)
+	highest /= len(days)
+	return
+}
+
 func (e *ESIClient) JitaPrices(ctx context.Context, typeID int) (buy, sell float64, err error) {
 	opts := esi.MarketApiGetMarketsRegionIdOrdersOpts{
 		TypeId: optional.NewInt32(int32(typeID)),

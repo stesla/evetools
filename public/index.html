@@ -110,20 +110,40 @@
               <p class="text-center italic text-gray-500">Fetching market info...</p>
             </template>
             <template x-if="marketInfo">
-              <dl class="mx-auto w-3/5 flex justify-between">
-                <div>
-                  <dt class="font-bold">Jita Buy</dt>
-                  <dd class="font-semibold text-red-500" x-text="(marketInfo.buy).toLocaleString('en')">
+              <div class="mx-auto w-3/5">
+                <div class="flex justify-between">
+                  <div>
+                    <dt class="font-bold">Margin</dt>
+                    <dd class="font-semibold text-center" x-text="(marketInfo.margin).toLocaleString('en') + '%'"></dd>
+                  </div>
+                  <div>
+                    <dt class="font-bold">Volume</dt>
+                    <dd class="font-semibold text-center" x-text="(marketInfo.volume).toLocaleString('en')"></dd>
+                  </div>
+                  <div>
+                    <dt class="font-bold">Jita Buy</dt>
+                    <dd class="font-semibold text-center text-red-500" x-text="(marketInfo.buy).toLocaleString('en')">
+                  </div>
+                  <div>
+                    <dt class="font-bold">Jita Sell</dt>
+                    <dd class="font-semibold text-center text-green-500" x-text="(marketInfo.sell).toLocaleString('en')">
+                  </div>
                 </div>
-                <div>
-                  <dt class="font-bold">Margin</dt>
-                  <dd class="font-semibold" x-text="(marketInfo.margin).toLocaleString('en') + '%'"></dd>
+                <div class="mt-4 flex justify-between">
+                  <div>
+                    <dd class="font-bold">Lowest</dt>
+                    <dd class="font-semibold text-center" x-text="(marketInfo.lowest).toLocaleString('en')"></dd>
+                  </div>
+                  <div>
+                    <dd class="font-bold">Average</dt>
+                    <dd class="font-semibold text-center" x-text="(marketInfo.average).toLocaleString('en')"></dd>
+                  </div>
+                  <div>
+                    <dd class="font-bold">Highest</dt>
+                    <dd class="font-semibold text-center" x-text="(marketInfo.highest).toLocaleString('en')"></dd>
+                  </div>
                 </div>
-                <div>
-                  <dt class="font-bold">Jita Sell</dt>
-                  <dd class="font-semibold text-green-500" x-text="(marketInfo.sell).toLocaleString('en')">
-                </div>
-              </dl>
+              </div>
             </template>
           </div>
         </div>

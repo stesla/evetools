@@ -307,13 +307,24 @@ func (s *Server) TypeMarketInfo(w http.ResponseWriter, r *http.Request) {
 	buy, sell, err := s.esi.JitaPrices(r.Context(), id)
 	if err != nil {
 		internalServerError(w, "JitaPrices", err)
+		return
+	}
+
+	volume, lowest, average, highest, err := s.esi.JitaHistory(r.Context(), id)
+	if err != nil {
+		internalServerError(w, "JitaHistory", err)
+		return
 	}
 
 	w.Header().Add("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(map[string]interface{}{
-		"buy":    buy,
-		"sell":   sell,
-		"margin": (sell - buy) / buy * 100,
+		"buy":     buy,
+		"sell":    sell,
+		"margin":  (sell - buy) / buy * 100,
+		"volume":  volume,
+		"lowest":  lowest,
+		"average": average,
+		"highest": highest,
 	})
 }
 

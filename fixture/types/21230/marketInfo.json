@@ -1,5 +1,9 @@
 {
   "buy": 207300,
   "sell": 696020,
-  "margin": 235.75
+  "margin": 235.75,
+  "volume": 16,
+  "average": 193417,
+  "highest": 286499,
+  "lowest": 82534
 }
