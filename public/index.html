@@ -110,10 +110,14 @@
               <p class="text-center italic text-gray-500">Fetching market info...</p>
             </template>
             <template x-if="marketInfo">
-              <dl class="mx-auto w-2/5 flex justify-between">
+              <dl class="mx-auto w-3/5 flex justify-between">
                 <div>
                   <dt class="font-bold">Jita Buy</dt>
                   <dd class="font-semibold text-red-500" x-text="(marketInfo.buy).toLocaleString('en')">
+                </div>
+                <div>
+                  <dt class="font-bold">Margin</dt>
+                  <dd class="font-semibold" x-text="(marketInfo.margin).toLocaleString('en') + '%'"></dd>
                 </div>
                 <div>
                   <dt class="font-bold">Jita Sell</dt>

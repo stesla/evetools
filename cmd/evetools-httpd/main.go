@@ -311,8 +311,9 @@ func (s *Server) TypeMarketInfo(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Add("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(map[string]interface{}{
-		"buy":  buy,
-		"sell": sell,
+		"buy":    buy,
+		"sell":   sell,
+		"margin": (sell - buy) / buy * 100,
 	})
 }
 
