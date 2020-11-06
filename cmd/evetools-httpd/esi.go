@@ -55,6 +55,9 @@ func (e *ESIClient) JitaPrices(ctx context.Context, typeID int) (buy, sell float
 	}
 
 	for _, order := range orders {
+		if order.LocationId != locationJitaTradeHub {
+			continue
+		}
 		if order.IsBuyOrder && order.Price > buy {
 			buy = order.Price
 		} else if !order.IsBuyOrder && (sell == 0 || order.Price < sell) {
