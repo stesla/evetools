@@ -141,7 +141,7 @@ window.formatNumber = function(amt) {
 }
 
 window.renderChart = function(data, width) {
-  var margin = {top: 20, right: 30, bottom: 0, left: 70};
+  var margin = {top: 20, right: 30, bottom: 20, left: 70};
   var height = 400;
 
   const bisect = function(mx) {
@@ -217,7 +217,7 @@ window.renderChart = function(data, width) {
         .data((value + '').split(/\n/))
         .join('tspan')
           .attr('x', 0)
-          .attr('y', (d, i) => `${i * 1.1}em`)
+          .attr('y', (d, i) => `${i * 2}em`)
           .style('font-weight', (_, i) => i ? null : 'bold')
           .text(d => d));
 
