@@ -64,7 +64,7 @@ func main() {
 		log.Fatalf("error loading config file: %s", err)
 	}
 
-	if err := initDatabase(); err != nil {
+	if err := initEVEDatabase(); err != nil {
 		log.Fatalf("error initializing database: %s", err)
 	}
 

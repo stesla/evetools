@@ -8,12 +8,12 @@ import (
 	"github.com/spf13/viper"
 )
 
-var db *sql.DB
+var eveDB *sql.DB
 
 var ErrNotFound = errors.New("Not Found")
 
-func initDatabase() (err error) {
-	db, err = sql.Open("sqlite3", viper.GetString("model.database"))
+func initEVEDatabase() (err error) {
+	eveDB, err = sql.Open("sqlite3", viper.GetString("model.database"))
 	return
 }
 
@@ -26,7 +26,7 @@ type MarketType struct {
 func GetMarketType(id int) (*MarketType, error) {
 	var query = `SELECT typeName, description FROM invTypes WHERE typeID = ?`
 	var name, desc sql.NullString
-	err := db.QueryRow(query, id).Scan(&name, &desc)
+	err := eveDB.QueryRow(query, id).Scan(&name, &desc)
 	if err == sql.ErrNoRows {
 		return nil, ErrNotFound
 	} else if err != nil {
@@ -47,7 +47,7 @@ func GetMarketTypes(filter string) ([]*MarketType, error) {
 			         AND typeName LIKE ?
                    ORDER BY typeName ASC`
 
-	rows, err := db.Query(query, "%"+filter+"%")
+	rows, err := eveDB.Query(query, "%"+filter+"%")
 	if err != nil {
 		return nil, err
 	}
