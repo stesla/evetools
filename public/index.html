@@ -58,8 +58,8 @@
           x-data="evetools.marketTypes()"
           x-init="initMarketTypes()">
 
-    <form id="search" @submit="handleSearch($event)">
-        <div class="flex w-1/4 items-center rounded-md overflow-hidden">
+      <form id="search" @submit="handleSearch($event)">
+        <div class="mx-auto flex w-full sm:w-4/5 max-w-screen-sm items-center rounded-md overflow-hidden">
           <input x-model="filter" class="px-4 py-2 w-full bg-gray-100 focus:outline-none"
                  placeholder="Type your search filter here...">
           <button form="search" class="px-4 py-2 bg-blue-500 text-gray-100">
@@ -67,9 +67,9 @@
           </button>
         </div>
       </form>
-      <div class="flex flex-wrap">
+      <div class="flex flex-wrap justify-around">
         <template x-for="type in marketTypes" :key="type.id">
-          <div class="mt-4 mr-4 p-4 w-56 h-48 flex flex-col justify-between rounded-xl shadow-xl bg-gray-100">
+          <div class="mt-4 sm:ml-4 p-4 w-full lg:w-64 h-48 flex flex-col justify-between rounded-xl shadow-xl bg-gray-100">
             <div>
               <img class="h-12 w-12 float-right" :src="imgURL(type)">
               <h2 class="text-lg font-semibold clearfix" x-text="type.name"></h2>
@@ -97,7 +97,7 @@
         </a>
       </div>
       <template x-if="type">
-        <div class="px-4 py-2 w-full mt-4 mx-auto rounded-lg shadow-xl bg-gray-100">
+        <div class="px-4 py-4 w-full mt-4 mx-auto rounded-xl shadow-xl bg-gray-100">
           <div class="flex justify-between items-start">
             <div class="mr-2">
               <h1 class="text-4xl font-bold" x-text="type.name"></h1>
@@ -110,7 +110,7 @@
               <p class="text-center italic text-gray-500">Fetching market info...</p>
             </template>
             <template x-if="marketInfo">
-              <dl class="mx-auto w-48 flex justify-between">
+              <dl class="mx-auto w-2/5 flex justify-between">
                 <div>
                   <dt class="font-bold">Jita Buy</dt>
                   <dd class="font-semibold text-red-500" x-text="(marketInfo.buy).toLocaleString('en')">

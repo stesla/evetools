@@ -12,7 +12,9 @@
   },
   "watch": {
     "build:css": {
-      "patterns": ["css"],
+      "patterns": [
+        "css"
+      ],
       "extensions": "css"
     }
   },
