@@ -202,7 +202,7 @@ func (h *failHandler) ServeHTTP(http.ResponseWriter, *http.Request) {
 func handleRequest(t *testing.T, r *http.Request) *http.Response {
 	w := httptest.NewRecorder()
 	s := NewServer(&failHandler{t})
-	s.client.Transport = mrt
+	s.http.Transport = mrt
 	s.ServeHTTP(w, r)
 	mrt.Reset()
 	return w.Result()

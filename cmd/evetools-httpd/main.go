@@ -106,12 +106,14 @@ func initOAuthConfig() error {
 }
 
 type Server struct {
-	client http.Client
-	mux    *mux.Router
+	http http.Client
+	esi  *ESIClient
+	mux  *mux.Router
 }
 
 func NewServer(static http.Handler) *Server {
 	s := &Server{mux: mux.NewRouter()}
+	s.esi = NewESIClient(&s.http)
 	s.mux.NotFoundHandler = alwaysThisPath("/", static)
 	s.mux.PathPrefix("/css").Handler(static)
 	s.mux.PathPrefix("/js").Handler(static)
@@ -121,14 +123,15 @@ func NewServer(static http.Handler) *Server {
 
 	api := s.mux.PathPrefix("/api").Subrouter()
 	api.Methods("GET").Path("/v1/currentUser").HandlerFunc(s.CurrentUser)
-	api.Methods("GET").Path("/v1/marketTypes/{filter}").HandlerFunc(s.MarketTypes)
-	api.Methods("GET").Path("/v1/typeInfo/{typeID:[0-9]+}").HandlerFunc(s.TypeInfo)
+	api.Methods("GET").Path("/v1/typeSearch/{filter}").HandlerFunc(s.TypeSearch)
+	api.Methods("GET").Path("/v1/types/{typeID:[0-9]+}").HandlerFunc(s.TypeInfo)
+	api.Methods("GET").Path("/v1/types/{typeID:[0-9]+}/marketInfo").HandlerFunc(s.TypeMarketInfo)
 
 	return s
 }
 
 func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	ctx := context.WithValue(r.Context(), oauth2.HTTPClient, &s.client)
+	ctx := context.WithValue(r.Context(), oauth2.HTTPClient, &s.http)
 	s.mux.ServeHTTP(w, r.WithContext(ctx))
 }
 
@@ -229,7 +232,7 @@ func (s *Server) LoginCallback(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	resp, err := s.client.Get(fmt.Sprintf("%s/.well-known/oauth-authorization-server",
+	resp, err := s.http.Get(fmt.Sprintf("%s/.well-known/oauth-authorization-server",
 		viper.GetString("oauth.basePath")))
 	if err != nil {
 		internalServerError(w, "GET metadata", err)
@@ -245,7 +248,7 @@ func (s *Server) LoginCallback(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	keyset, err := jwk.Fetch(meta.URI, jwk.WithHTTPClient(&s.client))
+	keyset, err := jwk.Fetch(meta.URI, jwk.WithHTTPClient(&s.http))
 	if err != nil {
 		internalServerError(w, "fetch jwks", err)
 		return
@@ -280,19 +283,6 @@ func (s *Server) Logout(w http.ResponseWriter, r *http.Request) {
 	http.Redirect(w, r, "/", http.StatusFound)
 }
 
-func (s *Server) MarketTypes(w http.ResponseWriter, r *http.Request) {
-	vars := mux.Vars(r)
-
-	items, err := GetMarketTypes(vars["filter"])
-	if err != nil {
-		internalServerError(w, "GetMarketTypes", err)
-		return
-	}
-
-	w.Header().Add("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(items)
-}
-
 func (s *Server) TypeInfo(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	id, _ := strconv.Atoi(vars["typeID"])
@@ -308,6 +298,35 @@ func (s *Server) TypeInfo(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Add("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(item)
+}
+
+func (s *Server) TypeMarketInfo(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	id, _ := strconv.Atoi(vars["typeID"])
+
+	buy, sell, err := s.esi.JitaPrices(r.Context(), id)
+	if err != nil {
+		internalServerError(w, "JitaPrices", err)
+	}
+
+	w.Header().Add("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(map[string]interface{}{
+		"buy":  buy,
+		"sell": sell,
+	})
+}
+
+func (s *Server) TypeSearch(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+
+	items, err := GetMarketTypes(vars["filter"])
+	if err != nil {
+		internalServerError(w, "GetMarketTypes", err)
+		return
+	}
+
+	w.Header().Add("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(items)
 }
 
 func alwaysThisPath(path string, h http.Handler) http.Handler {

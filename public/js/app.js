@@ -50,7 +50,7 @@ evetools.marketTypes = function() {
     marketTypes: [],
 
     fetchMarketTypes() {
-      fetch('/api/v1/marketTypes/' + this.filter).
+      fetch('/api/v1/typeSearch/' + this.filter).
         then(resp => {
           if (!resp.ok) {
             throw new Error('error fetching market types');
@@ -80,13 +80,15 @@ evetools.marketTypes = function() {
 
 evetools.typeInfo = function() {
   let typeRE = new RegExp("/type/(.*)");
+  let match = window.location.pathname.match(typeRE);
+  let typeID = match[1];
 
   return {
     type: null,
+    marketInfo: null,
 
-    fetchTypeInfo() {
-      let match = window.location.pathname.match(typeRE);
-      fetch('/api/v1/typeInfo/' + match[1]).
+    fetchTypeDetails() {
+      fetch('/api/v1/types/' + typeID).
         then(resp => {
           if(!resp.ok) {
             throw new Error('error fetching type info');
@@ -95,6 +97,17 @@ evetools.typeInfo = function() {
         }).
         then(type => {
           this.type = type;
+        });
+
+      fetch('/api/v1/types/' + typeID + '/marketInfo').
+        then(resp => {
+          if (!resp.ok) {
+            throw new Error('error fetching market info');
+          }
+          return resp.json();
+        }).
+        then(result => {
+          this.marketInfo = result;
         });
     },
   }
