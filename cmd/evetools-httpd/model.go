@@ -2,6 +2,7 @@ package main
 
 import (
 	"database/sql"
+	"errors"
 
 	_ "github.com/mattn/go-sqlite3"
 	"github.com/spf13/viper"
@@ -9,14 +10,34 @@ import (
 
 var db *sql.DB
 
+var ErrNotFound = errors.New("Not Found")
+
 func initDatabase() (err error) {
 	db, err = sql.Open("sqlite3", viper.GetString("model.database"))
 	return
 }
 
 type MarketType struct {
-	ID   int    `json:"id"`
-	Name string `json:"name"`
+	ID          int    `json:"id"`
+	Name        string `json:"name"`
+	Description string `json:"description,-"`
+}
+
+func GetMarketType(id int) (*MarketType, error) {
+	var query = `SELECT typeName, description FROM invTypes WHERE typeID = ?`
+	var name, desc sql.NullString
+	err := db.QueryRow(query, id).Scan(&name, &desc)
+	if err == sql.ErrNoRows {
+		return nil, ErrNotFound
+	} else if err != nil {
+		return nil, err
+	}
+
+	return &MarketType{
+		ID:          id,
+		Name:        name.String,
+		Description: desc.String,
+	}, nil
 }
 
 func GetMarketTypes(filter string) ([]*MarketType, error) {

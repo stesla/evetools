@@ -9,6 +9,7 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"net/url"
 	"os"
 	"strconv"
 	"strings"
@@ -111,7 +112,9 @@ type Server struct {
 
 func NewServer(static http.Handler) *Server {
 	s := &Server{mux: mux.NewRouter()}
-	s.mux.NotFoundHandler = static
+	s.mux.NotFoundHandler = alwaysThisPath("/", static)
+	s.mux.PathPrefix("/css").Handler(static)
+	s.mux.PathPrefix("/js").Handler(static)
 	s.mux.Methods("GET").Path("/login").HandlerFunc(s.Login)
 	s.mux.Methods("GET").Path("/login/callback").HandlerFunc(s.LoginCallback)
 	s.mux.Methods("GET").Path("/logout").HandlerFunc(s.Logout)
@@ -119,6 +122,7 @@ func NewServer(static http.Handler) *Server {
 	api := s.mux.PathPrefix("/api").Subrouter()
 	api.Methods("GET").Path("/v1/currentUser").HandlerFunc(s.CurrentUser)
 	api.Methods("GET").Path("/v1/marketTypes/{filter}").HandlerFunc(s.MarketTypes)
+	api.Methods("GET").Path("/v1/typeInfo/{typeID:[0-9]+}").HandlerFunc(s.TypeInfo)
 
 	return s
 }
@@ -287,4 +291,32 @@ func (s *Server) MarketTypes(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Add("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(items)
+}
+
+func (s *Server) TypeInfo(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	id, _ := strconv.Atoi(vars["typeID"])
+
+	item, err := GetMarketType(id)
+	if err == ErrNotFound {
+		w.WriteHeader(http.StatusNotFound)
+		return
+	} else if err != nil {
+		internalServerError(w, "GetMarketType", err)
+		return
+	}
+
+	w.Header().Add("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(item)
+}
+
+func alwaysThisPath(path string, h http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		r2 := new(http.Request)
+		*r2 = *r
+		r2.URL = new(url.URL)
+		*r2.URL = *r.URL
+		r2.URL.Path = path
+		h.ServeHTTP(w, r2)
+	})
 }

@@ -8,9 +8,15 @@ evetools.globalState = function() {
 
     get currentView() {
       if (!this.loggedIn) {
-        return 'login'
+        return 'login';
+      }
+
+      let path = window.location.pathname;
+      
+      if (path.startsWith('/type/')) {
+        return 'typeDetails';
       } else {
-        return 'home'
+        return 'search';
       }
     },
 
@@ -56,13 +62,49 @@ evetools.marketTypes = function() {
         });
     },
 
+    href(id) {
+      return '/type/' + id;
+    },
+
     initMarketTypes() {
       if (this.filter)
         this.fetchMarketTypes();
     },
 
-    imgURL(type) {
-      return 'https://images.evetech.net/types/' + type.id + '/icon?tenant=tranquility&size=128'
-    }
+    handleSearch(e) {
+      e.preventDefault();
+      window.location = '?q=' + this.filter;
+    },
   }
 }
+
+evetools.typeInfo = function() {
+  let typeRE = new RegExp("/type/(.*)");
+
+  return {
+    type: null,
+
+    fetchTypeInfo() {
+      let match = window.location.pathname.match(typeRE);
+      fetch('/api/v1/typeInfo/' + match[1]).
+        then(resp => {
+          if(!resp.ok) {
+            throw new Error('error fetching type info');
+          }
+          return resp.json();
+        }).
+        then(type => {
+          this.type = type;
+        });
+    },
+  }
+}
+
+window.imgURL = function(type) {
+  if (type) {
+    return 'https://images.evetech.net/types/' + type.id + '/icon?tenant=tranquility&size=128';
+  } else {
+    return undefined;
+  }
+}
+
