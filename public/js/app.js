@@ -119,7 +119,7 @@ evetools.typeInfo = function() {
       const observer = new MutationObserver(() => {
         let div = document.getElementById("chart");
         if (div) {
-          renderChart(this.marketInfo.history, div.clientWidth);
+          renderChart(this.marketInfo.history, 400, div.clientWidth);
           observer.disconnect();
         }
       });
@@ -140,11 +140,8 @@ window.formatNumber = function(amt) {
   return amt.toLocaleString('en-US', { maximumFractionDigits: 2 });
 }
 
-window.renderChart = function(data, width) {
-  var margin = {top: 20, right: 30, bottom: 20, left: 70};
-  var height = 400;
-
-  const bisect = function(mx) {
+window.renderChart = function(data, height, width) {
+ const bisect = function(mx) {
     const date = x.invert(mx);
     const index = d3.bisector(d => d.date).left(data, date, 1);
     const a = data[index - 1];
@@ -168,13 +165,17 @@ window.renderChart = function(data, width) {
     });
   }
 
-  var line = d3.line()
-    .curve(d3.curveStep)
-    .defined(d => !isNaN(+d.average))
-    .x(d => x(d.date))
-    .y(d => y(d.average));
+  const margin = {top: 20, right: 30, bottom: 20, left: 70};
 
-  var yAxis = g => g
+  const svg = d3.select("#chart").append("svg")
+    .attr('width', width + margin.left + margin.right)
+    .attr('height', height + margin.top + margin.bottom);
+
+  const y = d3.scaleLinear()
+          .domain([0, d3.max(data, d => d.average)]).nice()
+          .range([height - margin.bottom, margin.top]);
+
+  const yAxis = g => g
     .attr('transform', `translate(${margin.left},0)`)
     .call(d3.axisLeft(y))
     .call(g => g.select('.domain').remove())
@@ -184,19 +185,47 @@ window.renderChart = function(data, width) {
         .attr('font-weight', 'bold')
         .text(data.y));
 
-  var xAxis = g => g
-    .attr("transform", `translate(0,${height - margin.bottom})`)
-    .call(d3.axisBottom(x).ticks(3).tickSizeOuter(0));
+  svg.append('g').call(yAxis);
 
-  var y = d3.scaleLinear()
-          .domain([0, d3.max(data, d => d.average)]).nice()
-          .range([height - margin.bottom, margin.top]);
-  
-  var x = d3.scaleUtc()
+  const x = d3.scaleUtc()
           .domain(d3.extent(data, d => d.date))
           .range([margin.left, width - margin.right]);
 
-  var callout = function(g, value) {
+  const xAxis = g => g
+    .attr("transform", `translate(0,${height - margin.bottom})`)
+    .call(d3.axisBottom(x).ticks(3).tickSizeOuter(0));
+ 
+  svg.append('g').call(xAxis);
+
+  const line = d3.line()
+    .curve(d3.curveLinear)
+    .defined(d => !isNaN(+d.average))
+    .x(d => x(d.date))
+    .y(d => y(d.average));
+
+  svg.append('path')
+    .datum(data)
+    .attr('fill', 'none')
+    .attr('stroke', 'steelblue')
+    .attr('stroke-width', 1.5)
+    .attr('stroke-linejoin', 'round')
+    .attr('stroke-linecap', 'round')
+    .attr('d', line);
+
+  // history path tooltip
+  const tooltip = svg.append('g');
+
+  svg.on('touchmove mousemove', function(event) {
+    const day = bisect(d3.pointer(event, this)[0]);
+    const date = new Date(day.date);
+    const value = day.average;
+
+    tooltip
+      .attr("transform", `translate(${x(date)},${y(0)})`)
+      .call(callout, `${formatValue(value)}\n${formatDate(date)}`);
+  });
+
+  const callout = function(g, value) {
     if (!value) return g.style('display', 'none');
 
     g.style('display', null)
@@ -226,36 +255,6 @@ window.renderChart = function(data, width) {
     text.attr('transform', `translate(${-w / 2},${15 - y})`);
     path.attr('d', `M${-w / 2 - 10},5H-5l5,-5l5,5H${w / 2 + 10}v${h + 20}h-${w + 20}z`);
   };
-
-  const svg = d3.select("#chart").append("svg")
-    .attr('width', width + margin.left + margin.right)
-    .attr('height', height + margin.top + margin.bottom);
-
-  svg.append('g').call(xAxis);
-
-  svg.append('g').call(yAxis);
-
-  svg.append('path')
-    .datum(data)
-    .attr('fill', 'none')
-    .attr('stroke', 'steelblue')
-    .attr('stroke-width', 1.5)
-    .attr('stroke-linejoin', 'round')
-    .attr('stroke-linecap', 'round')
-    .attr('d', line);
-
-  const tooltip = svg.append('g');
-
-  svg.on('touchmove mousemove', function(event) {
-    const day = bisect(d3.pointer(event, this)[0]);
-    const date = new Date(day.date);
-    const value = day.average;
-
-    tooltip
-      .attr("transform", `translate(${x(date)},${y(value)})`)
-      .call(callout, `${formatValue(value)}
-${formatDate(date)}`);
-  });
 
   svg.on("touchend mouseleave", () => tooltip.call(callout, null));
 }
