@@ -140,30 +140,29 @@ window.formatNumber = function(amt) {
   return amt.toLocaleString('en-US', { maximumFractionDigits: 2 });
 }
 
-window.renderChart = function(data, height, width) {
- const bisect = function(mx) {
-    const date = x.invert(mx);
-    const index = d3.bisector(d => d.date).left(data, date, 1);
-    const a = data[index - 1];
-    const b = data[index];
-    return b && (date - Date.parse(a.date) > Date.parse(b.date) - date) ? b : a;
+window.renderChart = function(history, height, width) {
+  const bollinger = function(values, N, K) {
+    let i = 0;
+    let sum = 0;
+    let sum2 = 0;
+    const bands = K.map(() => new Float64Array(values.length).fill(NaN));
+    for (let n = Math.min(N - 1, values.length); i < n; ++i) {
+      const value = values[i];
+      sum += value, sum2 += value ** 2;
+    }
+    for (let n = values.length, m = bands.length; i < n; ++i) {
+      const value = values[i];
+      sum += value, sum2 += value ** 2;
+      const mean = sum / N;
+      const deviation = Math.sqrt((sum2 - sum ** 2/ N) / (N - 1));
+      for (let j = 0; j < K.length; ++j) {
+        bands[j][i] = mean + deviation * K[j];
+      }
+      const value0 = values[i - N + 1];
+      sum -= value0, sum2 -= value0 ** 2;
+    }
+    return bands;
   };
-
-  const formatDate = function(date) {
-    return date.toLocaleString('en-US', {
-      month: 'short',
-      day: 'numeric',
-      year: 'numeric',
-      timeZone: 'UTC'
-    });
-  }
-
-  const formatValue = function(value) {
-    return value.toLocaleString('en-US', {
-      style: "currency",
-      currency: "ISK"
-    });
-  }
 
   const margin = {top: 20, right: 30, bottom: 20, left: 70};
 
@@ -171,24 +170,29 @@ window.renderChart = function(data, height, width) {
     .attr('width', width + margin.left + margin.right)
     .attr('height', height + margin.top + margin.bottom);
 
+  const values = Float64Array.from(history, d => d.average);
+
   const y = d3.scaleLinear()
-          .domain([0, d3.max(data, d => d.average)]).nice()
+          .domain(d3.extent(values)).nice()
           .range([height - margin.bottom, margin.top]);
 
   const yAxis = g => g
     .attr('transform', `translate(${margin.left},0)`)
-    .call(d3.axisLeft(y))
+    .call(d3.axisLeft(y).tickValues(d3.ticks(...y.domain(), 10)).tickFormat(d => d))
     .call(g => g.select('.domain').remove())
+    .call(g => g.selectAll('.tick line').clone()
+        .attr('x2', width - margin.left - margin.right)
+        .attr('stroke-opacity', 0.1))
     .call(g => g.select('.tick:last-of-type text').clone()
         .attr('x', 3)
         .attr('text-anchor', 'start')
         .attr('font-weight', 'bold')
-        .text(data.y));
+        .text(history.y));
 
   svg.append('g').call(yAxis);
 
   const x = d3.scaleUtc()
-          .domain(d3.extent(data, d => d.date))
+          .domain(d3.extent(history, d => d.date))
           .range([margin.left, width - margin.right]);
 
   const xAxis = g => g
@@ -198,63 +202,30 @@ window.renderChart = function(data, height, width) {
   svg.append('g').call(xAxis);
 
   const line = d3.line()
-    .curve(d3.curveLinear)
-    .defined(d => !isNaN(+d.average))
-    .x(d => x(d.date))
-    .y(d => y(d.average));
+    .defined(d => !isNaN(d))
+    .x((d, i) => x(history[i].date))
+    .y(y);
 
-  svg.append('path')
-    .datum(data)
-    .attr('fill', 'none')
-    .attr('stroke', 'steelblue')
-    .attr('stroke-width', 1.5)
-    .attr('stroke-linejoin', 'round')
-    .attr('stroke-linecap', 'round')
-    .attr('d', line);
+  const N = 7 // days
+  const K = 2  // standard deviations
 
-  // history path tooltip
-  const tooltip = svg.append('g');
+  const data = [
+    values,
+    ...bollinger(values, 7, [0]),
+    ...bollinger(values, 30, [0]),
+    ...bollinger(values, 60, [0]),
+  ]
 
-  svg.on('touchmove mousemove', function(event) {
-    const day = bisect(d3.pointer(event, this)[0]);
-    const date = new Date(day.date);
-    const value = day.average;
+  const colors = (i) => ['#ddd', 'green', 'red', 'blue'][i];
 
-    tooltip
-      .attr("transform", `translate(${x(date)},${y(0)})`)
-      .call(callout, `${formatValue(value)}\n${formatDate(date)}`);
-  });
-
-  const callout = function(g, value) {
-    if (!value) return g.style('display', 'none');
-
-    g.style('display', null)
-     .style('pointer-events', 'none')
-     .style('font', '10px sans-serif');
-
-    const path = g.selectAll('path')
-      .data([null])
-      .join('path')
-        .attr('fill', 'white')
-        .attr('stroke', 'black');
-
-    const text = g.selectAll('text')
-      .data([null])
-      .join('text')
-      .call(text => text
-        .selectAll('tspan')
-        .data((value + '').split(/\n/))
-        .join('tspan')
-          .attr('x', 0)
-          .attr('y', (d, i) => `${i * 2}em`)
-          .style('font-weight', (_, i) => i ? null : 'bold')
-          .text(d => d));
-
-    const {x, y, width: w, height: h} = text.node().getBBox();
-
-    text.attr('transform', `translate(${-w / 2},${15 - y})`);
-    path.attr('d', `M${-w / 2 - 10},5H-5l5,-5l5,5H${w / 2 + 10}v${h + 20}h-${w + 20}z`);
-  };
-
-  svg.on("touchend mouseleave", () => tooltip.call(callout, null));
+  svg.append('g')
+      .attr('fill', 'none')
+      .attr('stroke-width', 1.5)
+      .attr('stroke-linejoin', 'round')
+      .attr('stroke-linecap', 'round')
+    .selectAll('path')
+    .data(data)
+    .join("path")
+      .attr("stroke", (d, i) => colors(i))
+      .attr('d', line);
 }
