@@ -167,8 +167,7 @@ window.renderChart = function(history, height, width) {
   const margin = {top: 20, right: 30, bottom: 20, left: 70};
 
   const svg = d3.select("#chart").append("svg")
-    .attr('width', width + margin.left + margin.right)
-    .attr('height', height + margin.top + margin.bottom);
+    .attr('viewBox', `0 0 ${width} ${height}`);
 
   const values = Float64Array.from(history, d => d.average);
 
@@ -216,16 +215,39 @@ window.renderChart = function(history, height, width) {
     ...bollinger(values, 60, [0]),
   ]
 
-  const colors = (i) => ['#ddd', 'green', 'red', 'blue'][i];
+  const categories = ['raw', '7-day', '30-day', '60-day'];
+  const colors = d3.scaleOrdinal(categories, ['#ddd', 'green', 'red', 'blue']);
+
+  // make the 60-day line a little thicker
+  const widths = (i) => [1, 1, 1, 2][i];
 
   svg.append('g')
       .attr('fill', 'none')
-      .attr('stroke-width', 1.5)
       .attr('stroke-linejoin', 'round')
       .attr('stroke-linecap', 'round')
     .selectAll('path')
     .data(data)
     .join("path")
       .attr("stroke", (d, i) => colors(i))
+      .attr('stroke-width', (d, i) => widths(i))
       .attr('d', line);
+
+  var legend = svg.selectAll(".legend")
+      .data(categories)
+      .enter().append("g")
+      .attr("class", "legend")
+      .attr("transform", function(d, i) { return `translate(-150,${i * 20})`; });
+
+  legend.append("rect")
+    .attr("x", width + 25)
+    .attr("width", 18)
+    .attr("height", 18)
+    .style("fill", function(d) { return colors(d); });
+
+  legend.append("text")
+    .attr("x", width + 50)
+    .attr("y", 9)
+    .attr("dy", ".35em")
+    .style("text-anchor", "start")
+    .text(function(d) { return d });
 }
