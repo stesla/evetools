@@ -71,10 +71,10 @@ type Price struct {
 }
 
 func (p Price) Margin() float64 {
-	if p.Buy == p.Sell {
+	if p.Buy == 0 {
 		return 0
 	}
-	return p.Sell - p.Buy
+	return (p.Sell - p.Buy) / p.Buy * 100
 }
 
 func (e *ESIClient) JitaPrices(ctx context.Context, typeID int) (*Price, error) {
