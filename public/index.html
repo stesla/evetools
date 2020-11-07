@@ -51,6 +51,23 @@
     </main>
   </template>
 
+  <template x-if="currentView === 'index'">
+    <main class="mt-10 container mx-auto max-w-6xl"
+          x-data="evetools.marketTypes()"
+          x-init="initMarketTypes()">
+      <h1 class="mb-10 text-3xl text-left text-gray-500 font-bolder">Search by name...</h1>
+      <form id="search" @submit="handleSearch($event)">
+        <div class="mx-auto flex w-full sm:w-4/5 max-w-screen-sm items-center rounded-md overflow-hidden">
+          <input x-model="filter" class="px-4 py-2 w-full bg-gray-100 focus:outline-none"
+                 placeholder="Search query">
+          <button form="search" class="px-4 py-2 bg-blue-500 text-gray-100">
+            Search
+          </button>
+        </div>
+      </form>
+    </main>
+  </template>
+
   <template x-if="currentView === 'search'">
     <main class="mt-10 container mx-auto max-w-6xl"
           x-data="evetools.marketTypes()"
@@ -59,7 +76,7 @@
       <form id="search" @submit="handleSearch($event)">
         <div class="mx-auto flex w-full sm:w-4/5 max-w-screen-sm items-center rounded-md overflow-hidden">
           <input x-model="filter" class="px-4 py-2 w-full bg-gray-100 focus:outline-none"
-                 placeholder="Type your search filter here...">
+                 placeholder="Search by name...">
           <button form="search" class="px-4 py-2 bg-blue-500 text-gray-100">
             Search
           </button>

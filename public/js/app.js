@@ -15,8 +15,10 @@ evetools.globalState = function() {
       
       if (path.startsWith('/type/')) {
         return 'typeDetails';
-      } else {
+      } else if (path.startsWith('/search')) {
         return 'search';
+      } else {
+        return 'index';
       }
     },
 
@@ -30,7 +32,7 @@ evetools.globalState = function() {
         }).
         then(user => {
           this.user = user
-          this.user.avatarURL = 'https://images.evetech.net/characters/' + user.characterID + '/portrait?tenant=tranquility&size=128';
+          this.user.avatarURL = 'https://images.evetech.net/characters/' + user.characterID + '/portrait?size=128';
           this.loggedIn = true;
         }).catch(() => {});
     },
@@ -73,7 +75,7 @@ evetools.marketTypes = function() {
 
     handleSearch(e) {
       e.preventDefault();
-      window.location = '?q=' + this.filter;
+      window.location = '/search?q=' + this.filter;
     },
   }
 }
@@ -129,11 +131,11 @@ evetools.typeInfo = function() {
 }
 
 window.imgURL = function(type) {
-  if (type) {
-    return 'https://images.evetech.net/types/' + type.id + '/icon?tenant=tranquility&size=128';
-  } else {
-    return undefined;
-  }
+  if (!type) return undefined;
+  var imgType = 'icon';
+  if (type.name.match(/(Blueprint|Formula)$/))
+    imgType = 'bp';
+  return 'https://images.evetech.net/types/' + type.id + '/' + imgType + '?size=128';
 }
 
 window.formatNumber = function(amt) {
