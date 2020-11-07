@@ -119,8 +119,8 @@ evetools.typeInfo = function() {
       const observer = new MutationObserver(() => {
         let div = document.getElementById("chart");
         if (div) {
-          renderChart(this.marketInfo.history, 400, div.clientWidth);
           observer.disconnect();
+          renderChart(this.marketInfo.history, 400, div.clientWidth);
         }
       });
       observer.observe(document.querySelector('main'), { childList: true, subtree: true });
@@ -232,22 +232,29 @@ window.renderChart = function(history, height, width) {
       .attr('stroke-width', (d, i) => widths(i))
       .attr('d', line);
 
-  var legend = svg.selectAll(".legend")
+  const legend = svg => {
+    const g = svg
+        .attr("transform", `translate(${width},10)`)
+        .attr("text-anchor", "end")
+        .attr("font-family", "sans-serif")
+        .attr("font-size", 10)
+      .selectAll("g")
       .data(categories)
-      .enter().append("g")
-      .attr("class", "legend")
-      .attr("transform", function(d, i) { return `translate(-150,${i * 20})`; });
+      .join("g")
+        .attr("transform", (d, i) => `translate(0,${i * 20})`);
 
-  legend.append("rect")
-    .attr("x", width + 25)
-    .attr("width", 18)
-    .attr("height", 18)
-    .style("fill", function(d) { return colors(d); });
+    g.append("rect")
+        .attr("x", -48)
+        .attr("width", 18)
+        .attr("height", 18)
+        .attr("fill", colors);
 
-  legend.append("text")
-    .attr("x", width + 50)
-    .attr("y", 9)
-    .attr("dy", ".35em")
-    .style("text-anchor", "start")
-    .text(function(d) { return d });
+    g.append("text")
+        .attr("x", -55)
+        .attr("y", 9.5)
+        .attr("dy", "0.35em")
+        .text(d => d);
+  }
+
+  svg.append("g").call(legend);
 }
