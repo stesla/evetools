@@ -24,6 +24,7 @@ import (
 	"github.com/lestrrat-go/jwx/jwt"
 	"github.com/spf13/pflag"
 	"github.com/spf13/viper"
+	"github.com/stesla/evetools/esd"
 )
 
 var store *sessions.CookieStore
@@ -64,7 +65,7 @@ func main() {
 		log.Fatalf("error loading config file: %s", err)
 	}
 
-	if err := initEVEDatabase(); err != nil {
+	if err := esd.Initialize(viper.GetString("model.database")); err != nil {
 		log.Fatalf("error initializing database: %s", err)
 	}
 
@@ -116,6 +117,7 @@ func NewServer(static http.Handler) *Server {
 	s.esi = NewESIClient(&s.http)
 	s.mux.NotFoundHandler = alwaysThisPath("/", static)
 	s.mux.PathPrefix("/css").Handler(static)
+	s.mux.PathPrefix("/data").Handler(static)
 	s.mux.PathPrefix("/js").Handler(static)
 	s.mux.Methods("GET").Path("/login").HandlerFunc(s.Login)
 	s.mux.Methods("GET").Path("/login/callback").HandlerFunc(s.LoginCallback)
@@ -123,9 +125,8 @@ func NewServer(static http.Handler) *Server {
 
 	api := s.mux.PathPrefix("/api").Subrouter()
 	api.Methods("GET").Path("/v1/currentUser").HandlerFunc(s.CurrentUser)
-	api.Methods("GET").Path("/v1/typeSearch/{filter}").HandlerFunc(s.TypeSearch)
-	api.Methods("GET").Path("/v1/types/{typeID:[0-9]+}").HandlerFunc(s.TypeInfo)
-	api.Methods("GET").Path("/v1/types/{typeID:[0-9]+}/marketInfo").HandlerFunc(s.TypeMarketInfo)
+	api.Methods("GET").Path("/v1/types/search/{filter}").HandlerFunc(s.TypeSearch)
+	api.Methods("GET").Path("/v1/types/marketInfo/{typeID:[0-9]+}").HandlerFunc(s.TypeMarketInfo)
 
 	return s
 }
@@ -283,23 +284,6 @@ func (s *Server) Logout(w http.ResponseWriter, r *http.Request) {
 	http.Redirect(w, r, "/", http.StatusFound)
 }
 
-func (s *Server) TypeInfo(w http.ResponseWriter, r *http.Request) {
-	vars := mux.Vars(r)
-	id, _ := strconv.Atoi(vars["typeID"])
-
-	item, err := GetMarketType(id)
-	if err == ErrNotFound {
-		w.WriteHeader(http.StatusNotFound)
-		return
-	} else if err != nil {
-		internalServerError(w, "GetMarketType", err)
-		return
-	}
-
-	w.Header().Add("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(item)
-}
-
 func (s *Server) TypeMarketInfo(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	id, _ := strconv.Atoi(vars["typeID"])
@@ -315,6 +299,8 @@ func (s *Server) TypeMarketInfo(w http.ResponseWriter, r *http.Request) {
 		internalServerError(w, "JitaHistory", err)
 		return
 	}
+
+	log.Printf("$$$$ price = %v, len(history) = %d", price, len(history))
 
 	var volume int64
 	var lowest, average, highest float64
@@ -347,7 +333,7 @@ func (s *Server) TypeMarketInfo(w http.ResponseWriter, r *http.Request) {
 func (s *Server) TypeSearch(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 
-	items, err := GetMarketTypes(vars["filter"])
+	items, err := esd.SearchTypesByName(vars["filter"])
 	if err != nil {
 		internalServerError(w, "GetMarketTypes", err)
 		return
