@@ -128,6 +128,7 @@ func NewServer(static http.Handler) *Server {
 	api.Methods("GET").Path("/v1/currentUser").HandlerFunc(s.CurrentUser)
 	api.Methods("GET").Path("/v1/types/search/{filter}").HandlerFunc(s.TypeSearch)
 	api.Methods("GET").Path("/v1/types/details/{typeID:[0-9]+}").HandlerFunc(s.TypeDetails)
+	api.Methods("PUT").Path("/v1/types/details/{typeID:[0-9]+}/favorite").HandlerFunc(s.TypeFavorite)
 
 	return s
 }
@@ -329,6 +330,19 @@ func (s *Server) TypeDetails(w http.ResponseWriter, r *http.Request) {
 		"highest": highest,
 		"history": history,
 	})
+}
+
+func (s *Server) TypeFavorite(w http.ResponseWriter, r *http.Request) {
+	var req struct {
+		Favorite bool `json:"favorite"`
+	}
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		http.Error(w, "bad request", http.StatusBadRequest)
+		return
+	}
+	// TODO: actually save this
+	w.Header().Add("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(&req)
 }
 
 func (s *Server) TypeSearch(w http.ResponseWriter, r *http.Request) {

@@ -188,16 +188,21 @@ evetools = (function(document, window, undefined) {
       type: undefined,
       typeID: match[1],
       info: undefined,
+      favorite: false,
 
-      get favorite() {
-        return this.info && this.info.favorite
-      },
-
-      set favorite(val) {
-        this.info.favorite = val
+      toggleFavorite() {
         fetch('/api/v1/types/details/'+this.typeID+'/favorite', {
           method: 'PUT',
-          body: JSON.stringify({favorite: val}),
+          body: JSON.stringify({favorite: !this.favorite}),
+        })
+        .then(resp => {
+          if (!resp.ok) {
+            throw new Error("error setting favorite");
+          }
+          return resp.json();
+        })
+        .then(obj => {
+          this.favorite = obj.favorite;
         });
       },
 
@@ -228,6 +233,7 @@ evetools = (function(document, window, undefined) {
             }
           });
           this.info = obj;
+          this.favorite = obj.favorite;
         });
 
         const observer = new MutationObserver(() => {
