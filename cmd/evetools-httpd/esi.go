@@ -3,7 +3,10 @@ package main
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"net/http"
+	"net/url"
+	"strconv"
 	"time"
 
 	"github.com/antihax/optional"
@@ -16,15 +19,21 @@ const (
 )
 
 type ESIClient struct {
-	api *esi.APIClient
+	api  *esi.APIClient
+	http *http.Client
 }
+
+type contextToken int
+
+const ESITokenKey contextToken = 1
 
 func NewESIClient(client *http.Client) *ESIClient {
 	cfg := esi.NewConfiguration()
 	cfg.HTTPClient = client
 	cfg.UserAgent = "evetools 0.0.1 - github.com/stesla/evetools - Stewart Cash"
 	return &ESIClient{
-		api: esi.NewAPIClient(cfg),
+		api:  esi.NewAPIClient(cfg),
+		http: client,
 	}
 }
 
@@ -98,4 +107,22 @@ func (e *ESIClient) JitaPrices(ctx context.Context, typeID int) (*Price, error) 
 		}
 	}
 	return &Price{Buy: buy, Sell: sell}, nil
+}
+
+func (e *ESIClient) OpenMarketWindow(ctx context.Context, typeID int) (err error) {
+	const apiURL = "https://esi.evetech.net/latest/ui/openwindow/marketdetails/"
+	req, err := http.NewRequestWithContext(ctx, http.MethodPost, apiURL, nil)
+	if err != nil {
+		return
+	}
+
+	q := url.Values{}
+	q.Add("datasource", "tranquility")
+	q.Add("type_id", strconv.Itoa(typeID))
+	req.URL.RawQuery = q.Encode()
+
+	req.Header.Add("Authorization", fmt.Sprintf("Bearer %s", ctx.Value(ESITokenKey)))
+
+	_, err = e.http.Do(req)
+	return
 }

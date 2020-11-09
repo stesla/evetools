@@ -48,6 +48,7 @@ func init() {
 
 var oauthConfig = oauth2.Config{
 	Scopes: []string{
+		"esi-ui.open_window.v1",
 		"publicData",
 	},
 }
@@ -132,10 +133,11 @@ func NewServer(static http.Handler) *Server {
 
 	api := s.mux.PathPrefix("/api").Subrouter()
 	api.Methods("GET").Path("/v1/currentUser").HandlerFunc(s.CurrentUser)
+	api.Methods("GET").Path("/v1/types/favorites").HandlerFunc(s.TypeGetFavorites)
 	api.Methods("GET").Path("/v1/types/search/{filter}").HandlerFunc(s.TypeSearch)
 	api.Methods("GET").Path("/v1/types/details/{typeID:[0-9]+}").HandlerFunc(s.TypeDetails)
 	api.Methods("PUT").Path("/v1/types/details/{typeID:[0-9]+}/favorite").HandlerFunc(s.TypeSetFavorite)
-	api.Methods("GET").Path("/v1/types/favorites").HandlerFunc(s.TypeGetFavorites)
+	api.Methods("POST").Path("/v1/types/{typeID:[0-9]+}/openInGame").HandlerFunc(s.TypeOpenInGame)
 
 	return s
 }
@@ -369,6 +371,40 @@ func (s *Server) TypeGetFavorites(w http.ResponseWriter, r *http.Request) {
 	}
 	w.Header().Add("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(&types)
+}
+
+func (s *Server) TypeOpenInGame(w http.ResponseWriter, r *http.Request) {
+	session, err := store.Get(r, viper.GetString("httpd.session.name"))
+	if err != nil {
+		internalServerError(w, "store.Get", err)
+		return
+	}
+
+	oldTok, ok := session.Values["token"].(oauth2.Token)
+	if !ok {
+		w.WriteHeader(http.StatusUnauthorized)
+		fmt.Fprintln(w, "{}")
+		return
+	}
+
+	tokSrc := oauthConfig.TokenSource(r.Context(), &oldTok)
+	newTok, err := tokSrc.Token()
+	if err != nil {
+		w.WriteHeader(http.StatusUnauthorized)
+		fmt.Fprintln(w, "{}")
+		return
+	}
+
+	ctx := context.WithValue(r.Context(), ESITokenKey, newTok.AccessToken)
+
+	vars := mux.Vars(r)
+	typeID, _ := strconv.Atoi(vars["typeID"])
+
+	if err := s.esi.OpenMarketWindow(ctx, typeID); err != nil {
+		internalServerError(w, "OpenMarketWindow", err)
+	} else {
+		w.WriteHeader(http.StatusNoContent)
+	}
 }
 
 func (s *Server) TypeSearch(w http.ResponseWriter, r *http.Request) {
