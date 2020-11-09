@@ -115,7 +115,7 @@ type Server struct {
 func NewServer(static http.Handler) *Server {
 	s := &Server{mux: mux.NewRouter()}
 	s.esi = NewESIClient(&s.http)
-	s.mux.NotFoundHandler = alwaysThisPath("/", static)
+	s.mux.NotFoundHandler = onlyAllowGet(alwaysThisPath("/", static))
 	s.mux.PathPrefix("/css").Handler(static)
 	s.mux.PathPrefix("/data").Handler(static)
 	s.mux.PathPrefix("/js").Handler(static)
@@ -352,5 +352,15 @@ func alwaysThisPath(path string, h http.Handler) http.Handler {
 		*r2.URL = *r.URL
 		r2.URL.Path = path
 		h.ServeHTTP(w, r2)
+	})
+}
+
+func onlyAllowGet(h http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != http.MethodGet {
+			http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
+		} else {
+			h.ServeHTTP(w, r)
+		}
 	})
 }
