@@ -32,6 +32,22 @@ func GetType(typeID int) (t Type, err error) {
 	return
 }
 
+func FavoriteTypes() ([]Type, error) {
+	rows, err := db.Query("SELECT typeID, favorite FROM types WHERE favorite")
+	if err != nil {
+		return nil, err
+	}
+	result := []Type{}
+	for rows.Next() {
+		var t Type
+		if err := rows.Scan(&t.ID, &t.Favorite); err != nil {
+			return nil, err
+		}
+		result = append(result, t)
+	}
+	return result, rows.Err()
+}
+
 func SetFavorite(typeID int, val bool) error {
 	t, err := GetType(typeID)
 	if err == ErrNotFound {

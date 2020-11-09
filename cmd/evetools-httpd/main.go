@@ -134,7 +134,8 @@ func NewServer(static http.Handler) *Server {
 	api.Methods("GET").Path("/v1/currentUser").HandlerFunc(s.CurrentUser)
 	api.Methods("GET").Path("/v1/types/search/{filter}").HandlerFunc(s.TypeSearch)
 	api.Methods("GET").Path("/v1/types/details/{typeID:[0-9]+}").HandlerFunc(s.TypeDetails)
-	api.Methods("PUT").Path("/v1/types/details/{typeID:[0-9]+}/favorite").HandlerFunc(s.TypeFavorite)
+	api.Methods("PUT").Path("/v1/types/details/{typeID:[0-9]+}/favorite").HandlerFunc(s.TypeSetFavorite)
+	api.Methods("GET").Path("/v1/types/favorites").HandlerFunc(s.TypeGetFavorites)
 
 	return s
 }
@@ -343,7 +344,7 @@ func (s *Server) TypeDetails(w http.ResponseWriter, r *http.Request) {
 	})
 }
 
-func (s *Server) TypeFavorite(w http.ResponseWriter, r *http.Request) {
+func (s *Server) TypeSetFavorite(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	typeID, _ := strconv.Atoi(vars["typeID"])
 
@@ -358,6 +359,16 @@ func (s *Server) TypeFavorite(w http.ResponseWriter, r *http.Request) {
 	model.SetFavorite(typeID, req.Favorite)
 	w.Header().Add("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(&req)
+}
+
+func (s *Server) TypeGetFavorites(w http.ResponseWriter, r *http.Request) {
+	types, err := model.FavoriteTypes()
+	if err != nil {
+		internalServerError(w, "FavoriteTypes", err)
+		return
+	}
+	w.Header().Add("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(&types)
 }
 
 func (s *Server) TypeSearch(w http.ResponseWriter, r *http.Request) {

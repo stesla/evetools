@@ -19,6 +19,9 @@ evetools = (function(document, window, undefined) {
         if (path.startsWith('/groups/'))
           return 'groupDetails';
 
+        if (path.startsWith('/browse'))
+          return 'browse';
+
         if (path.startsWith('/search'))
           return 'search';
 
@@ -77,6 +80,32 @@ evetools = (function(document, window, undefined) {
     }
   }
 
+  // Views
+
+  result.browse = function() {
+    return {
+      data: { root: [] },
+      filter: "",
+
+      handleSearch(e) {
+        e.preventDefault();
+        window.handleSearch(this.filter);
+      },
+
+      get groups() {
+        return this.data.root.map(id =>
+          this.data.groups[''+id]
+        );
+      },
+
+      initialize() {
+        promisedData.then(data => {
+          this.data = data
+        });
+      }
+    }
+  }
+
   result.groupDetails = function() {
     let typeRE = new RegExp("/groups/(.*)");
     let match = window.location.pathname.match(typeRE);
@@ -120,24 +149,26 @@ evetools = (function(document, window, undefined) {
 
   result.index = function() {
     return {
-      data: { root: [] },
-      filter: "",
-
-      handleSearch(e) {
-        e.preventDefault();
-        window.handleSearch(this.filter);
-      },
-
-      get groups() {
-        return this.data.root.map(id =>
-          this.data.groups[''+id]
-        );
-      },
+      data: undefined,
+      favorites: [],
 
       initialize() {
-        promisedData.then(data => {
+        promisedData
+        .then(data => {
           this.data = data
-        });
+          return fetch('/api/v1/types/favorites')
+        })
+        .then(resp => {
+          if (!resp.ok) {
+            throw new Error('error fetching favorites');
+          }
+          return resp.json();
+        })
+        .then(types => {
+          types.forEach(t => {
+            this.favorites.push(this.data.types[''+t.id])
+          })
+        })
       }
     }
   }
@@ -150,16 +181,16 @@ evetools = (function(document, window, undefined) {
       marketTypes: [],
 
       fetchData() {
-        fetch('/api/v1/types/search/' + this.filter).
-          then(resp => {
-            if (!resp.ok) {
-              throw new Error('error fetching market types');
-            }
-            return resp.json();
-          }).
-          then(ids => {
-            this.marketTypes = ids.map(id => this.data.types[''+id])
-          });
+        fetch('/api/v1/types/search/' + this.filter)
+        .then(resp => {
+          if (!resp.ok) {
+            throw new Error('error fetching search results');
+          }
+          return resp.json();
+        })
+        .then(ids => {
+          this.marketTypes = ids.map(id => this.data.types[''+id])
+        });
       },
 
       handleSearch(e) {
@@ -256,6 +287,8 @@ evetools = (function(document, window, undefined) {
       }
     }
   }
+
+  // Helper Functions
 
   window.hrefGroup = function(id) {
     return '/groups/' + id;

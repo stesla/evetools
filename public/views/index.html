@@ -1,25 +1,16 @@
 <main class="mt-10 container mx-auto max-w-6xl"
       x-data="evetools.index()"
       x-init="initialize()">
-  <h1 class="mb-10 text-3xl text-left text-gray-500 font-bolder">Search by name...</h1>
-  <form id="search" @submit="handleSearch($event)">
-    <div class="mx-auto flex w-full sm:w-4/5 max-w-screen-sm items-center rounded-md overflow-hidden">
-      <input x-model="filter" class="px-4 py-2 w-full bg-gray-100 focus:outline-none"
-             placeholder="Item name...">
-      <button form="search" class="px-4 py-2 bg-blue-500 text-gray-100">
-        Search
-      </button>
-    </div>
-  </form>
-  <h1 class="mt-10 text-3xl text-right text-gray-500 font-bolder">...or browse by category.</h1>
-  <div class="mt-10 grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
-    <template x-for="group in groups" x-ref="group.id">
-      <div class="mt-4 p-4 w-full h-40 flex flex-col justify-between rounded-xl shadow-xl bg-gray-100">
+  <h1 class="mb-10 text-3xl text-center text-gray-700 font-bold">My Favorites</h1>
+  <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
+    <template x-for="type in favorites" :key="type.id">
+      <div class="mt-4 p-4 w-full h-48 flex flex-col justify-between rounded-xl shadow-xl bg-gray-100">
         <div>
-          <h2 class="text-lg font-semibold clearfix" x-text="group.name"></h2>
+          <img class="h-12 w-12 float-right" :src="imgURL(type)">
+          <h2 class="text-lg font-semibold clearfix" x-text="type.name"></h2>
         </div>
         <a class="block object-bottom mt-4 py-2 px-4 rounded-md shadow-md bg-blue-500 text-gray-300 text-center"
-           :href="hrefGroup(group.id)">View Details</a>
+           :href="hrefType(type.id)">View Details</a>
       </div>
     </template>
   </div>
