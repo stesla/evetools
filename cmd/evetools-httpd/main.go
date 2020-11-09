@@ -24,6 +24,7 @@ import (
 	"github.com/lestrrat-go/jwx/jwt"
 	"github.com/spf13/pflag"
 	"github.com/spf13/viper"
+	"github.com/stesla/evetools/model"
 	"github.com/stesla/evetools/sde"
 )
 
@@ -37,6 +38,7 @@ func init() {
 	viper.BindPFlag("httpd.static.dir", pflag.Lookup("dir"))
 	viper.SetDefault("httpd.session.auth_key", securecookie.GenerateRandomKey(64))
 	viper.SetDefault("httpd.session.name", "evetools")
+	viper.SetDefault("model.database", "./evetools.sqlite3")
 	viper.SetDefault("sde.database", "./eve-sde.sqlite3")
 	viper.SetDefault("oauth.basePath", "https://login.eveonline.com")
 
@@ -65,8 +67,12 @@ func main() {
 		log.Fatalf("error loading config file: %s", err)
 	}
 
+	if err := model.Initialize(viper.GetString("model.database")); err != nil {
+		log.Fatalf("error initializing model: %s", err)
+	}
+
 	if err := sde.Initialize(viper.GetString("sde.database")); err != nil {
-		log.Fatalf("error initializing database: %s", err)
+		log.Fatalf("error initializing SDE: %s", err)
 	}
 
 	if err := initOAuthConfig(); err != nil {
@@ -290,6 +296,12 @@ func (s *Server) TypeDetails(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	id, _ := strconv.Atoi(vars["typeID"])
 
+	t, err := model.GetType(id)
+	if err != nil && err != model.ErrNotFound {
+		internalServerError(w, "GetType", err)
+		return
+	}
+
 	price, err := s.esi.JitaPrices(r.Context(), id)
 	if err != nil {
 		internalServerError(w, "JitaPrices", err)
@@ -301,8 +313,6 @@ func (s *Server) TypeDetails(w http.ResponseWriter, r *http.Request) {
 		internalServerError(w, "JitaHistory", err)
 		return
 	}
-
-	log.Printf("$$$$ price = %v, len(history) = %d", price, len(history))
 
 	var volume int64
 	var lowest, average, highest float64
@@ -321,18 +331,22 @@ func (s *Server) TypeDetails(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Add("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(map[string]interface{}{
-		"buy":     price.Buy,
-		"sell":    price.Sell,
-		"margin":  price.Margin(),
-		"volume":  volume,
-		"lowest":  lowest,
-		"average": average,
-		"highest": highest,
-		"history": history,
+		"buy":      price.Buy,
+		"sell":     price.Sell,
+		"margin":   price.Margin(),
+		"volume":   volume,
+		"lowest":   lowest,
+		"average":  average,
+		"highest":  highest,
+		"history":  history,
+		"favorite": t.Favorite,
 	})
 }
 
 func (s *Server) TypeFavorite(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	typeID, _ := strconv.Atoi(vars["typeID"])
+
 	var req struct {
 		Favorite bool `json:"favorite"`
 	}
@@ -340,7 +354,8 @@ func (s *Server) TypeFavorite(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "bad request", http.StatusBadRequest)
 		return
 	}
-	// TODO: actually save this
+	log.Println(typeID, req.Favorite)
+	model.SetFavorite(typeID, req.Favorite)
 	w.Header().Add("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(&req)
 }
