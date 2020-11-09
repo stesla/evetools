@@ -1,4 +1,4 @@
-package esd
+package sde
 
 import (
 	"database/sql"

@@ -6,7 +6,7 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/stesla/evetools/esd"
+	"github.com/stesla/evetools/sde"
 )
 
 func usage() {
@@ -20,12 +20,12 @@ func main() {
 		os.Exit(1)
 	}
 
-	if err := esd.Initialize(os.Args[1]); err != nil {
+	if err := sde.Initialize(os.Args[1]); err != nil {
 		fmt.Fprintln(os.Stderr, "error loading database file:", err)
 		os.Exit(1)
 	}
 
-	groups, err := esd.GetMarketGroups()
+	groups, err := sde.GetMarketGroups()
 	if err != nil {
 		fmt.Fprintln(os.Stderr, "error loading market groups:", err)
 		os.Exit(1)
@@ -42,7 +42,7 @@ func main() {
 		p.Groups = append(p.Groups, g.ID)
 	}
 
-	types, err := esd.GetMarketTypes()
+	types, err := sde.GetMarketTypes()
 	if err != nil {
 		fmt.Fprintln(os.Stderr, "error loading market types:", err)
 		os.Exit(1)

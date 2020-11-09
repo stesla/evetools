@@ -24,7 +24,7 @@ import (
 	"github.com/lestrrat-go/jwx/jwt"
 	"github.com/spf13/pflag"
 	"github.com/spf13/viper"
-	"github.com/stesla/evetools/esd"
+	"github.com/stesla/evetools/sde"
 )
 
 var store *sessions.CookieStore
@@ -37,7 +37,7 @@ func init() {
 	viper.BindPFlag("httpd.static.dir", pflag.Lookup("dir"))
 	viper.SetDefault("httpd.session.auth_key", securecookie.GenerateRandomKey(64))
 	viper.SetDefault("httpd.session.name", "evetools")
-	viper.SetDefault("model.database", "./eve-sde.sqlite3")
+	viper.SetDefault("sde.database", "./eve-sde.sqlite3")
 	viper.SetDefault("oauth.basePath", "https://login.eveonline.com")
 
 	gob.Register(oauth2.Token{})
@@ -65,7 +65,7 @@ func main() {
 		log.Fatalf("error loading config file: %s", err)
 	}
 
-	if err := esd.Initialize(viper.GetString("model.database")); err != nil {
+	if err := sde.Initialize(viper.GetString("sde.database")); err != nil {
 		log.Fatalf("error initializing database: %s", err)
 	}
 
@@ -348,7 +348,7 @@ func (s *Server) TypeFavorite(w http.ResponseWriter, r *http.Request) {
 func (s *Server) TypeSearch(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 
-	items, err := esd.SearchTypesByName(vars["filter"])
+	items, err := sde.SearchTypesByName(vars["filter"])
 	if err != nil {
 		internalServerError(w, "GetMarketTypes", err)
 		return
