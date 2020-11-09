@@ -127,7 +127,7 @@ func NewServer(static http.Handler) *Server {
 	api := s.mux.PathPrefix("/api").Subrouter()
 	api.Methods("GET").Path("/v1/currentUser").HandlerFunc(s.CurrentUser)
 	api.Methods("GET").Path("/v1/types/search/{filter}").HandlerFunc(s.TypeSearch)
-	api.Methods("GET").Path("/v1/types/marketInfo/{typeID:[0-9]+}").HandlerFunc(s.TypeMarketInfo)
+	api.Methods("GET").Path("/v1/types/details/{typeID:[0-9]+}").HandlerFunc(s.TypeDetails)
 
 	return s
 }
@@ -285,7 +285,7 @@ func (s *Server) Logout(w http.ResponseWriter, r *http.Request) {
 	http.Redirect(w, r, "/", http.StatusFound)
 }
 
-func (s *Server) TypeMarketInfo(w http.ResponseWriter, r *http.Request) {
+func (s *Server) TypeDetails(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	id, _ := strconv.Atoi(vars["typeID"])
 

@@ -187,7 +187,19 @@ evetools = (function(document, window, undefined) {
       group: undefined,
       type: undefined,
       typeID: match[1],
-      marketInfo: undefined,
+      info: undefined,
+
+      get favorite() {
+        return this.info && this.info.favorite
+      },
+
+      set favorite(val) {
+        this.info.favorite = val
+        fetch('/api/v1/types/details/'+this.typeID+'/favorite', {
+          method: 'PUT',
+          body: JSON.stringify({favorite: val}),
+        });
+      },
 
       get parentGroups() {
         if (!this.group) return [];
@@ -201,10 +213,10 @@ evetools = (function(document, window, undefined) {
       },
 
       fetchData() {
-        fetch('/api/v1/types/marketInfo/'+ this.typeID)
+        fetch('/api/v1/types/details/'+ this.typeID)
         .then(resp => {
           if (!resp.ok) {
-            throw new Error('error fetching market info');
+            throw new Error('error fetching type details');
           }
           return resp.json();
         })
@@ -215,14 +227,14 @@ evetools = (function(document, window, undefined) {
               average: +d.average,
             }
           });
-          this.marketInfo = obj;
+          this.info = obj;
         });
 
         const observer = new MutationObserver(() => {
           let div = document.getElementById("chart");
           if (div) {
             observer.disconnect();
-            renderChart(this.marketInfo.history, 400, div.clientWidth);
+            renderChart(this.info.history, 400, div.clientWidth);
           }
         });
         observer.observe(document.querySelector('main'), { childList: true, subtree: true });

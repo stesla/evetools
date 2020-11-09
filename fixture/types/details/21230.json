@@ -2967,5 +2967,6 @@
   "lowest": 82871.4184054054,
   "margin": 234.95660559305688,
   "sell": 694700,
-  "volume": 16
+  "volume": 16,
+  "favorite": true
 }

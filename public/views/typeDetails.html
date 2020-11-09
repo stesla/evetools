@@ -27,42 +27,42 @@
         <img class="float-right" :src="imgURL(type)">
       </div>
       <div class="mt-4 border-t-2 pt-4">
-        <template x-if="!marketInfo">
+        <template x-if="!info">
           <p class="text-center italic text-gray-500">Fetching market info...</p>
         </template>
-        <template x-if="marketInfo">
-          <div x-show="marketInfo">
+        <template x-if="info">
+          <div x-show="info">
             <div class="mx-auto w-3/5">
               <div class="flex justify-between">
                 <div>
                   <dt>Margin</dt>
-                  <dd class="font-bold text-center" x-text="formatNumber(marketInfo.margin) + '%'"></dd>
+                  <dd class="font-bold text-center" x-text="formatNumber(info.margin) + '%'"></dd>
                 </div>
                 <div>
                   <dt>Volume</dt>
-                  <dd class="font-bold text-center" x-text="formatNumber(marketInfo.volume)"></dd>
+                  <dd class="font-bold text-center" x-text="formatNumber(info.volume)"></dd>
                 </div>
                 <div>
                   <dt>Jita Buy</dt>
-                  <dd class="font-bold text-center text-red-500" x-text="formatNumber(marketInfo.buy)">
+                  <dd class="font-bold text-center text-red-500" x-text="formatNumber(info.buy)">
                 </div>
                 <div>
                   <dt>Jita Sell</dt>
-                  <dd class="font-bold text-center text-green-500" x-text="formatNumber(marketInfo.sell)">
+                  <dd class="font-bold text-center text-green-500" x-text="formatNumber(info.sell)">
                 </div>
               </div>
               <div class="mt-6 flex justify-between">
                 <div>
                   <dd>Lowest</dt>
-                  <dd class="font-bold text-center" x-text="formatNumber(marketInfo.lowest)"></dd>
+                  <dd class="font-bold text-center" x-text="formatNumber(info.lowest)"></dd>
                 </div>
                 <div>
                   <dd>Average</dt>
-                  <dd class="font-bold text-center" x-text="formatNumber(marketInfo.average)"></dd>
+                  <dd class="font-bold text-center" x-text="formatNumber(info.average)"></dd>
                 </div>
                 <div>
                   <dd>Highest</dt>
-                  <dd class="font-bold text-center" x-text="formatNumber(marketInfo.highest)"></dd>
+                  <dd class="font-bold text-center" x-text="formatNumber(info.highest)"></dd>
                 </div>
               </div>
             </div>
@@ -71,6 +71,15 @@
             </div>
           </div>
         </template>
+      </div>
+      <div class="mt-4 border-t-2 px-4 pt-4 flex items-center flex-row-reverse">
+        <button @click="favorite = !favorite" class="focus:outline-none">
+          <svg class="h-6 w-6 stroke-current text-gray-500"
+               :class="{'text-blue-500': favorite, 'fill-current': favorite}"
+               xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z" />
+          </svg>
+        </button>
       </div>
     </div>
   </template>
