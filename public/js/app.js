@@ -234,7 +234,7 @@ evetools = (function(document, window, undefined) {
       favorite: false,
 
       toggleFavorite() {
-        fetch('/api/v1/types/details/'+this.typeID+'/favorite', {
+        fetch('/api/v1/types/'+this.typeID+'/favorite', {
           method: 'PUT',
           body: JSON.stringify({favorite: !this.favorite}),
         })
@@ -261,7 +261,7 @@ evetools = (function(document, window, undefined) {
       },
 
       fetchData() {
-        fetch('/api/v1/types/details/'+ this.typeID)
+        fetch('/api/v1/types/'+ this.typeID)
         .then(resp => {
           if (!resp.ok) {
             throw new Error('error fetching type details');

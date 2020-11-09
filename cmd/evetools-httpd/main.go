@@ -135,8 +135,8 @@ func NewServer(static http.Handler) *Server {
 	api.Methods("GET").Path("/v1/currentUser").HandlerFunc(s.CurrentUser)
 	api.Methods("GET").Path("/v1/types/favorites").HandlerFunc(s.TypeGetFavorites)
 	api.Methods("GET").Path("/v1/types/search/{filter}").HandlerFunc(s.TypeSearch)
-	api.Methods("GET").Path("/v1/types/details/{typeID:[0-9]+}").HandlerFunc(s.TypeDetails)
-	api.Methods("PUT").Path("/v1/types/details/{typeID:[0-9]+}/favorite").HandlerFunc(s.TypeSetFavorite)
+	api.Methods("GET").Path("/v1/types/{typeID:[0-9]+}").HandlerFunc(s.TypeDetails)
+	api.Methods("PUT").Path("/v1/types/{typeID:[0-9]+}/favorite").HandlerFunc(s.TypeSetFavorite)
 	api.Methods("POST").Path("/v1/types/{typeID:[0-9]+}/openInGame").HandlerFunc(s.TypeOpenInGame)
 
 	return s
@@ -357,7 +357,6 @@ func (s *Server) TypeSetFavorite(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "bad request", http.StatusBadRequest)
 		return
 	}
-	log.Println(typeID, req.Favorite)
 	model.SetFavorite(typeID, req.Favorite)
 	w.Header().Add("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(&req)
