@@ -119,6 +119,7 @@ func NewServer(static http.Handler) *Server {
 	s.mux.PathPrefix("/css").Handler(static)
 	s.mux.PathPrefix("/data").Handler(static)
 	s.mux.PathPrefix("/js").Handler(static)
+	s.mux.PathPrefix("/views").Handler(static)
 	s.mux.Methods("GET").Path("/login").HandlerFunc(s.Login)
 	s.mux.Methods("GET").Path("/login/callback").HandlerFunc(s.LoginCallback)
 	s.mux.Methods("GET").Path("/logout").HandlerFunc(s.Logout)

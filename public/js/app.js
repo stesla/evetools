@@ -43,7 +43,8 @@ evetools = (function(document, window, undefined) {
         })
         .catch(() => {})
         .then(() => {
-          return fetch('/views/'+this.currentView+'.html');
+          const url = '/views/'+this.currentView+'.html';
+          return fetch(url);
         })
         .then(resp => {
           if(!resp.ok) {
@@ -143,7 +144,6 @@ evetools = (function(document, window, undefined) {
 
   result.search = function() {
     const urlParams = new URLSearchParams(window.location.search);
-    console.log(window.location.search);
     return {
       data: undefined,
       filter: urlParams.get('q'),
