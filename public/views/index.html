@@ -4,13 +4,18 @@
   <h1 class="mb-10 text-3xl text-center text-gray-700 font-bold">My Favorites</h1>
   <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
     <template x-for="type in favorites" :key="type.id">
-      <div class="mt-4 p-4 w-full h-48 flex flex-col justify-between rounded-xl shadow-xl bg-gray-100">
+      <div class="mt-4 p-4 w-full flex flex-col justify-between rounded-xl shadow-xl bg-gray-100">
         <div>
           <img class="h-12 w-12 float-right" :src="imgURL(type)">
           <h2 class="text-lg font-semibold clearfix" x-text="type.name"></h2>
         </div>
-        <a class="block object-bottom mt-4 py-2 px-4 rounded-md shadow-md bg-blue-500 text-gray-300 text-center"
-           :href="hrefType(type.id)">View Details</a>
+        <div>
+          <a class="block object-bottom mt-4 py-2 px-4 rounded-md shadow-md bg-blue-500 text-gray-300 text-center"
+             :href="hrefType(type.id)">View Details</a>
+
+          <button class="block object-bottom mt-4 py-2 px-4 w-full rounded-md shadow-md bg-blue-500 text-gray-300 text-center"
+            type="button" @click="openTypeInEVE(type.id)">Open in EVE</a>
+        <div>
       </div>
     </template>
   </div>

@@ -169,7 +169,19 @@ evetools = (function(document, window, undefined) {
             this.favorites.push(this.data.types[''+t.id])
           })
         })
-      }
+      },
+
+      openTypeInEVE(typeID) {
+        fetch('/api/v1/types/'+typeID+'/openInGame', {
+          method: 'POST',
+        })
+        .then(resp => {
+          // It will return 204 No Content, so this is all we need.
+          if (!resp.ok) {
+            throw new Error("error making openInGame API call");
+          }
+        });
+      },
     }
   }
 
