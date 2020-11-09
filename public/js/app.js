@@ -27,7 +27,7 @@ evetools = (function(document, window, undefined) {
         return 'index';
       },
 
-      fetchData() {
+      initialize() {
         fetch('/api/v1/currentUser')
         .then(resp => {
           if (!resp.ok) {
