@@ -39,7 +39,25 @@ evetools = (function(document, window, undefined) {
           this.user = user
           this.user.avatarURL = 'https://images.evetech.net/characters/' + user.characterID + '/portrait?size=128';
           this.loggedIn = true;
-        }).catch(() => {});
+        })
+        .catch(() => {})
+        .then(() => {
+          return fetch('/views/'+this.currentView+'.html');
+        })
+        .then(resp => {
+          if(!resp.ok) {
+            throw new Error('error fetching view');
+          }
+          return resp.text();
+        })
+        .then(html => {
+          console.log(html);
+          const parser = new DOMParser();
+          const elt = parser.parseFromString(html, 'text/html').querySelector('main');
+          const slot = document.querySelector('main');
+          slot.parentNode.replaceChild(elt, slot);
+        });
+
 
         promisedData = fetch('/data/static.json')
         .then(resp => {

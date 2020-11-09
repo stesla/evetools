@@ -1,0 +1,45 @@
+<main class="mt-10 container mx-auto max-w-6xl"
+      x-data="evetools.groupDetails()"
+      x-init="initialize()">
+  <div>
+    <a class="text-gray-500 hover:text-gray-700 transition duration-150 ease-in-out inline-flex items-center"
+       :href="parent ? hrefGroup(parent.id) : '/'">
+      <svg class="arrow-left w-6 h-6"
+        xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+      </svg>
+      <template x-if="parent">
+        <span class="ml-2" x-text="parent.name"></span>
+      </template>
+      <template x-if="!parent">
+        <span class="ml-2">Home</span>
+      </template>
+    </a>
+  </div>
+  <h1 class="mt-4 text-center text-4xl font-bold" x-text="group.name"></h1>
+  <div class="mt-4 grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
+    <template x-for="child in children" x-ref="child.id">
+      <div>
+        <template x-if="child.isGroup">
+          <div class="mt-4 p-4 w-full h-40 flex flex-col justify-between rounded-xl shadow-xl bg-gray-100">
+            <div>
+              <h2 class="text-lg font-semibold clearfix" x-text="child.name"></h2>
+            </div>
+            <a class="block object-bottom mt-4 py-2 px-4 rounded-md shadow-md bg-blue-500 text-gray-300 text-center"
+               :href="hrefGroup(child.id)">View Details</a>
+          </div>
+        </template>
+        <template x-if="child.isType">
+          <div class="mt-4 p-4 w-full h-48 flex flex-col justify-between rounded-xl shadow-xl bg-gray-100">
+            <div>
+              <img class="h-12 w-12 float-right" :src="imgURL(child)">
+              <h2 class="text-lg font-semibold clearfix" x-text="child.name"></h2>
+            </div>
+            <a class="block object-bottom mt-4 py-2 px-4 rounded-md shadow-md bg-blue-500 text-gray-300 text-center"
+               :href="hrefType(child.id)">View Details</a>
+          </div>
+        </template>
+      </div>
+    </template>
+  </div>
+</main>
