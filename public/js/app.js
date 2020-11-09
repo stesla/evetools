@@ -6,7 +6,8 @@ evetools = (function(document, window, undefined) {
     return {
       avatarMenuOpen: false,
       loggedIn: false,
-      user: null,
+      navOpen: false,
+      user: { characterName: "", characterID: 0},
 
       get currentView() {
         if (!this.loggedIn) {
@@ -51,7 +52,6 @@ evetools = (function(document, window, undefined) {
           return resp.text();
         })
         .then(html => {
-          console.log(html);
           const parser = new DOMParser();
           const elt = parser.parseFromString(html, 'text/html').querySelector('main');
           const slot = document.querySelector('main');

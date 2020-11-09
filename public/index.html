@@ -16,30 +16,46 @@
       x-init="initialize()"
       x-cloak>
 
-  <nav class="px-4 py-2 flex items-center justify-between h-16 bg-gray-900 text-gray-300">
-
-    <div>
+  <header class="sm:px-4 sm:py-2 sm:flex sm:items-center sm:justify-between sm:h-16 bg-gray-900 text-gray-300">
+    <div class="flex items-center justify-between px-4 py-3 sm:p-0">
       <a class="text-2xl" href="/">evetools</a>
-    </div>
-    <template x-if="loggedIn">
-      <div class="relative" @keydown.window="handleEscape($event)">
-        <button class="p-1 flex items-center" @click="avatarMenuOpen = !avatarMenuOpen">
-        <span class="mx-2 font-semibold" x-text="user.characterName"></span>
-        <figure class="h-12 w-12 rounded-full overflow-hidden border-2 border-gray-700 focus:outline-none focus:border-gray-500">
-          <img class="h-full w-full object-cover" :src="user.avatarURL" :alt="user.characterName">
-        </figure>
+      <div x-show="loggedIn" class="sm:hidden">
+        <button @click="navOpen = !navOpen" type="button" class="block text-gray-500 hover:text-gray-300 focus:text-gray-300 focus:outline-none">
+          <svg class="h-6 w-6 fill-current" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path x-show="!navOpen" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
+            <path x-show="navOpen" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+          </svg>
         </button>
-        <template x-if="avatarMenuOpen">
-          <button @click="avatarMenuOpen = false" tabindex="-1" class="fixed inset-0 h-full w-full bg-transparent cursor-default"></button>
-        </template>
-        <template x-if="avatarMenuOpen">
-          <div class="absolute right-0 mt-2 py-2 w-32 bg-white rounded-lg shadow-xl">
+      </div>
+    </div>
+    <nav x-show="loggedIn" :class="navOpen ? 'block' :'hidden'" class="sm:block">
+      <div class="px-2 pt-2 pb-4 sm:flex sm:items-center sm:p-0">
+        <a href="/" class="block px-2 py-1 text-white font-semibold rounded hover:bg-gray-800">Home</a>
+        <a href="#" class="mt-1 block px-2 py-1 text-white font-semibold rounded hover:bg-gray-800 sm:mt-0 sm:ml-2">Find Items</a>
+        <div class="hidden sm:block sm:ml-4" class="relative" @keydown.window="handleEscape($event)">
+          <button class="p-1 flex items-center" @click="avatarMenuOpen = !avatarMenuOpen">
+          <span class="mx-2 font-semibold" x-text="user.characterName"></span>
+          <figure class="h-12 w-12 rounded-full overflow-hidden border-2 border-gray-700 focus:outline-none focus:border-gray-500">
+            <img class="h-full w-full object-cover" :src="user.avatarURL" :alt="user.characterName">
+          </figure>
+          </button>
+          <button x-show='avatarMenuOpen' @click="avatarMenuOpen = false" tabindex="-1" class="fixed inset-0 h-full w-full bg-transparent cursor-default"></button>
+          <div x-show='avatarMenuOpen' class="absolute right-0 mt-2 py-2 w-32 bg-white rounded-lg shadow-xl">
             <a class="block px-4 py-2 text-gray-900 hover:bg-blue-500 hover:text-gray-100" href="/logout">Logout</a>
           </div>
-        </template>
+        </div>
       </div>
-    </template>
-  </nav>
+      <div class="px-4 py-5 border-t border-gray-800 sm:hidden">
+        <div class="flex items-center">
+          <img class="h-8 w-8 border-2 border-gray-700 rounded-full object-cover" :src="user.avatarURL" :alt="user.characterName">
+          <span class="ml-3 font-semibold text-gray-300" x-text="user.characterName"></span>
+        </div>
+        <div class="mt-4">
+          <a href="/logout" class="block text-gray-500 hover:text-gray-300">Logout</a>
+        </div>
+      </div>
+    </nav>
+  </header>
 
   <main></main>
 
