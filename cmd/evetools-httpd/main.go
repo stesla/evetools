@@ -44,6 +44,7 @@ func init() {
 
 	gob.Register(oauth2.Token{})
 	gob.Register(user{})
+	gob.Register(model.User{})
 }
 
 var oauthConfig = oauth2.Config{
@@ -68,7 +69,8 @@ func main() {
 		log.Fatalf("error loading config file: %s", err)
 	}
 
-	if err := model.Initialize(viper.GetString("model.database")); err != nil {
+	db, err := model.Initialize(viper.GetString("model.database"))
+	if err != nil {
 		log.Fatalf("error initializing model: %s", err)
 	}
 
@@ -83,7 +85,7 @@ func main() {
 	store = sessions.NewCookieStore([]byte(viper.GetString("httpd.session.auth_key")))
 
 	staticFiles := http.Dir(viper.GetString("httpd.static.dir"))
-	var handler http.Handler = NewServer(http.FileServer(staticFiles))
+	var handler http.Handler = NewServer(http.FileServer(staticFiles), db)
 	handler = handlers.LoggingHandler(os.Stdout, handler)
 	handler = handlers.ProxyHeaders(handler)
 
@@ -117,10 +119,11 @@ type Server struct {
 	http http.Client
 	esi  *ESIClient
 	mux  *mux.Router
+	db   model.DB
 }
 
-func NewServer(static http.Handler) *Server {
-	s := &Server{mux: mux.NewRouter()}
+func NewServer(static http.Handler, db model.DB) *Server {
+	s := &Server{db: db, mux: mux.NewRouter()}
 	s.esi = NewESIClient(&s.http)
 	s.mux.NotFoundHandler = onlyAllowGet(alwaysThisPath("/", static))
 	s.mux.PathPrefix("/css").Handler(static)
@@ -148,61 +151,26 @@ func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *Server) CurrentUser(w http.ResponseWriter, r *http.Request) {
-	w.Header().Add("Content-Type", "application/json")
-
 	session, err := store.Get(r, viper.GetString("httpd.session.name"))
 	if err != nil {
 		internalServerError(w, "store.Get", err)
 		return
 	}
 
-	oldTok, ok := session.Values["token"].(oauth2.Token)
+	user, ok := session.Values["user"].(model.User)
 	if !ok {
 		w.WriteHeader(http.StatusUnauthorized)
-		fmt.Fprintln(w, "{}")
 		return
 	}
 
-	tokSrc := oauthConfig.TokenSource(r.Context(), &oldTok)
-	newTok, err := tokSrc.Token()
+	character, err := s.db.GetCharacter(user.ActiveCharacterID)
 	if err != nil {
 		w.WriteHeader(http.StatusUnauthorized)
-		fmt.Fprintln(w, "{}")
 		return
 	}
 
-	payload, err := jwt.ParseString(newTok.AccessToken)
-	if err != nil {
-		w.WriteHeader(http.StatusUnauthorized)
-		fmt.Fprintln(w, "{}")
-		return
-	}
-
-	chunks := strings.Split(payload.Subject(), ":")
-	if len(chunks) != 3 {
-		w.WriteHeader(http.StatusUnauthorized)
-		fmt.Fprintln(w, "{}")
-		return
-	}
-	cid, err := strconv.Atoi(chunks[2])
-	if err != nil {
-		w.WriteHeader(http.StatusUnauthorized)
-		fmt.Fprintln(w, "{}")
-		return
-	}
-
-	v, _ := payload.Get("name")
-	name, ok := v.(string)
-	if !ok {
-		w.WriteHeader(http.StatusUnauthorized)
-		fmt.Fprintln(w, "{}")
-		return
-	}
-
-	json.NewEncoder(w).Encode(user{
-		CharacterID:   cid,
-		CharacterName: name,
-	})
+	w.Header().Add("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(&character)
 }
 
 func (s *Server) Login(w http.ResponseWriter, r *http.Request) {
@@ -266,12 +234,44 @@ func (s *Server) LoginCallback(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	_, err = jwt.ParseString(token.AccessToken, jwt.WithKeySet(keyset))
+	payload, err := jwt.ParseString(token.AccessToken, jwt.WithKeySet(keyset))
 	if err != nil {
 		internalServerError(w, "verify token", err)
 		return
 	}
 
+	chunks := strings.Split(payload.Subject(), ":")
+	if len(chunks) != 3 {
+		internalServerError(w, "get characterID", fmt.Errorf("incorrect subject format %q", payload.Subject()))
+		return
+	}
+	characterID, err := strconv.Atoi(chunks[2])
+	if err != nil {
+		internalServerError(w, "get characterID", err)
+		return
+	}
+
+	v, _ := payload.Get("name")
+	characterName, ok := v.(string)
+	if !ok {
+		internalServerError(w, "get characterName", err)
+		return
+	}
+
+	v, _ = payload.Get("owner")
+	ownerToken, ok := v.(string)
+	if !ok {
+		internalServerError(w, "get owner token", err)
+		return
+	}
+
+	user, err := s.db.FindOrCreateUserForCharacter(characterID, characterName, ownerToken)
+	if err != nil {
+		internalServerError(w, "FindOrCreateUserForCharacter", err)
+		return
+	}
+
+	session.Values["user"] = user
 	session.Values["token"] = token
 	if err := session.Save(r, w); err != nil {
 		internalServerError(w, "save session", err)
@@ -299,7 +299,7 @@ func (s *Server) TypeDetails(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	id, _ := strconv.Atoi(vars["typeID"])
 
-	t, err := model.GetType(id)
+	t, err := s.db.GetType(id)
 	if err != nil && err != model.ErrNotFound {
 		internalServerError(w, "GetType", err)
 		return
@@ -357,13 +357,13 @@ func (s *Server) TypeSetFavorite(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "bad request", http.StatusBadRequest)
 		return
 	}
-	model.SetFavorite(typeID, req.Favorite)
+	s.db.SetFavorite(typeID, req.Favorite)
 	w.Header().Add("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(&req)
 }
 
 func (s *Server) TypeGetFavorites(w http.ResponseWriter, r *http.Request) {
-	types, err := model.FavoriteTypes()
+	types, err := s.db.FavoriteTypes()
 	if err != nil {
 		internalServerError(w, "FavoriteTypes", err)
 		return

@@ -5,6 +5,7 @@ import (
 	"crypto/rsa"
 	"encoding/gob"
 	"encoding/json"
+	"errors"
 	"net/http"
 	"net/http/httptest"
 	"net/url"
@@ -20,6 +21,7 @@ import (
 	"github.com/lestrrat-go/jwx/jwt"
 	"github.com/spf13/viper"
 
+	"github.com/stesla/evetools/model"
 	"github.com/stretchr/testify/assert"
 	"golang.org/x/oauth2"
 )
@@ -41,12 +43,7 @@ func TestMain(m *testing.M) {
 func TestCurrentUserUnauthenticated(t *testing.T) {
 	req, _ := http.NewRequest("GET", "/api/v1/currentUser", nil)
 	resp := handleRequest(t, req)
-
 	assert.Equal(t, http.StatusUnauthorized, resp.StatusCode)
-	assert.Equal(t, "application/json", resp.Header.Get("Content-Type"))
-	var obj map[string]interface{}
-	json.NewDecoder(resp.Body).Decode(&obj)
-	assert.Equal(t, map[string]interface{}{}, obj)
 }
 
 func TestLogin(t *testing.T) {
@@ -94,6 +91,9 @@ func TestLoginCallback(t *testing.T) {
 		}))
 
 	token := jwt.New()
+	token.Set(jwt.SubjectKey, "CHARACTER:EVE:123456890")
+	token.Set("name", "Bob Awox")
+	token.Set("owner", "OWNER$TOKEN")
 	headers := jws.NewHeaders()
 	headers.Set(jwk.KeyIDKey, pubKey.KeyID())
 	headers.Set(jwt.IssuerKey, "https://esi")
@@ -167,16 +167,10 @@ func createSignedToken(claims map[string]interface{}) string {
 func TestCurrentUserAuthenticated(t *testing.T) {
 	assert := assert.New(t)
 
-	compact := createSignedToken(map[string]interface{}{
-		jwt.SubjectKey: "CHARACTER:EVE:1234567890",
-		"name":         "Bob Awox",
-	})
-
 	req, _ := http.NewRequest("GET", "/api/v1/currentUser", nil)
 	setSessionCookie(req, map[interface{}]interface{}{
-		"token": &oauth2.Token{
-			AccessToken:  string(compact),
-			RefreshToken: "REFRESH",
+		"user": &model.User{
+			ActiveCharacterID: 1234567890,
 		},
 	})
 	resp := handleRequest(t, req)
@@ -201,7 +195,7 @@ func (h *failHandler) ServeHTTP(http.ResponseWriter, *http.Request) {
 
 func handleRequest(t *testing.T, r *http.Request) *http.Response {
 	w := httptest.NewRecorder()
-	s := NewServer(&failHandler{t})
+	s := NewServer(&failHandler{t}, &testDB{})
 	s.http.Transport = mrt
 	s.ServeHTTP(w, r)
 	mrt.Reset()
@@ -245,4 +239,36 @@ func (m *mockRoundTripper) Reset() {
 	for k := range m.handlers {
 		delete(m.handlers, k)
 	}
+}
+
+type testDB struct {
+}
+
+var ErrNotImplemented = errors.New("not implemented")
+
+func (*testDB) GetType(int) (model.Type, error) {
+	return model.Type{}, ErrNotImplemented
+}
+
+func (*testDB) FavoriteTypes() ([]model.Type, error) {
+	return nil, ErrNotImplemented
+}
+
+func (*testDB) SetFavorite(int, bool) error {
+	return ErrNotImplemented
+}
+
+func (*testDB) FindOrCreateUserForCharacter(characterID int, characterName, owner string) (*model.User, error) {
+	return &model.User{
+		ID:                42,
+		ActiveCharacterID: characterID,
+	}, nil
+	return nil, ErrNotImplemented
+}
+
+func (*testDB) GetCharacter(characterID int) (*model.Character, error) {
+	return &model.Character{
+		CharacterID:   characterID,
+		CharacterName: "Bob Awox",
+	}, nil
 }
