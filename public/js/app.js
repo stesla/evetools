@@ -294,6 +294,7 @@ evetools = (function(document, window, undefined) {
       typeID: match[1],
       info: undefined,
       favorite: false,
+      system: { name: "" },
 
       toggleFavorite() {
         fetch('/api/v1/types/'+this.typeID+'/favorite', {
@@ -352,6 +353,9 @@ evetools = (function(document, window, undefined) {
       },
 
       initialize() {
+        currentUser.then(user =>
+          this.system = user.station.system
+        );
         staticData.then(data => {
           this.data = data;
           this.type = data.types[''+this.typeID];

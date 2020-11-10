@@ -286,9 +286,10 @@ func (*testSDB) GetMarketTypes() (map[int]*sde.MarketType, error)      { return 
 func (*testSDB) GetStations(q string) (map[string]*sde.Station, error) { return nil, ErrNotImplemented }
 func (*testSDB) GetStationByID(stationID int) (*sde.Station, error) {
 	return &sde.Station{
-		ID:       76543210,
-		RegionID: 12345678,
-		Name:     "Planet I - Moon 2 - Fake Station",
+		ID:     76543210,
+		Region: sde.Region{ID: 12345678},
+		System: sde.System{ID: 43218765},
+		Name:   "Planet I - Moon 2 - Fake Station",
 	}, nil
 }
 func (*testSDB) SearchTypesByName(filter string) ([]int, error) { return nil, ErrNotImplemented }

@@ -1,11 +1,2 @@
-{
-  "character": {
-    "id": 1759081950,
-    "name": "Stewart Cash"
-  },
-  "station": {
-    "id": 60003760,
-    "regionID": 10000002,
-    "name": "Jita IV - Moon 4 - Caldari Navy Assembly Plant"
-  }
-}
+{"character":{"id":1759081950,"name":"Stewart Cash"},"station":{"id":60011866,"name":"Dodixie IX - Moon 20 - Federation Navy Assembly Plant","region":{"id":10000032,"name":"Sinq Laison"},"system":{"id":30002659,"name":"Dodixie"}}}
+

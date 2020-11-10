@@ -88,9 +88,7 @@ func (m *databaseModel) FindOrCreateUserForCharacter(characterID int, characterN
 	const createCharacter = `INSERT INTO characters 
 							 (characterID, characterName, owner, userID)
 							 VALUES (?, ?, ?, ?)`
-	const createUser = `INSERT INTO users
-						(activeCharacterID, stationID)
-						VALUES (?, ?)`
+	const createUser = `INSERT INTO users (activeCharacterID) VALUES (?)`
 
 	tx, err := m.db.Begin()
 	if err != nil {
