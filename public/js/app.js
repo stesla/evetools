@@ -151,6 +151,8 @@ evetools = (function(document, window, undefined) {
     return {
       data: undefined,
       favorites: [],
+      station: "",
+      stations: {},
 
       initialize() {
         promisedData
@@ -169,6 +171,31 @@ evetools = (function(document, window, undefined) {
             this.favorites.push(this.data.types[''+typeID])
           })
         })
+      },
+
+      fetchStations() {
+        if (this.station === "") {
+          return;
+        }
+        const params = new URLSearchParams();
+        params.append("q", this.station);
+        const uri = '/api/v1/stations?' + params.toString();
+        fetch(uri)
+        .then(resp => {
+          if (!resp.ok) {
+            throw new Error("error fetching stations");
+          }
+          return resp.json();
+        })
+        .then(stations => {
+          console.log(stations);
+          this.stations = stations;
+        });
+      },
+
+      get stationList() {
+        vals = Object.values(this.stations);
+        return vals.length > 1 ? vals : [];
       },
 
       openTypeInEVE(typeID) {

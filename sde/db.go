@@ -90,6 +90,30 @@ func GetMarketTypes() (map[int]*MarketType, error) {
 	return result, rows.Err()
 }
 
+type Station struct {
+	ID       int    `json:"id"`
+	RegionID int    `json:"regionID"`
+	Name     string `json:"name"`
+}
+
+func GetStations(q string) (map[string]*Station, error) {
+	const query = `SELECT stationID, regionID, stationName FROM staStations
+				 WHERE stationName LIKE ?`
+	rows, err := eveDB.Query(query, "%"+q+"%")
+	if err != nil {
+		return nil, err
+	}
+	result := map[string]*Station{}
+	for rows.Next() {
+		var s Station
+		if err := rows.Scan(&s.ID, &s.RegionID, &s.Name); err != nil {
+			return nil, err
+		}
+		result[s.Name] = &s
+	}
+	return result, rows.Err()
+}
+
 func SearchTypesByName(filter string) ([]int, error) {
 	var query = `SELECT typeID FROM invTypes 
 			       WHERE published=1

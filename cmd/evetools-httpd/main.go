@@ -136,6 +136,7 @@ func NewServer(static http.Handler, db model.DB) *Server {
 
 	api := s.mux.PathPrefix("/api").Subrouter()
 	api.Methods("GET").Path("/v1/currentUser").HandlerFunc(s.CurrentUser)
+	api.Methods("GET").Path("/v1/stations").HandlerFunc(s.GetStations)
 	api.Methods("GET").Path("/v1/types/favorites").HandlerFunc(s.TypeGetFavorites)
 	api.Methods("GET").Path("/v1/types/search/{filter}").HandlerFunc(s.TypeSearch)
 	api.Methods("GET").Path("/v1/types/{typeID:[0-9]+}").HandlerFunc(s.TypeDetails)
@@ -171,6 +172,23 @@ func (s *Server) CurrentUser(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Add("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(&character)
+}
+
+func (s *Server) GetStations(w http.ResponseWriter, r *http.Request) {
+	query := strings.TrimSpace(r.FormValue("q"))
+	if query == "" {
+		w.WriteHeader(http.StatusBadRequest)
+		return
+	}
+
+	stations, err := sde.GetStations(query)
+	if err != nil {
+		internalServerError(w, "GetStations", err)
+		return
+	}
+
+	w.Header().Add("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(&stations)
 }
 
 func (s *Server) Login(w http.ResponseWriter, r *http.Request) {

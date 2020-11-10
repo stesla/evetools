@@ -3,7 +3,7 @@
       x-init="initialize()">
   <h1 class="mb-10 text-3xl text-left text-gray-500 font-semibold">Search by name...</h1>
   <form id="search" @submit="handleSearch($event)">
-    <div class="mx-auto flex w-full sm:w-4/5 max-w-screen-sm items-center rounded-md overflow-hidden">
+    <div class="mx-auto flex w-full sm:w-4/5 max-w-screen-sm items-center rounded-md overflow-hidden border border-gray-900">
       <input x-model="filter" class="px-4 py-2 w-full bg-gray-100 focus:outline-none"
              placeholder="Item name...">
       <button form="search" class="px-4 py-2 bg-blue-500 text-gray-100">

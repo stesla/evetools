@@ -19,4 +19,15 @@
       </div>
     </template>
   </div>
+  <h1 class="mt-32 mb-10 text-3xl text-center text-gray-700 font-bold">My Trading Station</h1>
+  <div class="max-w-xl mx-auto flex items-center rounded-md overflow-hidden border border-gray-900">
+    <input class="px-4 py-2 w-full bg-gray-100 text-gray-900" type="text" id="stations" list="station-list"
+           x-model="station" @input.debounce.350ms="fetchStations()" placeholder="Station name...">
+    <button class="px-8 py-2 bg-blue-500 text-gray-300">Save</button>
+    <datalist id="station-list">
+      <template x-for="s in stationList" x-ref="s.id">
+        <option x-text="s.name"></option>
+      </template>
+    </datalist>
+  </div>
 </main>
