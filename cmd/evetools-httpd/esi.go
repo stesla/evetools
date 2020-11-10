@@ -11,11 +11,6 @@ import (
 	"time"
 )
 
-const (
-	regionTheForge       = 10000002
-	locationJitaTradeHub = 60003760
-)
-
 type ESIClient struct {
 	http *http.Client
 }
@@ -48,8 +43,8 @@ type HistoryDay struct {
 	Volume     int64   `json:"volume"`
 }
 
-func (e *ESIClient) JitaHistory(ctx context.Context, typeID int) (result []HistoryDay, err error) {
-	url := fmt.Sprintf("/markets/%d/history/", regionTheForge)
+func (e *ESIClient) MarketHistory(ctx context.Context, regionID, typeID int) (result []HistoryDay, err error) {
+	url := fmt.Sprintf("/markets/%d/history/", regionID)
 	req, err := newESIRequest(ctx, http.MethodGet, url, nil)
 
 	q := req.URL.Query()
@@ -91,9 +86,9 @@ type marketOrder struct {
 	VolumeTotal  int     `json:"volume_total"`
 }
 
-func (e *ESIClient) JitaPrices(ctx context.Context, typeID int) (*Price, error) {
+func (e *ESIClient) MarketPrices(ctx context.Context, stationID, regionID, typeID int) (*Price, error) {
 	// TODO: this could potentially have a paginated response
-	url := fmt.Sprintf("/markets/%d/orders/", regionTheForge)
+	url := fmt.Sprintf("/markets/%d/orders/", regionID)
 	req, err := newESIRequest(ctx, http.MethodGet, url, nil)
 
 	q := req.URL.Query()
@@ -114,7 +109,7 @@ func (e *ESIClient) JitaPrices(ctx context.Context, typeID int) (*Price, error) 
 
 	var buy, sell float64
 	for _, order := range orders {
-		if order.LocationID != locationJitaTradeHub {
+		if order.LocationID != stationID {
 			continue
 		}
 		if order.IsBuyOrder && order.Price > buy {

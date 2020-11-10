@@ -373,6 +373,12 @@ func (s *Server) TypeDetails(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	station, err := s.static.GetStationByID(user.StationID)
+	if err != nil {
+		internalServerError(w, "GetStationByID", err)
+		return
+	}
+
 	vars := mux.Vars(r)
 	id, _ := strconv.Atoi(vars["typeID"])
 
@@ -382,13 +388,13 @@ func (s *Server) TypeDetails(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	price, err := s.esi.JitaPrices(r.Context(), id)
+	price, err := s.esi.MarketPrices(r.Context(), station.ID, station.Region.ID, id)
 	if err != nil {
 		internalServerError(w, "JitaPrices", err)
 		return
 	}
 
-	history, err := s.esi.JitaHistory(r.Context(), id)
+	history, err := s.esi.MarketHistory(r.Context(), station.Region.ID, id)
 	if err != nil {
 		internalServerError(w, "JitaHistory", err)
 		return
