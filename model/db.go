@@ -8,10 +8,10 @@ import (
 )
 
 type DB interface {
-	GetType(int) (Type, error)
-	FavoriteTypes() ([]Type, error)
-	SetFavorite(int, bool) error
-	FindOrCreateUserForCharacter(int, string, string) (*User, error)
+	IsFavorite(userID, typeID int) (bool, error)
+	FavoriteTypes(userID int) ([]int, error)
+	SetFavorite(userID, typeID int, val bool) error
+	FindOrCreateUserForCharacter(characterID int, characterName, owner string) (*User, error)
 	GetCharacter(int) (*Character, error)
 }
 
@@ -29,52 +29,42 @@ func Initialize(dbfilename string) (DB, error) {
 	return &databaseModel{db: db}, nil
 }
 
-type Type struct {
-	ID       int  `json:"id"`
-	Favorite bool `json:"favorite"`
-}
-
-func (m *databaseModel) GetType(typeID int) (t Type, err error) {
-	const query = `SELECT favorite FROM types WHERE typeID = ?`
-
-	t.ID = typeID
-	err = m.db.QueryRow(query, typeID).Scan(&t.Favorite)
-	if err == sql.ErrNoRows {
-		err = ErrNotFound
-	}
-	return
-}
-
-func (m *databaseModel) FavoriteTypes() ([]Type, error) {
-	rows, err := m.db.Query("SELECT typeID, favorite FROM types WHERE favorite")
+func (m *databaseModel) FavoriteTypes(userID int) ([]int, error) {
+	const query = "SELECT typeID FROM favorites WHERE userID = ?"
+	rows, err := m.db.Query(query, userID)
 	if err != nil {
 		return nil, err
 	}
-	result := []Type{}
+	result := []int{}
 	for rows.Next() {
-		var t Type
-		if err := rows.Scan(&t.ID, &t.Favorite); err != nil {
+		var typeID int
+		if err := rows.Scan(&typeID); err != nil {
 			return nil, err
 		}
-		result = append(result, t)
+		result = append(result, typeID)
 	}
 	return result, rows.Err()
 }
 
-func (m *databaseModel) SetFavorite(typeID int, val bool) error {
-	t, err := m.GetType(typeID)
-	if err == ErrNotFound {
-		// if it is not a favorite, it does not need a record created
-		if val {
-			_, err = m.db.Exec("INSERT INTO types (typeID, favorite) VALUES (?, ?)", typeID, val)
-		}
-	} else if err == nil {
-		// only do a query if we're actually changing the value
-		if val != t.Favorite {
-			_, err = m.db.Exec("UPDATE types SET favorite = ? WHERE typeID = ?", val, typeID)
-		}
+func (m *databaseModel) IsFavorite(userID, typeID int) (bool, error) {
+	const query = "SELECT typeID FROM favorites WHERE userID = ? and typeID = ?"
+	var id int
+	err := m.db.QueryRow(query, userID, typeID).Scan(&id)
+	if err == sql.ErrNoRows {
+		return false, nil
+	} else if err != nil {
+		return false, err
 	}
-	return err
+	return true, nil
+}
+
+func (m *databaseModel) SetFavorite(userID int, typeID int, val bool) (err error) {
+	if val {
+		_, err = m.db.Exec("INSERT INTO favorites (userID, typeID) VALUES (?, ?)", userID, typeID)
+	} else {
+		_, err = m.db.Exec("DELETE FROM favorites WHERE typeID = ? AND userID = ?", val, typeID, userID)
+	}
+	return
 }
 
 type Character struct {

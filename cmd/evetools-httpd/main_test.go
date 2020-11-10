@@ -246,15 +246,15 @@ type testDB struct {
 
 var ErrNotImplemented = errors.New("not implemented")
 
-func (*testDB) GetType(int) (model.Type, error) {
-	return model.Type{}, ErrNotImplemented
+func (*testDB) IsFavorite(int, int) (bool, error) {
+	return false, ErrNotImplemented
 }
 
-func (*testDB) FavoriteTypes() ([]model.Type, error) {
+func (*testDB) FavoriteTypes(int) ([]int, error) {
 	return nil, ErrNotImplemented
 }
 
-func (*testDB) SetFavorite(int, bool) error {
+func (*testDB) SetFavorite(int, int, bool) error {
 	return ErrNotImplemented
 }
 

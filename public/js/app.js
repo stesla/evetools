@@ -165,8 +165,8 @@ evetools = (function(document, window, undefined) {
           return resp.json();
         })
         .then(types => {
-          types.forEach(t => {
-            this.favorites.push(this.data.types[''+t.id])
+          types.forEach(typeID => {
+            this.favorites.push(this.data.types[''+typeID])
           })
         })
       },

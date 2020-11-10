@@ -16,9 +16,11 @@ CREATE TABLE characters (
   UNIQUE(characterID, owner)
 );
 
-CREATE TABLE types (
-  typeID    INTEGER  PRIMARY KEY,
-  favorite  BOOLEAN  NOT NULL DEFAULT FALSE
+CREATE TABLE favorites (
+  userID    INTEGER  NOT NULL,
+  typeID    INTEGER  NOT NULL,
+
+  PRIMARY KEY(userID, typeID) ON CONFLICT IGNORE
 );
 
 -- +goose Down

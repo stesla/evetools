@@ -296,10 +296,22 @@ func (s *Server) Logout(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *Server) TypeDetails(w http.ResponseWriter, r *http.Request) {
+	session, err := store.Get(r, viper.GetString("httpd.session.name"))
+	if err != nil {
+		internalServerError(w, "store.Get", err)
+		return
+	}
+
+	user, ok := session.Values["user"].(model.User)
+	if !ok {
+		w.WriteHeader(http.StatusUnauthorized)
+		return
+	}
+
 	vars := mux.Vars(r)
 	id, _ := strconv.Atoi(vars["typeID"])
 
-	t, err := s.db.GetType(id)
+	isFavorite, err := s.db.IsFavorite(user.ID, id)
 	if err != nil && err != model.ErrNotFound {
 		internalServerError(w, "GetType", err)
 		return
@@ -342,11 +354,23 @@ func (s *Server) TypeDetails(w http.ResponseWriter, r *http.Request) {
 		"average":  average,
 		"highest":  highest,
 		"history":  history,
-		"favorite": t.Favorite,
+		"favorite": isFavorite,
 	})
 }
 
 func (s *Server) TypeSetFavorite(w http.ResponseWriter, r *http.Request) {
+	session, err := store.Get(r, viper.GetString("httpd.session.name"))
+	if err != nil {
+		internalServerError(w, "store.Get", err)
+		return
+	}
+
+	user, ok := session.Values["user"].(model.User)
+	if !ok {
+		w.WriteHeader(http.StatusUnauthorized)
+		return
+	}
+
 	vars := mux.Vars(r)
 	typeID, _ := strconv.Atoi(vars["typeID"])
 
@@ -357,17 +381,35 @@ func (s *Server) TypeSetFavorite(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "bad request", http.StatusBadRequest)
 		return
 	}
-	s.db.SetFavorite(typeID, req.Favorite)
+
+	if err := s.db.SetFavorite(user.ID, typeID, req.Favorite); err != nil {
+		internalServerError(w, "SetFavorite", err)
+		return
+	}
+
 	w.Header().Add("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(&req)
 }
 
 func (s *Server) TypeGetFavorites(w http.ResponseWriter, r *http.Request) {
-	types, err := s.db.FavoriteTypes()
+	session, err := store.Get(r, viper.GetString("httpd.session.name"))
+	if err != nil {
+		internalServerError(w, "store.Get", err)
+		return
+	}
+
+	user, ok := session.Values["user"].(model.User)
+	if !ok {
+		w.WriteHeader(http.StatusUnauthorized)
+		return
+	}
+
+	types, err := s.db.FavoriteTypes(user.ID)
 	if err != nil {
 		internalServerError(w, "FavoriteTypes", err)
 		return
 	}
+
 	w.Header().Add("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(&types)
 }
