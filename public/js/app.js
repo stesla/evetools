@@ -1,13 +1,17 @@
 evetools = (function(document, window, undefined) {
   var result = {};
-  var promisedData;
+  var staticData;
+  var currentUser;
 
   result.globalState = function() {
     return {
       avatarMenuOpen: false,
       loggedIn: false,
       navOpen: false,
-      user: { characterName: "", characterID: 0},
+      user: {
+        character: { name: "", id: 0},
+        sationName: "",
+      },
 
       get currentView() {
         if (!this.loggedIn) {
@@ -32,7 +36,7 @@ evetools = (function(document, window, undefined) {
       },
 
       initialize() {
-        fetch('/api/v1/currentUser')
+        currentUser = fetch('/api/v1/currentUser')
         .then(resp => {
           if (!resp.ok) {
             throw new Error('error fetching current user');
@@ -40,12 +44,14 @@ evetools = (function(document, window, undefined) {
           return resp.json();
         })
         .then(user => {
+          user.avatarURL = 'https://images.evetech.net/characters/' + user.character.id + '/portrait?size=128';
           this.user = user
-          this.user.avatarURL = 'https://images.evetech.net/characters/' + user.characterID + '/portrait?size=128';
           this.loggedIn = true;
+          return user;
         })
-        .catch(() => {})
-        .then(() => {
+        .catch(() => {});
+
+        currentUser.then(() => {
           const url = '/views/'+this.currentView+'.html';
           return fetch(url);
         })
@@ -63,7 +69,7 @@ evetools = (function(document, window, undefined) {
         });
 
 
-        promisedData = fetch('/data/static.json')
+        staticData = fetch('/data/static.json')
         .then(resp => {
           if (!resp.ok) {
             throw new Error('error fetching static data');
@@ -99,7 +105,7 @@ evetools = (function(document, window, undefined) {
       },
 
       initialize() {
-        promisedData.then(data => {
+        staticData.then(data => {
           this.data = data
         });
       }
@@ -138,7 +144,7 @@ evetools = (function(document, window, undefined) {
       },
 
       initialize() {
-        promisedData.then(data => {
+        staticData.then(data => {
           this.data = data;
           this.group = data.groups[''+this.groupID];
           this.parent = data.groups[''+this.group.parentID];
@@ -150,12 +156,20 @@ evetools = (function(document, window, undefined) {
   result.index = function() {
     return {
       data: undefined,
+      editingStation: false,
       favorites: [],
-      station: "",
+      station: { name: "" },
+      stationName: "",
       stations: {},
 
       initialize() {
-        promisedData
+        currentUser
+        .then(user => {
+          this.user = user;
+          this.station = user.station;
+        });
+
+        staticData
         .then(data => {
           this.data = data
           return fetch('/api/v1/types/favorites')
@@ -174,11 +188,11 @@ evetools = (function(document, window, undefined) {
       },
 
       fetchStations() {
-        if (this.station === "") {
+        if (this.stationName.length < 3) {
           return;
         }
         const params = new URLSearchParams();
-        params.append("q", this.station);
+        params.append("q", this.stationName);
         const uri = '/api/v1/stations?' + params.toString();
         fetch(uri)
         .then(resp => {
@@ -188,15 +202,36 @@ evetools = (function(document, window, undefined) {
           return resp.json();
         })
         .then(stations => {
-          console.log(stations);
           this.stations = stations;
         });
       },
 
       get stationList() {
         vals = Object.values(this.stations);
-        return vals.length > 1 ? vals : [];
+        return vals;
       },
+
+      saveStation() {
+        if (this.stationName === "") {
+          this.editingStation = false;
+          return;
+        }
+        let station = this.stations[this.stationName];
+        fetch('/api/v1/user/station', {
+          method: 'PUT',
+          body: JSON.stringify(station),
+        })
+        .then(resp => {
+          if (!resp.ok) {
+            throw new Error("error saving station");
+          }
+          this.station = station;
+          this.stationName = "";
+          this.editingStation = false;
+        });
+
+
+     },
 
       openTypeInEVE(typeID) {
         fetch('/api/v1/types/'+typeID+'/openInGame', {
@@ -238,7 +273,7 @@ evetools = (function(document, window, undefined) {
       },
 
       initialize() {
-        promisedData.then(data => {
+        staticData.then(data => {
           this.data = data;
         })
         .then(() => {
@@ -317,7 +352,7 @@ evetools = (function(document, window, undefined) {
       },
 
       initialize() {
-        promisedData.then(data => {
+        staticData.then(data => {
           this.data = data;
           this.type = data.types[''+this.typeID];
           this.group = data.groups[''+this.type.groupID];

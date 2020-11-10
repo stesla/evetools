@@ -3,17 +3,30 @@ package sde
 import (
 	"database/sql"
 	"errors"
+	"log"
 
 	_ "github.com/mattn/go-sqlite3"
 )
 
-var eveDB *sql.DB
+var db *sql.DB
 
 var ErrNotFound = errors.New("Not Found")
 
-func Initialize(dbfilename string) (err error) {
-	eveDB, err = sql.Open("sqlite3", dbfilename)
-	return
+type DB interface {
+	GetMarketGroups() (map[int]*MarketGroup, error)
+	GetMarketTypes() (map[int]*MarketType, error)
+	GetStations(q string) (map[string]*Station, error)
+	GetStationByID(stationID int) (*Station, error)
+	SearchTypesByName(filter string) ([]int, error)
+}
+
+type staticDB struct {
+	db *sql.DB
+}
+
+func Initialize(dbfilename string) (DB, error) {
+	db, err := sql.Open("sqlite3", dbfilename)
+	return &staticDB{db: db}, err
 }
 
 type MarketGroup struct {
@@ -25,11 +38,11 @@ type MarketGroup struct {
 	Types       []int  `json:"types,omitempty"`
 }
 
-func GetMarketGroups() (map[int]*MarketGroup, error) {
+func (s *staticDB) GetMarketGroups() (map[int]*MarketGroup, error) {
 	var query = `SELECT marketGroupID, marketGroupName, description, parentGroupID
 			     FROM invMarketGroups`
 
-	rows, err := eveDB.Query(query)
+	rows, err := s.db.Query(query)
 	if err != nil {
 		return nil, err
 	}
@@ -63,11 +76,11 @@ type MarketType struct {
 	GroupID     int    `json:"groupID"`
 }
 
-func GetMarketTypes() (map[int]*MarketType, error) {
+func (s *staticDB) GetMarketTypes() (map[int]*MarketType, error) {
 	var query = `SELECT typeID, typeName, description, marketGroupID FROM invTypes
 				 WHERE published=1
 				   AND marketGroupID IS NOT NULL`
-	rows, err := eveDB.Query(query)
+	rows, err := s.db.Query(query)
 	if err != nil {
 		return nil, err
 	}
@@ -96,10 +109,10 @@ type Station struct {
 	Name     string `json:"name"`
 }
 
-func GetStations(q string) (map[string]*Station, error) {
+func (s *staticDB) GetStations(q string) (map[string]*Station, error) {
 	const query = `SELECT stationID, regionID, stationName FROM staStations
 				 WHERE stationName LIKE ?`
-	rows, err := eveDB.Query(query, "%"+q+"%")
+	rows, err := s.db.Query(query, "%"+q+"%")
 	if err != nil {
 		return nil, err
 	}
@@ -114,14 +127,23 @@ func GetStations(q string) (map[string]*Station, error) {
 	return result, rows.Err()
 }
 
-func SearchTypesByName(filter string) ([]int, error) {
+func (s *staticDB) GetStationByID(stationID int) (*Station, error) {
+	const query = `SELECT regionID, stationName FROM staStations
+				 WHERE stationID = ?`
+	sta := &Station{ID: stationID}
+	log.Println(stationID)
+	err := s.db.QueryRow(query, stationID).Scan(&sta.RegionID, &sta.Name)
+	return sta, err
+}
+
+func (s *staticDB) SearchTypesByName(filter string) ([]int, error) {
 	var query = `SELECT typeID FROM invTypes 
 			       WHERE published=1
 				     AND marketGroupID IS NOT NULL
 			         AND typeName LIKE ?
                    ORDER BY typeName ASC`
 
-	rows, err := eveDB.Query(query, "%"+filter+"%")
+	rows, err := s.db.Query(query, "%"+filter+"%")
 	if err != nil {
 		return nil, err
 	}

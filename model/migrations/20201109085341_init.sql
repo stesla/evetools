@@ -25,6 +25,6 @@ CREATE TABLE favorites (
 
 -- +goose Down
 -- SQL in this section is executed when the migration is rolled back.
-DROP TABLE types;
+DROP TABLE favorites;
 DROP TABLE characters;
 DROP TABLE users;

@@ -20,12 +20,13 @@ func main() {
 		os.Exit(1)
 	}
 
-	if err := sde.Initialize(os.Args[1]); err != nil {
+	db, err := sde.Initialize(os.Args[1])
+	if err != nil {
 		fmt.Fprintln(os.Stderr, "error loading database file:", err)
 		os.Exit(1)
 	}
 
-	groups, err := sde.GetMarketGroups()
+	groups, err := db.GetMarketGroups()
 	if err != nil {
 		fmt.Fprintln(os.Stderr, "error loading market groups:", err)
 		os.Exit(1)
@@ -42,7 +43,7 @@ func main() {
 		p.Groups = append(p.Groups, g.ID)
 	}
 
-	types, err := sde.GetMarketTypes()
+	types, err := db.GetMarketTypes()
 	if err != nil {
 		fmt.Fprintln(os.Stderr, "error loading market types:", err)
 		os.Exit(1)

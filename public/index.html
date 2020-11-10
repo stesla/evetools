@@ -34,9 +34,9 @@
         <a href="/browse" class="mt-1 block px-2 py-1 text-white font-semibold rounded hover:bg-gray-800 sm:mt-0 sm:ml-2">Find Items</a>
         <div class="hidden sm:block sm:ml-4" class="relative" @keydown.window="handleEscape($event)">
           <button class="p-1 flex items-center" @click="avatarMenuOpen = !avatarMenuOpen">
-          <span class="mx-2 font-semibold" x-text="user.characterName"></span>
+          <span class="mx-2 font-semibold" x-text="user.character.name"></span>
           <figure class="h-12 w-12 rounded-full overflow-hidden border-2 border-gray-700 focus:outline-none focus:border-gray-500">
-            <img class="h-full w-full object-cover" :src="user.avatarURL" :alt="user.characterName">
+            <img class="h-full w-full object-cover" :src="user.avatarURL" :alt="user.character.name">
           </figure>
           </button>
           <button x-show='avatarMenuOpen' @click="avatarMenuOpen = false" tabindex="-1" class="fixed inset-0 h-full w-full bg-transparent cursor-default"></button>
@@ -47,8 +47,8 @@
       </div>
       <div class="px-4 py-5 border-t border-gray-800 sm:hidden">
         <div class="flex items-center">
-          <img class="h-8 w-8 border-2 border-gray-700 rounded-full object-cover" :src="user.avatarURL" :alt="user.characterName">
-          <span class="ml-3 font-semibold text-gray-300" x-text="user.characterName"></span>
+          <img class="h-8 w-8 border-2 border-gray-700 rounded-full object-cover" :src="user.avatarURL" :alt="user.character.name">
+          <span class="ml-3 font-semibold text-gray-300" x-text="user.character.name"></span>
         </div>
         <div class="mt-4">
           <a href="/logout" class="block text-gray-500 hover:text-gray-300">Logout</a>

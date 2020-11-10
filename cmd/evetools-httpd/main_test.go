@@ -22,6 +22,7 @@ import (
 	"github.com/spf13/viper"
 
 	"github.com/stesla/evetools/model"
+	"github.com/stesla/evetools/sde"
 	"github.com/stretchr/testify/assert"
 	"golang.org/x/oauth2"
 )
@@ -171,6 +172,7 @@ func TestCurrentUserAuthenticated(t *testing.T) {
 	setSessionCookie(req, map[interface{}]interface{}{
 		"user": &model.User{
 			ActiveCharacterID: 1234567890,
+			StationID:         76543210,
 		},
 	})
 	resp := handleRequest(t, req)
@@ -178,10 +180,13 @@ func TestCurrentUserAuthenticated(t *testing.T) {
 	assert.Equal(http.StatusOK, resp.StatusCode)
 	assert.Equal("application/json", resp.Header.Get("Content-Type"))
 
-	var u user
-	json.NewDecoder(resp.Body).Decode(&u)
-	assert.Equal(1234567890, u.CharacterID)
-	assert.Equal("Bob Awox", u.CharacterName)
+	var obj struct {
+		Character   model.Character `json:"character"`
+		StationName string          `json:"stationName"`
+	}
+	json.NewDecoder(resp.Body).Decode(&obj)
+	assert.Equal(1234567890, obj.Character.ID)
+	assert.Equal("Bob Awox", obj.Character.Name)
 }
 
 type failHandler struct {
@@ -195,7 +200,7 @@ func (h *failHandler) ServeHTTP(http.ResponseWriter, *http.Request) {
 
 func handleRequest(t *testing.T, r *http.Request) *http.Response {
 	w := httptest.NewRecorder()
-	s := NewServer(&failHandler{t}, &testDB{})
+	s := NewServer(&failHandler{t}, &testDB{}, &testSDB{})
 	s.http.Transport = mrt
 	s.ServeHTTP(w, r)
 	mrt.Reset()
@@ -241,8 +246,7 @@ func (m *mockRoundTripper) Reset() {
 	}
 }
 
-type testDB struct {
-}
+type testDB struct{}
 
 var ErrNotImplemented = errors.New("not implemented")
 
@@ -268,7 +272,23 @@ func (*testDB) FindOrCreateUserForCharacter(characterID int, characterName, owne
 
 func (*testDB) GetCharacter(characterID int) (*model.Character, error) {
 	return &model.Character{
-		CharacterID:   characterID,
-		CharacterName: "Bob Awox",
+		ID:   characterID,
+		Name: "Bob Awox",
 	}, nil
 }
+
+func (*testDB) SaveUserStation(userID, stationID int) error { return ErrNotImplemented }
+
+type testSDB struct{}
+
+func (*testSDB) GetMarketGroups() (map[int]*sde.MarketGroup, error)    { return nil, ErrNotImplemented }
+func (*testSDB) GetMarketTypes() (map[int]*sde.MarketType, error)      { return nil, ErrNotImplemented }
+func (*testSDB) GetStations(q string) (map[string]*sde.Station, error) { return nil, ErrNotImplemented }
+func (*testSDB) GetStationByID(stationID int) (*sde.Station, error) {
+	return &sde.Station{
+		ID:       76543210,
+		RegionID: 12345678,
+		Name:     "Planet I - Moon 2 - Fake Station",
+	}, nil
+}
+func (*testSDB) SearchTypesByName(filter string) ([]int, error) { return nil, ErrNotImplemented }

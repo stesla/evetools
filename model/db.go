@@ -8,11 +8,12 @@ import (
 )
 
 type DB interface {
-	IsFavorite(userID, typeID int) (bool, error)
 	FavoriteTypes(userID int) ([]int, error)
-	SetFavorite(userID, typeID int, val bool) error
 	FindOrCreateUserForCharacter(characterID int, characterName, owner string) (*User, error)
 	GetCharacter(int) (*Character, error)
+	IsFavorite(userID, typeID int) (bool, error)
+	SaveUserStation(userID, stationID int) error
+	SetFavorite(userID, typeID int, val bool) error
 }
 
 var ErrNotFound = errors.New("Not Found")
@@ -68,21 +69,28 @@ func (m *databaseModel) SetFavorite(userID int, typeID int, val bool) (err error
 }
 
 type Character struct {
-	CharacterID   int    `json:"characterID"`
-	CharacterName string `json:"characterName"`
-	Owner         string `json:"-"`
-	UserID        string `json:"-"`
+	ID     int    `json:"id"`
+	Name   string `json:"name"`
+	Owner  string `json:"-"`
+	UserID string `json:"-"`
 }
 
 type User struct {
 	ID                int `json:"id"`
 	ActiveCharacterID int `json:"activeCharacterID"`
+	StationID         int `json:"stationID"`
 }
 
 func (m *databaseModel) FindOrCreateUserForCharacter(characterID int, characterName, owner string) (*User, error) {
-	const getUserID = `SELECT userID FROM characters WHERE characterID = ? AND owner = ?`
-	const createCharacter = `INSERT INTO characters (characterID, characterName, owner, userID) VALUES (?, ?, ?, ?)`
-	const createUser = `INSERT INTO users (activeCharacterID) VALUES (?)`
+	const getUserID = `SELECT c.userID, u.stationID
+					   FROM characters AS c JOIN users AS u ON c.userID = u.ID
+					   WHERE characterID = ? AND owner = ?`
+	const createCharacter = `INSERT INTO characters 
+							 (characterID, characterName, owner, userID)
+							 VALUES (?, ?, ?, ?)`
+	const createUser = `INSERT INTO users
+						(activeCharacterID, stationID)
+						VALUES (?, ?)`
 
 	tx, err := m.db.Begin()
 	if err != nil {
@@ -90,7 +98,8 @@ func (m *databaseModel) FindOrCreateUserForCharacter(characterID int, characterN
 	}
 
 	var userID int
-	if err = tx.QueryRow(getUserID, characterID, owner).Scan(&userID); err == sql.ErrNoRows {
+	var stationID int = 60003760 // Jita IV - Moon 4 - Caldari Navy Assembly Plant
+	if err = tx.QueryRow(getUserID, characterID, owner).Scan(&userID, &stationID); err == sql.ErrNoRows {
 		var r sql.Result
 		r, err = tx.Exec(createUser, characterID)
 		if err != nil {
@@ -111,18 +120,28 @@ func (m *databaseModel) FindOrCreateUserForCharacter(characterID int, characterN
 		tx.Rollback()
 		return nil, err
 	}
-	return &User{ID: userID, ActiveCharacterID: characterID}, tx.Commit()
+	return &User{
+		ID:                userID,
+		ActiveCharacterID: characterID,
+		StationID:         stationID,
+	}, tx.Commit()
 }
 
 func (m *databaseModel) GetCharacter(characterID int) (*Character, error) {
 	const query = `SELECT characterName, owner, userID FROM characters WHERE characterID = ?`
 
-	c := &Character{CharacterID: characterID}
-	err := m.db.QueryRow(query, characterID).Scan(&c.CharacterName, &c.Owner, &c.UserID)
+	c := &Character{ID: characterID}
+	err := m.db.QueryRow(query, characterID).Scan(&c.Name, &c.Owner, &c.UserID)
 	if err == sql.ErrNoRows {
 		return nil, ErrNotFound
 	} else if err != nil {
 		return nil, err
 	}
 	return c, nil
+}
+
+func (m *databaseModel) SaveUserStation(userID, stationID int) error {
+	const query = `UPDATE users SET stationID = ? WHERE id = ?`
+	_, err := m.db.Exec(query, stationID, userID)
+	return err
 }

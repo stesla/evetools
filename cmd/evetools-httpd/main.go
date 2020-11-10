@@ -43,7 +43,6 @@ func init() {
 	viper.SetDefault("oauth.basePath", "https://login.eveonline.com")
 
 	gob.Register(oauth2.Token{})
-	gob.Register(user{})
 	gob.Register(model.User{})
 }
 
@@ -52,11 +51,6 @@ var oauthConfig = oauth2.Config{
 		"esi-ui.open_window.v1",
 		"publicData",
 	},
-}
-
-type user struct {
-	CharacterID   int    `json:"characterID"`
-	CharacterName string `json:"characterName"`
 }
 
 func main() {
@@ -74,7 +68,8 @@ func main() {
 		log.Fatalf("error initializing model: %s", err)
 	}
 
-	if err := sde.Initialize(viper.GetString("sde.database")); err != nil {
+	static, err := sde.Initialize(viper.GetString("sde.database"))
+	if err != nil {
 		log.Fatalf("error initializing SDE: %s", err)
 	}
 
@@ -85,7 +80,7 @@ func main() {
 	store = sessions.NewCookieStore([]byte(viper.GetString("httpd.session.auth_key")))
 
 	staticFiles := http.Dir(viper.GetString("httpd.static.dir"))
-	var handler http.Handler = NewServer(http.FileServer(staticFiles), db)
+	var handler http.Handler = NewServer(http.FileServer(staticFiles), db, static)
 	handler = handlers.LoggingHandler(os.Stdout, handler)
 	handler = handlers.ProxyHeaders(handler)
 
@@ -116,15 +111,21 @@ func initOAuthConfig() error {
 }
 
 type Server struct {
-	http http.Client
-	esi  *ESIClient
-	mux  *mux.Router
-	db   model.DB
+	http   http.Client
+	esi    *ESIClient
+	mux    *mux.Router
+	db     model.DB
+	static sde.DB
 }
 
-func NewServer(static http.Handler, db model.DB) *Server {
-	s := &Server{db: db, mux: mux.NewRouter()}
+func NewServer(static http.Handler, db model.DB, sdb sde.DB) *Server {
+	s := &Server{
+		mux:    mux.NewRouter(),
+		db:     db,
+		static: sdb,
+	}
 	s.esi = NewESIClient(&s.http)
+
 	s.mux.NotFoundHandler = onlyAllowGet(alwaysThisPath("/", static))
 	s.mux.PathPrefix("/css").Handler(static)
 	s.mux.PathPrefix("/data").Handler(static)
@@ -142,6 +143,7 @@ func NewServer(static http.Handler, db model.DB) *Server {
 	api.Methods("GET").Path("/v1/types/{typeID:[0-9]+}").HandlerFunc(s.TypeDetails)
 	api.Methods("PUT").Path("/v1/types/{typeID:[0-9]+}/favorite").HandlerFunc(s.TypeSetFavorite)
 	api.Methods("POST").Path("/v1/types/{typeID:[0-9]+}/openInGame").HandlerFunc(s.TypeOpenInGame)
+	api.Methods("PUT").Path("/v1/user/station").HandlerFunc(s.SaveUserStation)
 
 	return s
 }
@@ -166,12 +168,21 @@ func (s *Server) CurrentUser(w http.ResponseWriter, r *http.Request) {
 
 	character, err := s.db.GetCharacter(user.ActiveCharacterID)
 	if err != nil {
-		w.WriteHeader(http.StatusUnauthorized)
+		internalServerError(w, "GetCharacter", err)
+		return
+	}
+
+	station, err := s.static.GetStationByID(user.StationID)
+	if err != nil {
+		internalServerError(w, "GetStationByID", err)
 		return
 	}
 
 	w.Header().Add("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(&character)
+	json.NewEncoder(w).Encode(map[string]interface{}{
+		"character": character,
+		"station":   station,
+	})
 }
 
 func (s *Server) GetStations(w http.ResponseWriter, r *http.Request) {
@@ -181,7 +192,7 @@ func (s *Server) GetStations(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	stations, err := sde.GetStations(query)
+	stations, err := s.static.GetStations(query)
 	if err != nil {
 		internalServerError(w, "GetStations", err)
 		return
@@ -311,6 +322,42 @@ func (s *Server) Logout(w http.ResponseWriter, r *http.Request) {
 	session.Options.MaxAge = -1
 	session.Save(r, w)
 	http.Redirect(w, r, "/", http.StatusFound)
+}
+
+func (s *Server) SaveUserStation(w http.ResponseWriter, r *http.Request) {
+	session, err := store.Get(r, viper.GetString("httpd.session.name"))
+	if err != nil {
+		internalServerError(w, "store.Get", err)
+		return
+	}
+
+	user, ok := session.Values["user"].(model.User)
+	if !ok {
+		w.WriteHeader(http.StatusUnauthorized)
+		return
+	}
+
+	var station sde.Station
+	err = json.NewDecoder(r.Body).Decode(&station)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	err = s.db.SaveUserStation(user.ID, station.ID)
+	if err != nil {
+		internalServerError(w, "SaveUserStation", err)
+		return
+	}
+
+	user.StationID = station.ID
+	session.Values["user"] = user
+	if err := session.Save(r, w); err != nil {
+		internalServerError(w, "save session", err)
+		return
+	}
+
+	w.WriteHeader(http.StatusAccepted)
 }
 
 func (s *Server) TypeDetails(w http.ResponseWriter, r *http.Request) {
@@ -469,7 +516,7 @@ func (s *Server) TypeOpenInGame(w http.ResponseWriter, r *http.Request) {
 func (s *Server) TypeSearch(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 
-	items, err := sde.SearchTypesByName(vars["filter"])
+	items, err := s.static.SearchTypesByName(vars["filter"])
 	if err != nil {
 		internalServerError(w, "GetMarketTypes", err)
 		return
