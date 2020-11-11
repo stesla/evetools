@@ -28,21 +28,17 @@ func (s *Server) GetCurrentUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	json.NewEncoder(w).Encode(map[string]interface{}{
-		"character": character,
-		"station":   station,
-	})
-}
-
-func (s *Server) GetFavorites(w http.ResponseWriter, r *http.Request) {
-	user := currentUser(r)
-	types, err := s.db.FavoriteTypes(user.ID)
+	favorites, err := s.db.FavoriteTypes(user.ID)
 	if err != nil {
 		apiInternalServerError(w, "FavoriteTypes", err)
 		return
 	}
 
-	json.NewEncoder(w).Encode(&types)
+	json.NewEncoder(w).Encode(map[string]interface{}{
+		"character": character,
+		"favorites": favorites,
+		"station":   station,
+	})
 }
 
 func (s *Server) GetStations(w http.ResponseWriter, r *http.Request) {

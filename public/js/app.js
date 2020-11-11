@@ -179,23 +179,8 @@ evetools = (function(document, window, undefined) {
 
         staticData
         .then(data => {
-          this.data = data
-          return fetch('/api/v1/types/favorites')
-        })
-        .then(resp => {
-          if (!resp.ok) {
-            throw new Error('error fetching favorites');
-          }
-          return resp.json();
-        })
-        .then(types => {
-          types.forEach(typeID => {
-            let type = this.data.types[''+typeID]
-            type.favorite = true
-            this.favorites.push(type)
-          })
-          this.favorites.sort(byName);
-        })
+          this.favorites = this.user.favorites.map(id => data.types[""+id]).sort(byName);
+        });
       },
 
       fetchStations() {
@@ -268,7 +253,7 @@ evetools = (function(document, window, undefined) {
           return resp.json();
         })
         .then(ids => {
-          this.marketTypes = ids.map(id => this.data.types[''+id])
+          this.marketTypes = ids.map(id => this.data.types[''+id]);
         });
       },
 
