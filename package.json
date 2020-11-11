@@ -5,9 +5,8 @@
   "main": "sass/styles.scss",
   "scripts": {
     "build:css": "tailwindcss build css/styles.css -o public/css/styles.css",
-    "serveui:logged-in": "live-server public --no-browser --port 8080 --middleware=../../fixture/middleware.js --mount=/api/v1:fixture",
-    "serveui:logged-out": "live-server public --no-browser --port 8080",
-    "start": "modd",
+    "startapi": "modd",
+    "startui": "livereloadx --port 8080 --prefer-local --proxy http://localhost:8081 public",
     "watch": "npm-watch"
   },
   "watch": {
@@ -30,7 +29,7 @@
   "homepage": "https://github.com/stesla/evetools#readme",
   "devDependencies": {
     "alpinejs": "^2.7.3",
-    "live-server": "^1.2.1",
+    "livereloadx": "^0.3.10",
     "npm-watch": "^0.7.0",
     "tailwindcss": "^1.9.6"
   }
