@@ -157,28 +157,25 @@ func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 func (s *Server) CurrentUser(w http.ResponseWriter, r *http.Request) {
 	session, err := store.Get(r, viper.GetString("httpd.session.name"))
 	if err != nil {
-		internalServerError(w, "store.Get", err)
+		internalServerError(w, "store.Get", "{}", err)
 		return
 	}
 
 	user, ok := session.Values["user"].(model.User)
 	if !ok {
-		w.WriteHeader(http.StatusUnauthorized)
-		fmt.Fprintln(w, "{}")
+		http.Error(w, "{}", http.StatusUnauthorized)
 		return
 	}
 
 	character, err := s.db.GetCharacter(user.ActiveCharacterID)
 	if err != nil {
-		internalServerError(w, "GetCharacter", err)
-		fmt.Fprintln(w, "{}")
+		internalServerError(w, "GetCharacter", "{}", err)
 		return
 	}
 
 	station, err := s.static.GetStationByID(user.StationID)
 	if err != nil {
-		internalServerError(w, "GetStationByID", err)
-		fmt.Fprintln(w, "{}")
+		internalServerError(w, "GetStationByID", "{}", err)
 		return
 	}
 
@@ -191,15 +188,13 @@ func (s *Server) CurrentUser(w http.ResponseWriter, r *http.Request) {
 func (s *Server) GetStations(w http.ResponseWriter, r *http.Request) {
 	query := strings.TrimSpace(r.FormValue("q"))
 	if query == "" {
-		w.WriteHeader(http.StatusBadRequest)
-		fmt.Fprintln(w, "{}")
+		http.Error(w, "{}", http.StatusBadRequest)
 		return
 	}
 
 	stations, err := s.static.GetStations(query)
 	if err != nil {
-		internalServerError(w, "GetStations", err)
-		fmt.Fprintln(w, "{}")
+		internalServerError(w, "GetStations", "{}", err)
 		return
 	}
 
@@ -213,22 +208,17 @@ func (s *Server) Login(w http.ResponseWriter, r *http.Request) {
 	state := base64.RawURLEncoding.EncodeToString(b)
 	session.Values["oauth.state"] = state
 	if err := session.Save(r, w); err != nil {
-		internalServerError(w, "session.Save", err)
+		internalServerError(w, "session.Save", err.Error(), err)
 		return
 	}
 	url := oauthConfig.AuthCodeURL(state)
 	http.Redirect(w, r, url, http.StatusFound)
 }
 
-func internalServerError(w http.ResponseWriter, tag string, err error) {
-	log.Println("Internal Server Error:", tag, ":", err)
-	http.Error(w, err.Error(), http.StatusInternalServerError)
-}
-
 func (s *Server) LoginCallback(w http.ResponseWriter, r *http.Request) {
 	session, err := store.Get(r, viper.GetString("httpd.session.name"))
 	if err != nil {
-		internalServerError(w, "store.Get", err)
+		internalServerError(w, "store.Get", err.Error(), err)
 		return
 	}
 
@@ -241,14 +231,14 @@ func (s *Server) LoginCallback(w http.ResponseWriter, r *http.Request) {
 	code := r.FormValue("code")
 	token, err := oauthConfig.Exchange(r.Context(), code)
 	if err != nil {
-		internalServerError(w, "oauth.Exchange", err)
+		internalServerError(w, "oauth.Exchange", err.Error(), err)
 		return
 	}
 
 	resp, err := s.http.Get(fmt.Sprintf("%s/.well-known/oauth-authorization-server",
 		viper.GetString("oauth.basePath")))
 	if err != nil {
-		internalServerError(w, "GET metadata", err)
+		internalServerError(w, "GET metadata", err.Error(), err)
 		return
 	}
 	defer resp.Body.Close()
@@ -257,57 +247,58 @@ func (s *Server) LoginCallback(w http.ResponseWriter, r *http.Request) {
 	}
 	err = json.NewDecoder(resp.Body).Decode(&meta)
 	if err != nil {
-		internalServerError(w, "Decode metadata", err)
+		internalServerError(w, "Decode metadata", err.Error(), err)
 		return
 	}
 
 	keyset, err := jwk.Fetch(meta.URI, jwk.WithHTTPClient(&s.http))
 	if err != nil {
-		internalServerError(w, "fetch jwks", err)
+		internalServerError(w, "fetch jwks", err.Error(), err)
 		return
 	}
 
 	payload, err := jwt.ParseString(token.AccessToken, jwt.WithKeySet(keyset))
 	if err != nil {
-		internalServerError(w, "verify token", err)
+		internalServerError(w, "verify token", err.Error(), err)
 		return
 	}
 
 	chunks := strings.Split(payload.Subject(), ":")
 	if len(chunks) != 3 {
-		internalServerError(w, "get characterID", fmt.Errorf("incorrect subject format %q", payload.Subject()))
+		err := fmt.Errorf("incorrect subject format %q", payload.Subject())
+		internalServerError(w, "get characterID", err.Error(), err)
 		return
 	}
 	characterID, err := strconv.Atoi(chunks[2])
 	if err != nil {
-		internalServerError(w, "get characterID", err)
+		internalServerError(w, "get characterID", err.Error(), err)
 		return
 	}
 
 	v, _ := payload.Get("name")
 	characterName, ok := v.(string)
 	if !ok {
-		internalServerError(w, "get characterName", err)
+		internalServerError(w, "get characterName", err.Error(), err)
 		return
 	}
 
 	v, _ = payload.Get("owner")
 	ownerToken, ok := v.(string)
 	if !ok {
-		internalServerError(w, "get owner token", err)
+		internalServerError(w, "get owner token", err.Error(), err)
 		return
 	}
 
 	user, err := s.db.FindOrCreateUserForCharacter(characterID, characterName, ownerToken)
 	if err != nil {
-		internalServerError(w, "FindOrCreateUserForCharacter", err)
+		internalServerError(w, "FindOrCreateUserForCharacter", err.Error(), err)
 		return
 	}
 
 	session.Values["user"] = user
 	session.Values["token"] = token
 	if err := session.Save(r, w); err != nil {
-		internalServerError(w, "save session", err)
+		internalServerError(w, "save session", err.Error(), err)
 		return
 	}
 
@@ -331,38 +322,33 @@ func (s *Server) Logout(w http.ResponseWriter, r *http.Request) {
 func (s *Server) SaveUserStation(w http.ResponseWriter, r *http.Request) {
 	session, err := store.Get(r, viper.GetString("httpd.session.name"))
 	if err != nil {
-		internalServerError(w, "store.Get", err)
-		fmt.Fprintln(w, "{}")
+		internalServerError(w, "store.Get", "{}", err)
 		return
 	}
 
 	user, ok := session.Values["user"].(model.User)
 	if !ok {
-		w.WriteHeader(http.StatusUnauthorized)
-		fmt.Fprintln(w, "{}")
+		http.Error(w, "{}", http.StatusUnauthorized)
 		return
 	}
 
 	var station sde.Station
 	err = json.NewDecoder(r.Body).Decode(&station)
 	if err != nil {
-		w.WriteHeader(http.StatusBadRequest)
-		fmt.Fprintln(w, "{}")
+		http.Error(w, "{}", http.StatusBadRequest)
 		return
 	}
 
 	err = s.db.SaveUserStation(user.ID, station.ID)
 	if err != nil {
-		internalServerError(w, "SaveUserStation", err)
-		fmt.Fprintln(w, "{}")
+		internalServerError(w, "SaveUserStation", "{}", err)
 		return
 	}
 
 	user.StationID = station.ID
 	session.Values["user"] = user
 	if err := session.Save(r, w); err != nil {
-		internalServerError(w, "save session", err)
-		fmt.Fprintln(w, "{}")
+		internalServerError(w, "save session", "{}", err)
 		return
 	}
 
@@ -372,22 +358,19 @@ func (s *Server) SaveUserStation(w http.ResponseWriter, r *http.Request) {
 func (s *Server) TypeDetails(w http.ResponseWriter, r *http.Request) {
 	session, err := store.Get(r, viper.GetString("httpd.session.name"))
 	if err != nil {
-		internalServerError(w, "store.Get", err)
-		fmt.Fprintln(w, "{}")
+		internalServerError(w, "store.Get", "{}", err)
 		return
 	}
 
 	user, ok := session.Values["user"].(model.User)
 	if !ok {
-		w.WriteHeader(http.StatusUnauthorized)
-		fmt.Fprintln(w, "{}")
+		http.Error(w, "{}", http.StatusUnauthorized)
 		return
 	}
 
 	station, err := s.static.GetStationByID(user.StationID)
 	if err != nil {
-		internalServerError(w, "GetStationByID", err)
-		fmt.Fprintln(w, "{}")
+		internalServerError(w, "GetStationByID", "{}", err)
 		return
 	}
 
@@ -396,22 +379,19 @@ func (s *Server) TypeDetails(w http.ResponseWriter, r *http.Request) {
 
 	isFavorite, err := s.db.IsFavorite(user.ID, id)
 	if err != nil && err != model.ErrNotFound {
-		internalServerError(w, "GetType", err)
-		fmt.Fprintln(w, "{}")
+		internalServerError(w, "GetType", "{}", err)
 		return
 	}
 
 	price, err := s.esi.MarketPrices(r.Context(), station.ID, station.Region.ID, id)
 	if err != nil {
-		internalServerError(w, "JitaPrices", err)
-		fmt.Fprintln(w, "{}")
+		internalServerError(w, "JitaPrices", "{}", err)
 		return
 	}
 
 	history, err := s.esi.MarketHistory(r.Context(), station.Region.ID, id)
 	if err != nil {
-		internalServerError(w, "JitaHistory", err)
-		fmt.Fprintln(w, "{}")
+		internalServerError(w, "JitaHistory", "{}", err)
 		return
 	}
 
@@ -446,15 +426,13 @@ func (s *Server) TypeDetails(w http.ResponseWriter, r *http.Request) {
 func (s *Server) TypeSetFavorite(w http.ResponseWriter, r *http.Request) {
 	session, err := store.Get(r, viper.GetString("httpd.session.name"))
 	if err != nil {
-		internalServerError(w, "store.Get", err)
-		fmt.Fprintln(w, "{}")
+		internalServerError(w, "store.Get", "{}", err)
 		return
 	}
 
 	user, ok := session.Values["user"].(model.User)
 	if !ok {
-		w.WriteHeader(http.StatusUnauthorized)
-		fmt.Fprintln(w, "{}")
+		http.Error(w, "{}", http.StatusUnauthorized)
 		return
 	}
 
@@ -465,14 +443,12 @@ func (s *Server) TypeSetFavorite(w http.ResponseWriter, r *http.Request) {
 		Favorite bool `json:"favorite"`
 	}
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		w.WriteHeader(http.StatusBadRequest)
-		fmt.Fprintln(w, "{}")
+		http.Error(w, "{}", http.StatusBadRequest)
 		return
 	}
 
 	if err := s.db.SetFavorite(user.ID, typeID, req.Favorite); err != nil {
-		internalServerError(w, "SetFavorite", err)
-		fmt.Fprintln(w, "{}")
+		internalServerError(w, "SetFavorite", "{}", err)
 		return
 	}
 
@@ -482,22 +458,19 @@ func (s *Server) TypeSetFavorite(w http.ResponseWriter, r *http.Request) {
 func (s *Server) TypeGetFavorites(w http.ResponseWriter, r *http.Request) {
 	session, err := store.Get(r, viper.GetString("httpd.session.name"))
 	if err != nil {
-		internalServerError(w, "store.Get", err)
-		fmt.Fprintln(w, "{}")
+		internalServerError(w, "store.Get", "{}", err)
 		return
 	}
 
 	user, ok := session.Values["user"].(model.User)
 	if !ok {
-		w.WriteHeader(http.StatusUnauthorized)
-		fmt.Fprintln(w, "{}")
+		http.Error(w, "{}", http.StatusUnauthorized)
 		return
 	}
 
 	types, err := s.db.FavoriteTypes(user.ID)
 	if err != nil {
-		internalServerError(w, "FavoriteTypes", err)
-		fmt.Fprintln(w, "{}")
+		internalServerError(w, "FavoriteTypes", "{}", err)
 		return
 	}
 
@@ -507,8 +480,7 @@ func (s *Server) TypeGetFavorites(w http.ResponseWriter, r *http.Request) {
 func (s *Server) TypeOpenInGame(w http.ResponseWriter, r *http.Request) {
 	session, err := store.Get(r, viper.GetString("httpd.session.name"))
 	if err != nil {
-		internalServerError(w, "store.Get", err)
-		fmt.Fprintln(w, "{}")
+		internalServerError(w, "store.Get", "{}", err)
 		return
 	}
 
@@ -522,8 +494,7 @@ func (s *Server) TypeOpenInGame(w http.ResponseWriter, r *http.Request) {
 	tokSrc := oauthConfig.TokenSource(r.Context(), &oldTok)
 	newTok, err := tokSrc.Token()
 	if err != nil {
-		w.WriteHeader(http.StatusUnauthorized)
-		fmt.Fprintln(w, "{}")
+		http.Error(w, "{}", http.StatusUnauthorized)
 		return
 	}
 
@@ -533,7 +504,7 @@ func (s *Server) TypeOpenInGame(w http.ResponseWriter, r *http.Request) {
 	typeID, _ := strconv.Atoi(vars["typeID"])
 
 	if err := s.esi.OpenMarketWindow(ctx, typeID); err != nil {
-		internalServerError(w, "OpenMarketWindow", err)
+		internalServerError(w, "OpenMarketWindow", "{}", err)
 	} else {
 		w.Header()["Content-Type"] = nil
 		w.WriteHeader(http.StatusNoContent)
@@ -545,7 +516,7 @@ func (s *Server) TypeSearch(w http.ResponseWriter, r *http.Request) {
 
 	items, err := s.static.SearchTypesByName(vars["filter"])
 	if err != nil {
-		internalServerError(w, "GetMarketTypes", err)
+		internalServerError(w, "GetMarketTypes", "{}", err)
 		fmt.Fprintln(w, "{}")
 		return
 	}
@@ -581,4 +552,9 @@ func (s contentType) Middleware(h http.Handler) http.Handler {
 		w.Header().Add("Content-Type", string(s))
 		h.ServeHTTP(w, r)
 	})
+}
+
+func internalServerError(w http.ResponseWriter, tag, body string, err error) {
+	log.Println("Internal Server Error:", tag, ":", err)
+	http.Error(w, body, http.StatusInternalServerError)
 }
