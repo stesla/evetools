@@ -229,20 +229,6 @@ evetools = (function(document, window, undefined) {
           this.stationName = "";
           this.editingStation = false;
         });
-
-
-     },
-
-      openTypeInEVE(typeID) {
-        fetch('/api/v1/types/'+typeID+'/openInGame', {
-          method: 'POST',
-        })
-        .then(resp => {
-          // It will return 204 No Content, so this is all we need.
-          if (!resp.ok) {
-            throw new Error("error making openInGame API call");
-          }
-        });
       },
     }
   }
@@ -391,6 +377,18 @@ evetools = (function(document, window, undefined) {
   window.handleSearch = function(q) {
     window.location = '/search?q=' + q;
   }
+
+  window.openTypeInEVE = function(typeID) {
+    fetch('/api/v1/types/'+typeID+'/openInGame', {
+      method: 'POST',
+    })
+    .then(resp => {
+      // It will return 204 No Content, so this is all we need.
+      if (!resp.ok) {
+        throw new Error("error making openInGame API call");
+      }
+    });
+  },
 
   window.renderChart = function(history, height, width) {
     const bollinger = function(values, N, K) {
