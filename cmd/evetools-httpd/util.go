@@ -10,6 +10,7 @@ import (
 
 	"github.com/gorilla/sessions"
 	"github.com/spf13/viper"
+	"github.com/stesla/evetools/esi"
 	"github.com/stesla/evetools/model"
 	"golang.org/x/oauth2"
 )
@@ -103,7 +104,7 @@ func haveLoggedInUser(next http.Handler) http.Handler {
 		ctx := r.Context()
 		ctx = context.WithValue(ctx, CurrentSessionKey, session)
 		ctx = context.WithValue(ctx, CurrentUserKey, user)
-		ctx = context.WithValue(ctx, ESITokenKey, newTok.AccessToken)
+		ctx = context.WithValue(ctx, esi.AccessTokenKey, newTok.AccessToken)
 		next.ServeHTTP(w, r.WithContext(ctx))
 	})
 }

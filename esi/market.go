@@ -1,4 +1,4 @@
-package main
+package esi
 
 import (
 	"context"
@@ -11,12 +11,16 @@ import (
 	"time"
 )
 
-type ESIClient struct {
+type contextKey int
+
+const AccessTokenKey contextKey = 1
+
+type Client struct {
 	http *http.Client
 }
 
-func NewESIClient(client *http.Client) *ESIClient {
-	return &ESIClient{
+func NewClient(client *http.Client) *Client {
+	return &Client{
 		http: client,
 	}
 }
@@ -39,7 +43,7 @@ type HistoryDay struct {
 	Volume     int64   `json:"volume"`
 }
 
-func (e *ESIClient) MarketHistory(ctx context.Context, regionID, typeID int) (result []HistoryDay, err error) {
+func (e *Client) MarketHistory(ctx context.Context, regionID, typeID int) (result []HistoryDay, err error) {
 	url := fmt.Sprintf("/markets/%d/history/", regionID)
 	req, err := newESIRequest(ctx, http.MethodGet, url, nil)
 
@@ -82,7 +86,7 @@ type marketOrder struct {
 	VolumeTotal  int     `json:"volume_total"`
 }
 
-func (e *ESIClient) MarketPrices(ctx context.Context, stationID, regionID, typeID int) (*Price, error) {
+func (e *Client) MarketPrices(ctx context.Context, stationID, regionID, typeID int) (*Price, error) {
 	var buy, sell float64
 	var page = 1
 
@@ -128,7 +132,7 @@ func (e *ESIClient) MarketPrices(ctx context.Context, stationID, regionID, typeI
 	return &Price{Buy: buy, Sell: sell}, nil
 }
 
-func (e *ESIClient) OpenMarketWindow(ctx context.Context, typeID int) (err error) {
+func (e *Client) OpenMarketWindow(ctx context.Context, typeID int) (err error) {
 	req, err := newESIRequest(ctx, http.MethodPost, "/ui/openwindow/marketdetails/", nil)
 	if err != nil {
 		return
@@ -156,7 +160,7 @@ func newESIRequest(ctx context.Context, method, path string, body io.Reader) (*h
 	q.Add("datasource", "tranquility")
 	req.URL.RawQuery = q.Encode()
 
-	token := ctx.Value(ESITokenKey)
+	token := ctx.Value(AccessTokenKey)
 	req.Header.Add("Authorization", fmt.Sprintf("Bearer %s", token))
 	// TODO: maybe have a version variable?
 	req.Header.Add("User-Agent", "evetools 0.0.1 - github.com/stesla/evetools - Stewart Cash")

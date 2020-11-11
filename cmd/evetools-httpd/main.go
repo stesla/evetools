@@ -23,6 +23,7 @@ import (
 	"github.com/lestrrat-go/jwx/jwt"
 	"github.com/spf13/pflag"
 	"github.com/spf13/viper"
+	"github.com/stesla/evetools/esi"
 	"github.com/stesla/evetools/model"
 	"github.com/stesla/evetools/sde"
 )
@@ -30,8 +31,7 @@ import (
 type contextKey int
 
 const (
-	ESITokenKey contextKey = 1 + iota
-	CurrentUserKey
+	CurrentUserKey contextKey = 1 + iota
 	CurrentSessionKey
 )
 
@@ -119,7 +119,7 @@ func initOAuthConfig() error {
 
 type Server struct {
 	http   http.Client
-	esi    *ESIClient
+	esi    *esi.Client
 	mux    *mux.Router
 	db     model.DB
 	static sde.DB
@@ -131,7 +131,7 @@ func NewServer(static http.Handler, db model.DB, sdb sde.DB) *Server {
 		db:     db,
 		static: sdb,
 	}
-	s.esi = NewESIClient(&s.http)
+	s.esi = esi.NewClient(&s.http)
 
 	s.mux.NotFoundHandler = onlyAllowGet(alwaysThisPath("/", static))
 	s.mux.PathPrefix("/css").Handler(static)
