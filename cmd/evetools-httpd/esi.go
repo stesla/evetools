@@ -83,37 +83,48 @@ type marketOrder struct {
 }
 
 func (e *ESIClient) MarketPrices(ctx context.Context, stationID, regionID, typeID int) (*Price, error) {
-	// TODO: this could potentially have a paginated response
-	url := fmt.Sprintf("/markets/%d/orders/", regionID)
-	req, err := newESIRequest(ctx, http.MethodGet, url, nil)
-
-	q := req.URL.Query()
-	q.Add("order_type", "all")
-	q.Add("type_id", strconv.Itoa(typeID))
-	req.URL.RawQuery = q.Encode()
-
-	resp, err := e.http.Do(req)
-	if err != nil {
-		return nil, err
-	}
-
-	var orders []marketOrder
-	err = json.NewDecoder(resp.Body).Decode(&orders)
-	if err != nil {
-		return nil, err
-	}
-
 	var buy, sell float64
-	for _, order := range orders {
-		if order.LocationID != stationID {
-			continue
+	var page = 1
+
+	for {
+		url := fmt.Sprintf("/markets/%d/orders/", regionID)
+		req, err := newESIRequest(ctx, http.MethodGet, url, nil)
+
+		q := req.URL.Query()
+		q.Add("order_type", "all")
+		q.Add("type_id", strconv.Itoa(typeID))
+		q.Add("page", strconv.Itoa(page))
+		req.URL.RawQuery = q.Encode()
+
+		resp, err := e.http.Do(req)
+		if err != nil {
+			return nil, err
 		}
-		if order.IsBuyOrder && order.Price > buy {
-			buy = order.Price
-		} else if !order.IsBuyOrder && (sell == 0 || order.Price < sell) {
-			sell = order.Price
+
+		var orders []marketOrder
+		err = json.NewDecoder(resp.Body).Decode(&orders)
+		if err != nil {
+			return nil, err
+		}
+
+		for _, order := range orders {
+			if order.LocationID != stationID {
+				continue
+			}
+			if order.IsBuyOrder && order.Price > buy {
+				buy = order.Price
+			} else if !order.IsBuyOrder && (sell == 0 || order.Price < sell) {
+				sell = order.Price
+			}
+		}
+
+		if str := resp.Header.Get("X-Pages"); str == "" {
+			break
+		} else if i, _ := strconv.Atoi(str); page >= i {
+			break
 		}
 	}
+
 	return &Price{Buy: buy, Sell: sell}, nil
 }
 
