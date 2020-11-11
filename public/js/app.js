@@ -182,7 +182,9 @@ evetools = (function(document, window, undefined) {
         })
         .then(types => {
           types.forEach(typeID => {
-            this.favorites.push(this.data.types[''+typeID])
+            let type = this.data.types[''+typeID]
+            type.favorite = true
+            this.favorites.push(type)
           })
         })
       },
@@ -209,6 +211,14 @@ evetools = (function(document, window, undefined) {
       get stationList() {
         vals = Object.values(this.stations);
         return vals;
+      },
+
+      toggleFavorite(type) {
+        let val = !type.favorite
+        setFavorite(type.id, val)
+        .then(() => {
+          type.favorite = val
+        });
       },
 
       saveStation() {
@@ -283,16 +293,7 @@ evetools = (function(document, window, undefined) {
       system: { name: "" },
 
       toggleFavorite() {
-        fetch('/api/v1/types/'+this.typeID+'/favorite', {
-          method: 'PUT',
-          body: JSON.stringify({favorite: !this.favorite}),
-        })
-        .then(resp => {
-          if (!resp.ok) {
-            throw new Error("error setting favorite");
-          }
-          return resp.json();
-        })
+        setFavorite(this.typeID, !this.favorite)
         .then(obj => {
           this.favorite = obj.favorite;
         });
@@ -389,6 +390,19 @@ evetools = (function(document, window, undefined) {
       }
     });
   },
+
+  window.setFavorite = function(typeID, val) {
+    return fetch('/api/v1/types/'+typeID+'/favorite', {
+      method: 'PUT',
+      body: JSON.stringify({favorite: val}),
+    })
+    .then(resp => {
+      if (!resp.ok) {
+        throw new Error("error setting favorite");
+      }
+      return resp.json();
+    })
+  }
 
   window.renderChart = function(history, height, width) {
     const bollinger = function(values, N, K) {
