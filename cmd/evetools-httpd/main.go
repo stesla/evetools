@@ -136,6 +136,7 @@ func NewServer(static http.Handler, db model.DB, sdb sde.DB) *Server {
 	s.mux.Methods("GET").Path("/logout").HandlerFunc(s.Logout)
 
 	api := s.mux.PathPrefix("/api").Subrouter()
+	api.Use(contentType("application/json").Middleware)
 	api.Methods("GET").Path("/v1/currentUser").HandlerFunc(s.CurrentUser)
 	api.Methods("GET").Path("/v1/stations").HandlerFunc(s.GetStations)
 	api.Methods("GET").Path("/v1/types/favorites").HandlerFunc(s.TypeGetFavorites)
@@ -163,22 +164,24 @@ func (s *Server) CurrentUser(w http.ResponseWriter, r *http.Request) {
 	user, ok := session.Values["user"].(model.User)
 	if !ok {
 		w.WriteHeader(http.StatusUnauthorized)
+		fmt.Fprintln(w, "{}")
 		return
 	}
 
 	character, err := s.db.GetCharacter(user.ActiveCharacterID)
 	if err != nil {
 		internalServerError(w, "GetCharacter", err)
+		fmt.Fprintln(w, "{}")
 		return
 	}
 
 	station, err := s.static.GetStationByID(user.StationID)
 	if err != nil {
 		internalServerError(w, "GetStationByID", err)
+		fmt.Fprintln(w, "{}")
 		return
 	}
 
-	w.Header().Add("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(map[string]interface{}{
 		"character": character,
 		"station":   station,
@@ -189,16 +192,17 @@ func (s *Server) GetStations(w http.ResponseWriter, r *http.Request) {
 	query := strings.TrimSpace(r.FormValue("q"))
 	if query == "" {
 		w.WriteHeader(http.StatusBadRequest)
+		fmt.Fprintln(w, "{}")
 		return
 	}
 
 	stations, err := s.static.GetStations(query)
 	if err != nil {
 		internalServerError(w, "GetStations", err)
+		fmt.Fprintln(w, "{}")
 		return
 	}
 
-	w.Header().Add("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(&stations)
 }
 
@@ -328,25 +332,29 @@ func (s *Server) SaveUserStation(w http.ResponseWriter, r *http.Request) {
 	session, err := store.Get(r, viper.GetString("httpd.session.name"))
 	if err != nil {
 		internalServerError(w, "store.Get", err)
+		fmt.Fprintln(w, "{}")
 		return
 	}
 
 	user, ok := session.Values["user"].(model.User)
 	if !ok {
 		w.WriteHeader(http.StatusUnauthorized)
+		fmt.Fprintln(w, "{}")
 		return
 	}
 
 	var station sde.Station
 	err = json.NewDecoder(r.Body).Decode(&station)
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
+		w.WriteHeader(http.StatusBadRequest)
+		fmt.Fprintln(w, "{}")
 		return
 	}
 
 	err = s.db.SaveUserStation(user.ID, station.ID)
 	if err != nil {
 		internalServerError(w, "SaveUserStation", err)
+		fmt.Fprintln(w, "{}")
 		return
 	}
 
@@ -354,6 +362,7 @@ func (s *Server) SaveUserStation(w http.ResponseWriter, r *http.Request) {
 	session.Values["user"] = user
 	if err := session.Save(r, w); err != nil {
 		internalServerError(w, "save session", err)
+		fmt.Fprintln(w, "{}")
 		return
 	}
 
@@ -364,18 +373,21 @@ func (s *Server) TypeDetails(w http.ResponseWriter, r *http.Request) {
 	session, err := store.Get(r, viper.GetString("httpd.session.name"))
 	if err != nil {
 		internalServerError(w, "store.Get", err)
+		fmt.Fprintln(w, "{}")
 		return
 	}
 
 	user, ok := session.Values["user"].(model.User)
 	if !ok {
 		w.WriteHeader(http.StatusUnauthorized)
+		fmt.Fprintln(w, "{}")
 		return
 	}
 
 	station, err := s.static.GetStationByID(user.StationID)
 	if err != nil {
 		internalServerError(w, "GetStationByID", err)
+		fmt.Fprintln(w, "{}")
 		return
 	}
 
@@ -385,18 +397,21 @@ func (s *Server) TypeDetails(w http.ResponseWriter, r *http.Request) {
 	isFavorite, err := s.db.IsFavorite(user.ID, id)
 	if err != nil && err != model.ErrNotFound {
 		internalServerError(w, "GetType", err)
+		fmt.Fprintln(w, "{}")
 		return
 	}
 
 	price, err := s.esi.MarketPrices(r.Context(), station.ID, station.Region.ID, id)
 	if err != nil {
 		internalServerError(w, "JitaPrices", err)
+		fmt.Fprintln(w, "{}")
 		return
 	}
 
 	history, err := s.esi.MarketHistory(r.Context(), station.Region.ID, id)
 	if err != nil {
 		internalServerError(w, "JitaHistory", err)
+		fmt.Fprintln(w, "{}")
 		return
 	}
 
@@ -415,7 +430,6 @@ func (s *Server) TypeDetails(w http.ResponseWriter, r *http.Request) {
 		volume /= int64(l)
 	}
 
-	w.Header().Add("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(map[string]interface{}{
 		"buy":      price.Buy,
 		"sell":     price.Sell,
@@ -433,12 +447,14 @@ func (s *Server) TypeSetFavorite(w http.ResponseWriter, r *http.Request) {
 	session, err := store.Get(r, viper.GetString("httpd.session.name"))
 	if err != nil {
 		internalServerError(w, "store.Get", err)
+		fmt.Fprintln(w, "{}")
 		return
 	}
 
 	user, ok := session.Values["user"].(model.User)
 	if !ok {
 		w.WriteHeader(http.StatusUnauthorized)
+		fmt.Fprintln(w, "{}")
 		return
 	}
 
@@ -449,16 +465,17 @@ func (s *Server) TypeSetFavorite(w http.ResponseWriter, r *http.Request) {
 		Favorite bool `json:"favorite"`
 	}
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		http.Error(w, "bad request", http.StatusBadRequest)
+		w.WriteHeader(http.StatusBadRequest)
+		fmt.Fprintln(w, "{}")
 		return
 	}
 
 	if err := s.db.SetFavorite(user.ID, typeID, req.Favorite); err != nil {
 		internalServerError(w, "SetFavorite", err)
+		fmt.Fprintln(w, "{}")
 		return
 	}
 
-	w.Header().Add("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(&req)
 }
 
@@ -466,22 +483,24 @@ func (s *Server) TypeGetFavorites(w http.ResponseWriter, r *http.Request) {
 	session, err := store.Get(r, viper.GetString("httpd.session.name"))
 	if err != nil {
 		internalServerError(w, "store.Get", err)
+		fmt.Fprintln(w, "{}")
 		return
 	}
 
 	user, ok := session.Values["user"].(model.User)
 	if !ok {
 		w.WriteHeader(http.StatusUnauthorized)
+		fmt.Fprintln(w, "{}")
 		return
 	}
 
 	types, err := s.db.FavoriteTypes(user.ID)
 	if err != nil {
 		internalServerError(w, "FavoriteTypes", err)
+		fmt.Fprintln(w, "{}")
 		return
 	}
 
-	w.Header().Add("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(&types)
 }
 
@@ -489,6 +508,7 @@ func (s *Server) TypeOpenInGame(w http.ResponseWriter, r *http.Request) {
 	session, err := store.Get(r, viper.GetString("httpd.session.name"))
 	if err != nil {
 		internalServerError(w, "store.Get", err)
+		fmt.Fprintln(w, "{}")
 		return
 	}
 
@@ -515,6 +535,7 @@ func (s *Server) TypeOpenInGame(w http.ResponseWriter, r *http.Request) {
 	if err := s.esi.OpenMarketWindow(ctx, typeID); err != nil {
 		internalServerError(w, "OpenMarketWindow", err)
 	} else {
+		w.Header()["Content-Type"] = nil
 		w.WriteHeader(http.StatusNoContent)
 	}
 }
@@ -525,10 +546,10 @@ func (s *Server) TypeSearch(w http.ResponseWriter, r *http.Request) {
 	items, err := s.static.SearchTypesByName(vars["filter"])
 	if err != nil {
 		internalServerError(w, "GetMarketTypes", err)
+		fmt.Fprintln(w, "{}")
 		return
 	}
 
-	w.Header().Add("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(items)
 }
 
@@ -550,5 +571,14 @@ func onlyAllowGet(h http.Handler) http.Handler {
 		} else {
 			h.ServeHTTP(w, r)
 		}
+	})
+}
+
+type contentType string
+
+func (s contentType) Middleware(h http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Add("Content-Type", string(s))
+		h.ServeHTTP(w, r)
 	})
 }
