@@ -179,7 +179,11 @@ evetools = (function(document, window, undefined) {
 
         staticData
         .then(data => {
-          this.favorites = this.user.favorites.map(id => data.types[""+id]).sort(byName);
+          this.favorites = this.user.favorites.map(id => {
+            let type = data.types[""+id];
+            type.favorite = true;
+            return type;
+          }).sort(byName);
         });
       },
 
