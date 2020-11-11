@@ -165,6 +165,7 @@ func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 func (s *Server) CurrentUser(w http.ResponseWriter, r *http.Request) {
 	user := currentUser(r)
+
 	character, err := s.db.GetCharacter(user.ActiveCharacterID)
 	if err != nil {
 		internalServerError(w, "GetCharacter", "{}", err)
@@ -186,7 +187,7 @@ func (s *Server) CurrentUser(w http.ResponseWriter, r *http.Request) {
 func (s *Server) GetStations(w http.ResponseWriter, r *http.Request) {
 	query := strings.TrimSpace(r.FormValue("q"))
 	if query == "" {
-		http.Error(w, "{}", http.StatusBadRequest)
+		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
 
@@ -321,7 +322,7 @@ func (s *Server) SaveUserStation(w http.ResponseWriter, r *http.Request) {
 	var station sde.Station
 	err := json.NewDecoder(r.Body).Decode(&station)
 	if err != nil {
-		http.Error(w, "{}", http.StatusBadRequest)
+		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
 
@@ -408,7 +409,7 @@ func (s *Server) TypeSetFavorite(w http.ResponseWriter, r *http.Request) {
 		Favorite bool `json:"favorite"`
 	}
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		http.Error(w, "{}", http.StatusBadRequest)
+		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
 
@@ -433,32 +434,10 @@ func (s *Server) TypeGetFavorites(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *Server) TypeOpenInGame(w http.ResponseWriter, r *http.Request) {
-	session, err := store.Get(r, viper.GetString("httpd.session.name"))
-	if err != nil {
-		internalServerError(w, "store.Get", "{}", err)
-		return
-	}
-
-	oldTok, ok := session.Values["token"].(oauth2.Token)
-	if !ok {
-		w.WriteHeader(http.StatusUnauthorized)
-		fmt.Fprintln(w, "{}")
-		return
-	}
-
-	tokSrc := oauthConfig.TokenSource(r.Context(), &oldTok)
-	newTok, err := tokSrc.Token()
-	if err != nil {
-		http.Error(w, "{}", http.StatusUnauthorized)
-		return
-	}
-
-	ctx := context.WithValue(r.Context(), ESITokenKey, newTok.AccessToken)
-
 	vars := mux.Vars(r)
 	typeID, _ := strconv.Atoi(vars["typeID"])
 
-	if err := s.esi.OpenMarketWindow(ctx, typeID); err != nil {
+	if err := s.esi.OpenMarketWindow(r.Context(), typeID); err != nil {
 		internalServerError(w, "OpenMarketWindow", "{}", err)
 	} else {
 		w.Header()["Content-Type"] = nil
@@ -531,12 +510,27 @@ func haveLoggedInUser(next http.Handler) http.Handler {
 
 		user, ok := session.Values["user"].(model.User)
 		if !ok {
-			http.Error(w, "{}", http.StatusUnauthorized)
+			w.WriteHeader(http.StatusUnauthorized)
 			return
 		}
 
-		ctx := context.WithValue(r.Context(), CurrentUserKey, user)
+		oldTok, ok := session.Values["token"].(oauth2.Token)
+		if !ok {
+			w.WriteHeader(http.StatusUnauthorized)
+			return
+		}
+
+		tokSrc := oauthConfig.TokenSource(r.Context(), &oldTok)
+		newTok, err := tokSrc.Token()
+		if err != nil {
+			w.WriteHeader(http.StatusUnauthorized)
+			return
+		}
+
+		ctx := r.Context()
 		ctx = context.WithValue(ctx, CurrentSessionKey, session)
+		ctx = context.WithValue(ctx, CurrentUserKey, user)
+		ctx = context.WithValue(ctx, ESITokenKey, newTok.AccessToken)
 		next.ServeHTTP(w, r.WithContext(ctx))
 	})
 }

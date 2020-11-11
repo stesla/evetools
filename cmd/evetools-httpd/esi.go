@@ -124,11 +124,13 @@ func (e *ESIClient) OpenMarketWindow(ctx context.Context, typeID int) (err error
 	}
 
 	q := req.URL.Query()
-	q.Add("datasource", "tranquility")
 	q.Add("type_id", strconv.Itoa(typeID))
 	req.URL.RawQuery = q.Encode()
 
-	_, err = e.http.Do(req)
+	resp, err := e.http.Do(req)
+	if err == nil && resp.StatusCode != http.StatusNoContent {
+		return fmt.Errorf("unexpected HTTP status: %s", resp.Status)
+	}
 	return
 }
 
@@ -143,9 +145,9 @@ func newESIRequest(ctx context.Context, method, path string, body io.Reader) (*h
 	q.Add("datasource", "tranquility")
 	req.URL.RawQuery = q.Encode()
 
-	req.Header.Add("Authorization", fmt.Sprintf("Bearer %s", ctx.Value(ESITokenKey)))
+	token := ctx.Value(ESITokenKey)
+	req.Header.Add("Authorization", fmt.Sprintf("Bearer %s", token))
 	// TODO: maybe have a version variable?
 	req.Header.Add("User-Agent", "evetools 0.0.1 - github.com/stesla/evetools - Stewart Cash")
 	return req, nil
-
 }

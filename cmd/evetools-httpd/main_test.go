@@ -168,8 +168,17 @@ func createSignedToken(claims map[string]interface{}) string {
 func TestCurrentUserAuthenticated(t *testing.T) {
 	assert := assert.New(t)
 
+	compact := createSignedToken(map[string]interface{}{
+		jwt.SubjectKey: "CHARACTER:EVE:1234567890",
+		"name":         "Bob Awox",
+	})
+
 	req, _ := http.NewRequest("GET", "/api/v1/currentUser", nil)
 	setSessionCookie(req, map[interface{}]interface{}{
+		"token": &oauth2.Token{
+			AccessToken:  string(compact),
+			RefreshToken: "REFRESH",
+		},
 		"user": &model.User{
 			ActiveCharacterID: 1234567890,
 			StationID:         76543210,
