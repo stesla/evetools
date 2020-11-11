@@ -169,7 +169,7 @@ func (s *Server) Login(w http.ResponseWriter, r *http.Request) {
 	state := base64.RawURLEncoding.EncodeToString(b)
 	session.Values["oauth.state"] = state
 	if err := session.Save(r, w); err != nil {
-		internalServerError(w, "session.Save", err.Error(), err)
+		internalServerError(w, "session.Save", err)
 		return
 	}
 	url := oauthConfig.AuthCodeURL(state)
@@ -179,7 +179,7 @@ func (s *Server) Login(w http.ResponseWriter, r *http.Request) {
 func (s *Server) LoginCallback(w http.ResponseWriter, r *http.Request) {
 	session, err := store.Get(r, viper.GetString("httpd.session.name"))
 	if err != nil {
-		internalServerError(w, "store.Get", err.Error(), err)
+		internalServerError(w, "store.Get", err)
 		return
 	}
 
@@ -192,14 +192,14 @@ func (s *Server) LoginCallback(w http.ResponseWriter, r *http.Request) {
 	code := r.FormValue("code")
 	token, err := oauthConfig.Exchange(r.Context(), code)
 	if err != nil {
-		internalServerError(w, "oauth.Exchange", err.Error(), err)
+		internalServerError(w, "oauth.Exchange", err)
 		return
 	}
 
 	resp, err := s.http.Get(fmt.Sprintf("%s/.well-known/oauth-authorization-server",
 		viper.GetString("oauth.basePath")))
 	if err != nil {
-		internalServerError(w, "GET metadata", err.Error(), err)
+		internalServerError(w, "GET metadata", err)
 		return
 	}
 	defer resp.Body.Close()
@@ -208,58 +208,58 @@ func (s *Server) LoginCallback(w http.ResponseWriter, r *http.Request) {
 	}
 	err = json.NewDecoder(resp.Body).Decode(&meta)
 	if err != nil {
-		internalServerError(w, "Decode metadata", err.Error(), err)
+		internalServerError(w, "Decode metadata", err)
 		return
 	}
 
 	keyset, err := jwk.Fetch(meta.URI, jwk.WithHTTPClient(&s.http))
 	if err != nil {
-		internalServerError(w, "fetch jwks", err.Error(), err)
+		internalServerError(w, "fetch jwks", err)
 		return
 	}
 
 	payload, err := jwt.ParseString(token.AccessToken, jwt.WithKeySet(keyset))
 	if err != nil {
-		internalServerError(w, "verify token", err.Error(), err)
+		internalServerError(w, "verify token", err)
 		return
 	}
 
 	chunks := strings.Split(payload.Subject(), ":")
 	if len(chunks) != 3 {
 		err := fmt.Errorf("incorrect subject format %q", payload.Subject())
-		internalServerError(w, "get characterID", err.Error(), err)
+		internalServerError(w, "get characterID", err)
 		return
 	}
 	characterID, err := strconv.Atoi(chunks[2])
 	if err != nil {
-		internalServerError(w, "get characterID", err.Error(), err)
+		internalServerError(w, "get characterID", err)
 		return
 	}
 
 	v, _ := payload.Get("name")
 	characterName, ok := v.(string)
 	if !ok {
-		internalServerError(w, "get characterName", err.Error(), err)
+		internalServerError(w, "get characterName", err)
 		return
 	}
 
 	v, _ = payload.Get("owner")
 	ownerToken, ok := v.(string)
 	if !ok {
-		internalServerError(w, "get owner token", err.Error(), err)
+		internalServerError(w, "get owner token", err)
 		return
 	}
 
 	user, err := s.db.FindOrCreateUserForCharacter(characterID, characterName, ownerToken)
 	if err != nil {
-		internalServerError(w, "FindOrCreateUserForCharacter", err.Error(), err)
+		internalServerError(w, "FindOrCreateUserForCharacter", err)
 		return
 	}
 
 	session.Values["user"] = user
 	session.Values["token"] = token
 	if err := session.Save(r, w); err != nil {
-		internalServerError(w, "save session", err.Error(), err)
+		internalServerError(w, "save session", err)
 		return
 	}
 

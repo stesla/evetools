@@ -2,6 +2,8 @@ package main
 
 import (
 	"encoding/json"
+	"errors"
+	"fmt"
 	"net/http"
 	"strconv"
 	"strings"
@@ -16,13 +18,13 @@ func (s *Server) GetCurrentUser(w http.ResponseWriter, r *http.Request) {
 
 	character, err := s.db.GetCharacter(user.ActiveCharacterID)
 	if err != nil {
-		internalServerError(w, "GetCharacter", "{}", err)
+		apiInternalServerError(w, "GetCharacter", err)
 		return
 	}
 
 	station, err := s.static.GetStationByID(user.StationID)
 	if err != nil {
-		internalServerError(w, "GetStationByID", "{}", err)
+		apiInternalServerError(w, "GetStationByID", err)
 		return
 	}
 
@@ -36,7 +38,7 @@ func (s *Server) GetFavorites(w http.ResponseWriter, r *http.Request) {
 	user := currentUser(r)
 	types, err := s.db.FavoriteTypes(user.ID)
 	if err != nil {
-		internalServerError(w, "FavoriteTypes", "{}", err)
+		apiInternalServerError(w, "FavoriteTypes", err)
 		return
 	}
 
@@ -45,14 +47,14 @@ func (s *Server) GetFavorites(w http.ResponseWriter, r *http.Request) {
 
 func (s *Server) GetStations(w http.ResponseWriter, r *http.Request) {
 	query := strings.TrimSpace(r.FormValue("q"))
-	if query == "" {
-		w.WriteHeader(http.StatusBadRequest)
+	if len(query) < 3 {
+		apiError(w, errors.New("q must be at least three characters"), http.StatusBadRequest)
 		return
 	}
 
 	stations, err := s.static.GetStations(query)
 	if err != nil {
-		internalServerError(w, "GetStations", "{}", err)
+		apiInternalServerError(w, "GetStations", err)
 		return
 	}
 
@@ -63,7 +65,7 @@ func (s *Server) GetTypeID(w http.ResponseWriter, r *http.Request) {
 	user := currentUser(r)
 	station, err := s.static.GetStationByID(user.StationID)
 	if err != nil {
-		internalServerError(w, "GetStationByID", "{}", err)
+		apiInternalServerError(w, "GetStationByID", err)
 		return
 	}
 
@@ -72,19 +74,19 @@ func (s *Server) GetTypeID(w http.ResponseWriter, r *http.Request) {
 
 	isFavorite, err := s.db.IsFavorite(user.ID, id)
 	if err != nil && err != model.ErrNotFound {
-		internalServerError(w, "GetType", "{}", err)
+		apiInternalServerError(w, "GetType", err)
 		return
 	}
 
 	price, err := s.esi.MarketPrices(r.Context(), station.ID, station.Region.ID, id)
 	if err != nil {
-		internalServerError(w, "JitaPrices", "{}", err)
+		apiInternalServerError(w, "JitaPrices", err)
 		return
 	}
 
 	history, err := s.esi.MarketHistory(r.Context(), station.Region.ID, id)
 	if err != nil {
-		internalServerError(w, "JitaHistory", "{}", err)
+		apiInternalServerError(w, "JitaHistory", err)
 		return
 	}
 
@@ -121,7 +123,7 @@ func (s *Server) GetTypeSearch(w http.ResponseWriter, r *http.Request) {
 
 	items, err := s.static.SearchTypesByName(vars["filter"])
 	if err != nil {
-		internalServerError(w, "GetMarketTypes", "{}", err)
+		apiInternalServerError(w, "GetMarketTypes", err)
 		return
 	}
 
@@ -133,7 +135,7 @@ func (s *Server) PostOpenInGame(w http.ResponseWriter, r *http.Request) {
 	typeID, _ := strconv.Atoi(vars["typeID"])
 
 	if err := s.esi.OpenMarketWindow(r.Context(), typeID); err != nil {
-		internalServerError(w, "OpenMarketWindow", "{}", err)
+		apiInternalServerError(w, "OpenMarketWindow", err)
 	} else {
 		w.Header()["Content-Type"] = nil
 		w.WriteHeader(http.StatusNoContent)
@@ -148,13 +150,14 @@ func (s *Server) PutTypeFavorite(w http.ResponseWriter, r *http.Request) {
 		Favorite bool `json:"favorite"`
 	}
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		w.WriteHeader(http.StatusBadRequest)
+		err = fmt.Errorf("error parsing request body: %v", err)
+		apiError(w, err, http.StatusBadRequest)
 		return
 	}
 
 	user := currentUser(r)
 	if err := s.db.SetFavorite(user.ID, typeID, req.Favorite); err != nil {
-		internalServerError(w, "SetFavorite", "{}", err)
+		apiInternalServerError(w, "SetFavorite", err)
 		return
 	}
 
@@ -165,14 +168,15 @@ func (s *Server) PutUserStation(w http.ResponseWriter, r *http.Request) {
 	var station sde.Station
 	err := json.NewDecoder(r.Body).Decode(&station)
 	if err != nil {
-		w.WriteHeader(http.StatusBadRequest)
+		err = fmt.Errorf("error parsing request body: %v", err)
+		apiError(w, err, http.StatusBadRequest)
 		return
 	}
 
 	user := currentUser(r)
 	err = s.db.SaveUserStation(user.ID, station.ID)
 	if err != nil {
-		internalServerError(w, "SaveUserStation", "{}", err)
+		apiInternalServerError(w, "SaveUserStation", err)
 		return
 	}
 
@@ -180,7 +184,7 @@ func (s *Server) PutUserStation(w http.ResponseWriter, r *http.Request) {
 	user.StationID = station.ID
 	session.Values["user"] = user
 	if err := session.Save(r, w); err != nil {
-		internalServerError(w, "save session", "{}", err)
+		apiInternalServerError(w, "save session", err)
 		return
 	}
 
