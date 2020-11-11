@@ -63,7 +63,7 @@ func (m *databaseModel) SetFavorite(userID int, typeID int, val bool) (err error
 	if val {
 		_, err = m.db.Exec("INSERT INTO favorites (userID, typeID) VALUES (?, ?)", userID, typeID)
 	} else {
-		_, err = m.db.Exec("DELETE FROM favorites WHERE typeID = ? AND userID = ?", val, typeID, userID)
+		_, err = m.db.Exec("DELETE FROM favorites WHERE userID = ? AND typeID = ?", userID, typeID)
 	}
 	return
 }
