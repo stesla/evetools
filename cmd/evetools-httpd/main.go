@@ -145,14 +145,14 @@ func NewServer(static http.Handler, db model.DB, sdb sde.DB) *Server {
 	api := s.mux.PathPrefix("/api").Subrouter()
 	api.Use(haveLoggedInUser)
 	api.Use(contentType("application/json").Middleware)
-	api.Methods("GET").Path("/v1/currentUser").HandlerFunc(s.CurrentUser)
+	api.Methods("GET").Path("/v1/currentUser").HandlerFunc(s.GetCurrentUser)
 	api.Methods("GET").Path("/v1/stations").HandlerFunc(s.GetStations)
-	api.Methods("GET").Path("/v1/types/favorites").HandlerFunc(s.TypeGetFavorites)
-	api.Methods("GET").Path("/v1/types/search/{filter}").HandlerFunc(s.TypeSearch)
-	api.Methods("GET").Path("/v1/types/{typeID:[0-9]+}").HandlerFunc(s.TypeDetails)
-	api.Methods("PUT").Path("/v1/types/{typeID:[0-9]+}/favorite").HandlerFunc(s.TypeSetFavorite)
-	api.Methods("POST").Path("/v1/types/{typeID:[0-9]+}/openInGame").HandlerFunc(s.TypeOpenInGame)
-	api.Methods("PUT").Path("/v1/user/station").HandlerFunc(s.SaveUserStation)
+	api.Methods("GET").Path("/v1/types/favorites").HandlerFunc(s.GetFavorites)
+	api.Methods("GET").Path("/v1/types/search/{filter}").HandlerFunc(s.GetTypeSearch)
+	api.Methods("GET").Path("/v1/types/{typeID:[0-9]+}").HandlerFunc(s.GetTypeID)
+	api.Methods("PUT").Path("/v1/types/{typeID:[0-9]+}/favorite").HandlerFunc(s.PutTypeFavorite)
+	api.Methods("POST").Path("/v1/types/{typeID:[0-9]+}/openInGame").HandlerFunc(s.PostOpenInGame)
+	api.Methods("PUT").Path("/v1/user/station").HandlerFunc(s.PutUserStation)
 
 	return s
 }

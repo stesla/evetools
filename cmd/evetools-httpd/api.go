@@ -11,7 +11,7 @@ import (
 	"github.com/stesla/evetools/sde"
 )
 
-func (s *Server) CurrentUser(w http.ResponseWriter, r *http.Request) {
+func (s *Server) GetCurrentUser(w http.ResponseWriter, r *http.Request) {
 	user := currentUser(r)
 
 	character, err := s.db.GetCharacter(user.ActiveCharacterID)
@@ -32,6 +32,17 @@ func (s *Server) CurrentUser(w http.ResponseWriter, r *http.Request) {
 	})
 }
 
+func (s *Server) GetFavorites(w http.ResponseWriter, r *http.Request) {
+	user := currentUser(r)
+	types, err := s.db.FavoriteTypes(user.ID)
+	if err != nil {
+		internalServerError(w, "FavoriteTypes", "{}", err)
+		return
+	}
+
+	json.NewEncoder(w).Encode(&types)
+}
+
 func (s *Server) GetStations(w http.ResponseWriter, r *http.Request) {
 	query := strings.TrimSpace(r.FormValue("q"))
 	if query == "" {
@@ -48,33 +59,7 @@ func (s *Server) GetStations(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(&stations)
 }
 
-func (s *Server) SaveUserStation(w http.ResponseWriter, r *http.Request) {
-	var station sde.Station
-	err := json.NewDecoder(r.Body).Decode(&station)
-	if err != nil {
-		w.WriteHeader(http.StatusBadRequest)
-		return
-	}
-
-	user := currentUser(r)
-	err = s.db.SaveUserStation(user.ID, station.ID)
-	if err != nil {
-		internalServerError(w, "SaveUserStation", "{}", err)
-		return
-	}
-
-	session := currentSession(r)
-	user.StationID = station.ID
-	session.Values["user"] = user
-	if err := session.Save(r, w); err != nil {
-		internalServerError(w, "save session", "{}", err)
-		return
-	}
-
-	w.WriteHeader(http.StatusAccepted)
-}
-
-func (s *Server) TypeDetails(w http.ResponseWriter, r *http.Request) {
+func (s *Server) GetTypeID(w http.ResponseWriter, r *http.Request) {
 	user := currentUser(r)
 	station, err := s.static.GetStationByID(user.StationID)
 	if err != nil {
@@ -131,7 +116,31 @@ func (s *Server) TypeDetails(w http.ResponseWriter, r *http.Request) {
 	})
 }
 
-func (s *Server) TypeSetFavorite(w http.ResponseWriter, r *http.Request) {
+func (s *Server) GetTypeSearch(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+
+	items, err := s.static.SearchTypesByName(vars["filter"])
+	if err != nil {
+		internalServerError(w, "GetMarketTypes", "{}", err)
+		return
+	}
+
+	json.NewEncoder(w).Encode(items)
+}
+
+func (s *Server) PostOpenInGame(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	typeID, _ := strconv.Atoi(vars["typeID"])
+
+	if err := s.esi.OpenMarketWindow(r.Context(), typeID); err != nil {
+		internalServerError(w, "OpenMarketWindow", "{}", err)
+	} else {
+		w.Header()["Content-Type"] = nil
+		w.WriteHeader(http.StatusNoContent)
+	}
+}
+
+func (s *Server) PutTypeFavorite(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	typeID, _ := strconv.Atoi(vars["typeID"])
 
@@ -152,37 +161,28 @@ func (s *Server) TypeSetFavorite(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(&req)
 }
 
-func (s *Server) TypeGetFavorites(w http.ResponseWriter, r *http.Request) {
+func (s *Server) PutUserStation(w http.ResponseWriter, r *http.Request) {
+	var station sde.Station
+	err := json.NewDecoder(r.Body).Decode(&station)
+	if err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		return
+	}
+
 	user := currentUser(r)
-	types, err := s.db.FavoriteTypes(user.ID)
+	err = s.db.SaveUserStation(user.ID, station.ID)
 	if err != nil {
-		internalServerError(w, "FavoriteTypes", "{}", err)
+		internalServerError(w, "SaveUserStation", "{}", err)
 		return
 	}
 
-	json.NewEncoder(w).Encode(&types)
-}
-
-func (s *Server) TypeOpenInGame(w http.ResponseWriter, r *http.Request) {
-	vars := mux.Vars(r)
-	typeID, _ := strconv.Atoi(vars["typeID"])
-
-	if err := s.esi.OpenMarketWindow(r.Context(), typeID); err != nil {
-		internalServerError(w, "OpenMarketWindow", "{}", err)
-	} else {
-		w.Header()["Content-Type"] = nil
-		w.WriteHeader(http.StatusNoContent)
-	}
-}
-
-func (s *Server) TypeSearch(w http.ResponseWriter, r *http.Request) {
-	vars := mux.Vars(r)
-
-	items, err := s.static.SearchTypesByName(vars["filter"])
-	if err != nil {
-		internalServerError(w, "GetMarketTypes", "{}", err)
+	session := currentSession(r)
+	user.StationID = station.ID
+	session.Values["user"] = user
+	if err := session.Save(r, w); err != nil {
+		internalServerError(w, "save session", "{}", err)
 		return
 	}
 
-	json.NewEncoder(w).Encode(items)
+	w.WriteHeader(http.StatusAccepted)
 }
