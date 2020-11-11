@@ -9,6 +9,7 @@ import (
 	"strings"
 
 	"github.com/gorilla/mux"
+	"github.com/stesla/evetools/esi"
 	"github.com/stesla/evetools/model"
 	"github.com/stesla/evetools/sde"
 )
@@ -124,6 +125,31 @@ func (s *Server) GetTypeSearch(w http.ResponseWriter, r *http.Request) {
 	}
 
 	json.NewEncoder(w).Encode(items)
+}
+
+func (s *Server) GetUserOrders(w http.ResponseWriter, r *http.Request) {
+	user := currentUser(r)
+
+	orders, err := s.esi.MarketOrders(r.Context(), user.ActiveCharacterID)
+	if err != nil {
+		apiInternalServerError(w, "MarketOrders", err)
+		return
+	}
+
+	buy := []*esi.MarketOrder{}
+	sell := []*esi.MarketOrder{}
+	for _, order := range orders {
+		if order.IsBuyOrder {
+			buy = append(buy, order)
+		} else {
+			sell = append(sell, order)
+		}
+	}
+
+	json.NewEncoder(w).Encode(map[string]interface{}{
+		"buy":  buy,
+		"sell": sell,
+	})
 }
 
 func (s *Server) PostOpenInGame(w http.ResponseWriter, r *http.Request) {

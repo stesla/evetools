@@ -55,6 +55,7 @@ func (e *Client) MarketHistory(ctx context.Context, regionID, typeID int) (resul
 	if err != nil {
 		return nil, err
 	}
+	defer resp.Body.Close()
 
 	err = json.NewDecoder(resp.Body).Decode(&result)
 	return
@@ -71,19 +72,36 @@ func (p Price) Margin() float64 {
 	return (p.Sell - p.Buy) / p.Buy * 100
 }
 
-type marketOrder struct {
-	Duration     int     `json:"duration"`
-	IsBuyOrder   bool    `json:"is_buy_order"`
-	Issued       string  `json:"issued"`
-	LocationID   int     `json:"location_id"`
-	MinVolume    int     `json:"min_volume"`
-	OrderID      int     `json:"order_id"`
-	Price        float64 `json:"price"`
-	Range        string  `json:"range"`
-	SystemID     int     `json:"system_id"`
-	TypeID       int     `json:"type_id"`
-	VolumeRemain int     `json:"volume_remain"`
-	VolumeTotal  int     `json:"volume_total"`
+type MarketOrder struct {
+	Duration      int     `json:"duration"`
+	Escrow        float64 `json:"escrow"`
+	IsBuyOrder    bool    `json:"is_buy_order"`
+	IsCorporation bool    `json:"is_corporation"`
+	Issued        string  `json:"issued"`
+	LocationID    int     `json:"location_id"`
+	MinVolume     int     `json:"min_volume"`
+	OrderID       int     `json:"order_id"`
+	Price         float64 `json:"price"`
+	Range         string  `json:"range"`
+	RegionID      int     `json:"region_id"`
+	TypeID        int     `json:"type_id"`
+	VolumeRemain  int     `json:"volume_remain"`
+	VolumeTotal   int     `json:"volume_total"`
+}
+
+func (e *Client) MarketOrders(ctx context.Context, userID int) ([]*MarketOrder, error) {
+	url := fmt.Sprintf("/characters/%d/orders/", userID)
+	req, err := newESIRequest(ctx, http.MethodGet, url, nil)
+
+	resp, err := e.http.Do(req)
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+
+	var orders []*MarketOrder
+	err = json.NewDecoder(resp.Body).Decode(&orders)
+	return orders, err
 }
 
 func (e *Client) MarketPrices(ctx context.Context, stationID, regionID, typeID int) (*Price, error) {
@@ -104,8 +122,13 @@ func (e *Client) MarketPrices(ctx context.Context, stationID, regionID, typeID i
 		if err != nil {
 			return nil, err
 		}
+		defer resp.Body.Close()
 
-		var orders []marketOrder
+		var orders []struct {
+			IsBuyOrder bool    `json:"is_buy_order"`
+			Price      float64 `json:"price"`
+			LocationID int     `json:"location_id"`
+		}
 		err = json.NewDecoder(resp.Body).Decode(&orders)
 		if err != nil {
 			return nil, err
@@ -146,6 +169,7 @@ func (e *Client) OpenMarketWindow(ctx context.Context, typeID int) (err error) {
 	if err == nil && resp.StatusCode != http.StatusNoContent {
 		return fmt.Errorf("unexpected HTTP status: %s", resp.Status)
 	}
+	resp.Body.Close()
 	return
 }
 
