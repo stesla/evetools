@@ -88,6 +88,14 @@ evetools = (function(document, window, undefined) {
 
   // Views
 
+  function byName(a, b) {
+    if (a.name < b.name)
+      return -1;
+    else if (a.name > b.name)
+      return 1;
+    return 0;
+  }
+
   result.browse = function() {
     return {
       data: { root: [] },
@@ -101,7 +109,7 @@ evetools = (function(document, window, undefined) {
       get groups() {
         return this.data.root.map(id =>
           this.data.groups[''+id]
-        );
+        ).sort(byName);
       },
 
       initialize() {
@@ -132,14 +140,14 @@ evetools = (function(document, window, undefined) {
             let g = this.data.groups[''+id];
             g.isGroup = true;
             return g
-          });
+          }).sort(byName);
           return []
         } else if (this.group.types) {
           return this.group.types.map(id => {
             let t = this.data.types[''+id];
             t.isType = true;
             return t;
-          });
+          }).sort(byName);
         }
       },
 
@@ -186,13 +194,7 @@ evetools = (function(document, window, undefined) {
             type.favorite = true
             this.favorites.push(type)
           })
-          this.favorites.sort((a, b) => {
-            if (a.name < b.name)
-              return -1;
-            else if (a.name > b.name)
-              return 1;
-            return 0;
-          });
+          this.favorites.sort(byName);
         })
       },
 
