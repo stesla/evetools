@@ -15,10 +15,6 @@ type ESIClient struct {
 	http *http.Client
 }
 
-type contextToken int
-
-const ESITokenKey contextToken = 1
-
 func NewESIClient(client *http.Client) *ESIClient {
 	return &ESIClient{
 		http: client,

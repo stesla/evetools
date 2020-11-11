@@ -28,6 +28,14 @@ import (
 	"github.com/stesla/evetools/sde"
 )
 
+type contextKey int
+
+const (
+	ESITokenKey contextKey = 1 + iota
+	CurrentUserKey
+	CurrentSessionKey
+)
+
 var store *sessions.CookieStore
 
 func init() {
@@ -136,6 +144,7 @@ func NewServer(static http.Handler, db model.DB, sdb sde.DB) *Server {
 	s.mux.Methods("GET").Path("/logout").HandlerFunc(s.Logout)
 
 	api := s.mux.PathPrefix("/api").Subrouter()
+	api.Use(haveLoggedInUser)
 	api.Use(contentType("application/json").Middleware)
 	api.Methods("GET").Path("/v1/currentUser").HandlerFunc(s.CurrentUser)
 	api.Methods("GET").Path("/v1/stations").HandlerFunc(s.GetStations)
@@ -155,18 +164,7 @@ func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *Server) CurrentUser(w http.ResponseWriter, r *http.Request) {
-	session, err := store.Get(r, viper.GetString("httpd.session.name"))
-	if err != nil {
-		internalServerError(w, "store.Get", "{}", err)
-		return
-	}
-
-	user, ok := session.Values["user"].(model.User)
-	if !ok {
-		http.Error(w, "{}", http.StatusUnauthorized)
-		return
-	}
-
+	user := currentUser(r)
 	character, err := s.db.GetCharacter(user.ActiveCharacterID)
 	if err != nil {
 		internalServerError(w, "GetCharacter", "{}", err)
@@ -320,31 +318,21 @@ func (s *Server) Logout(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *Server) SaveUserStation(w http.ResponseWriter, r *http.Request) {
-	session, err := store.Get(r, viper.GetString("httpd.session.name"))
-	if err != nil {
-		internalServerError(w, "store.Get", "{}", err)
-		return
-	}
-
-	user, ok := session.Values["user"].(model.User)
-	if !ok {
-		http.Error(w, "{}", http.StatusUnauthorized)
-		return
-	}
-
 	var station sde.Station
-	err = json.NewDecoder(r.Body).Decode(&station)
+	err := json.NewDecoder(r.Body).Decode(&station)
 	if err != nil {
 		http.Error(w, "{}", http.StatusBadRequest)
 		return
 	}
 
+	user := currentUser(r)
 	err = s.db.SaveUserStation(user.ID, station.ID)
 	if err != nil {
 		internalServerError(w, "SaveUserStation", "{}", err)
 		return
 	}
 
+	session := currentSession(r)
 	user.StationID = station.ID
 	session.Values["user"] = user
 	if err := session.Save(r, w); err != nil {
@@ -356,18 +344,7 @@ func (s *Server) SaveUserStation(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *Server) TypeDetails(w http.ResponseWriter, r *http.Request) {
-	session, err := store.Get(r, viper.GetString("httpd.session.name"))
-	if err != nil {
-		internalServerError(w, "store.Get", "{}", err)
-		return
-	}
-
-	user, ok := session.Values["user"].(model.User)
-	if !ok {
-		http.Error(w, "{}", http.StatusUnauthorized)
-		return
-	}
-
+	user := currentUser(r)
 	station, err := s.static.GetStationByID(user.StationID)
 	if err != nil {
 		internalServerError(w, "GetStationByID", "{}", err)
@@ -424,18 +401,6 @@ func (s *Server) TypeDetails(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *Server) TypeSetFavorite(w http.ResponseWriter, r *http.Request) {
-	session, err := store.Get(r, viper.GetString("httpd.session.name"))
-	if err != nil {
-		internalServerError(w, "store.Get", "{}", err)
-		return
-	}
-
-	user, ok := session.Values["user"].(model.User)
-	if !ok {
-		http.Error(w, "{}", http.StatusUnauthorized)
-		return
-	}
-
 	vars := mux.Vars(r)
 	typeID, _ := strconv.Atoi(vars["typeID"])
 
@@ -447,6 +412,7 @@ func (s *Server) TypeSetFavorite(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	user := currentUser(r)
 	if err := s.db.SetFavorite(user.ID, typeID, req.Favorite); err != nil {
 		internalServerError(w, "SetFavorite", "{}", err)
 		return
@@ -456,18 +422,7 @@ func (s *Server) TypeSetFavorite(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *Server) TypeGetFavorites(w http.ResponseWriter, r *http.Request) {
-	session, err := store.Get(r, viper.GetString("httpd.session.name"))
-	if err != nil {
-		internalServerError(w, "store.Get", "{}", err)
-		return
-	}
-
-	user, ok := session.Values["user"].(model.User)
-	if !ok {
-		http.Error(w, "{}", http.StatusUnauthorized)
-		return
-	}
-
+	user := currentUser(r)
 	types, err := s.db.FavoriteTypes(user.ID)
 	if err != nil {
 		internalServerError(w, "FavoriteTypes", "{}", err)
@@ -517,7 +472,6 @@ func (s *Server) TypeSearch(w http.ResponseWriter, r *http.Request) {
 	items, err := s.static.SearchTypesByName(vars["filter"])
 	if err != nil {
 		internalServerError(w, "GetMarketTypes", "{}", err)
-		fmt.Fprintln(w, "{}")
 		return
 	}
 
@@ -557,4 +511,32 @@ func (s contentType) Middleware(h http.Handler) http.Handler {
 func internalServerError(w http.ResponseWriter, tag, body string, err error) {
 	log.Println("Internal Server Error:", tag, ":", err)
 	http.Error(w, body, http.StatusInternalServerError)
+}
+
+func currentSession(r *http.Request) *sessions.Session {
+	return r.Context().Value(CurrentSessionKey).(*sessions.Session)
+}
+
+func currentUser(r *http.Request) model.User {
+	return r.Context().Value(CurrentUserKey).(model.User)
+}
+
+func haveLoggedInUser(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		session, err := store.Get(r, viper.GetString("httpd.session.name"))
+		if err != nil {
+			internalServerError(w, "store.Get", "{}", err)
+			return
+		}
+
+		user, ok := session.Values["user"].(model.User)
+		if !ok {
+			http.Error(w, "{}", http.StatusUnauthorized)
+			return
+		}
+
+		ctx := context.WithValue(r.Context(), CurrentUserKey, user)
+		ctx = context.WithValue(ctx, CurrentSessionKey, session)
+		next.ServeHTTP(w, r.WithContext(ctx))
+	})
 }
