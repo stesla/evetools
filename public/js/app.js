@@ -325,7 +325,20 @@ evetools = (function(document, window, undefined) {
         return arr
       },
 
-      fetchData() {
+      initialize() {
+        currentUser.then(user =>
+          this.system = user.station.system
+        );
+
+        const observer = new MutationObserver(() => {
+          let div = document.getElementById("chart");
+          if (div) {
+            observer.disconnect();
+            renderChart(this.info.history, 400, div.clientWidth);
+          }
+        });
+        observer.observe(document.querySelector('main'), { childList: true, subtree: true });
+
         retrieve('/api/v1/types/'+ this.typeID, 'error fetching type details')
         .then(obj => {
           obj.history = obj.history.map(d => {
@@ -336,28 +349,13 @@ evetools = (function(document, window, undefined) {
           });
           this.info = obj;
           this.favorite = obj.favorite;
-        });
-
-        const observer = new MutationObserver(() => {
-          let div = document.getElementById("chart");
-          if (div) {
-            observer.disconnect();
-            renderChart(this.info.history, 400, div.clientWidth);
-          }
-        });
-        observer.observe(document.querySelector('main'), { childList: true, subtree: true });
-      },
-
-      initialize() {
-        currentUser.then(user =>
-          this.system = user.station.system
-        );
-        staticData.then(data => {
+          return staticData
+        })
+        .then(data => {
           this.data = data;
           this.type = data.types[''+this.typeID];
           this.group = data.groups[''+this.type.groupID];
-        })
-        .then(() => { this.fetchData() });
+        });
       }
     }
   }
