@@ -31,6 +31,7 @@
     "alpinejs": "^2.7.3",
     "livereloadx": "^0.3.10",
     "npm-watch": "^0.7.0",
-    "tailwindcss": "^1.9.6"
+    "tailwindcss": "^1.9.6",
+    "http-proxy": ">=1.18.1"
   }
 }
