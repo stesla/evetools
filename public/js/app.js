@@ -3,6 +3,16 @@ evetools = (function(document, window, undefined) {
   var staticData;
   var currentUser;
 
+  function retrieve(url, errmsg, options) {
+    return fetch(url, options)
+    .then(resp => {
+      if(!resp.ok) {
+        throw new Error(errmsg);
+      }
+      return options && options.raw ? resp : resp.json();
+    });
+  }
+
   result.globalState = function() {
     return {
       avatarMenuOpen: false,
@@ -39,13 +49,7 @@ evetools = (function(document, window, undefined) {
       },
 
       initialize() {
-        currentUser = fetch('/api/v1/currentUser')
-        .then(resp => {
-          if (!resp.ok) {
-            throw new Error('error fetching current user');
-          }
-          return resp.json();
-        })
+        currentUser = retrieve('/api/v1/currentUser', 'error fetching current user')
         .then(user => {
           user.avatarURL = 'https://images.evetech.net/characters/' + user.character.id + '/portrait?size=128';
           this.user = user
@@ -56,14 +60,9 @@ evetools = (function(document, window, undefined) {
 
         currentUser.then(() => {
           const url = '/views/'+this.currentView+'.html';
-          return fetch(url);
+          return retrieve(url, 'error fetching view', { raw: true });
         })
-        .then(resp => {
-          if(!resp.ok) {
-            throw new Error('error fetching view');
-          }
-          return resp.text();
-        })
+        .then(resp => resp.text())
         .then(html => {
           const parser = new DOMParser();
           const elt = parser.parseFromString(html, 'text/html').querySelector('main');
@@ -71,14 +70,7 @@ evetools = (function(document, window, undefined) {
           slot.parentNode.replaceChild(elt, slot);
         });
 
-
-        staticData = fetch('/data/static.json')
-        .then(resp => {
-          if (!resp.ok) {
-            throw new Error('error fetching static data');
-          }
-          return resp.json();
-        });
+        staticData = retrieve('/data/static.json', 'error fetching static data')
       },
 
       handleEscape(e) {
@@ -184,13 +176,7 @@ evetools = (function(document, window, undefined) {
           this.walletBalance = user.wallet_balance;
         })
         .then(() => {
-          return fetch('/api/v1/user/orders');
-        })
-        .then(resp => {
-          if (!resp.ok) {
-            throw new Error("error fetching market orders");
-          }
-          return resp.json();
+          return retrieve('/api/v1/user/orders', 'error fetching market orders');
         })
         .then(orders => {
           this.buyTotal = orders.buy.reduce((a, o) => a + o.escrow, 0);
@@ -214,13 +200,7 @@ evetools = (function(document, window, undefined) {
         const params = new URLSearchParams();
         params.append("q", this.stationName);
         const uri = '/api/v1/stations?' + params.toString();
-        fetch(uri)
-        .then(resp => {
-          if (!resp.ok) {
-            throw new Error("error fetching stations");
-          }
-          return resp.json();
-        })
+        retrieve(uri, 'error fetching stations')
         .then(stations => {
           this.stations = stations;
         });
@@ -245,14 +225,12 @@ evetools = (function(document, window, undefined) {
           return;
         }
         let station = this.stations[this.stationName];
-        fetch('/api/v1/user/station', {
+        retrieve('/api/v1/user/station', 'error saving station', {
+          raw: true,
           method: 'PUT',
           body: JSON.stringify(station),
         })
-        .then(resp => {
-          if (!resp.ok) {
-            throw new Error("error saving station");
-          }
+        .then(() => {
           this.station = station;
           this.stationName = "";
           this.editingStation = false;
@@ -269,13 +247,7 @@ evetools = (function(document, window, undefined) {
       initialize() {
         staticData.then(data => {
           this.data = data;
-          return fetch('/api/v1/user/orders')
-        })
-        .then(resp => {
-          if (!resp.ok) {
-            throw new Error('error fetching orders');
-          }
-          return resp.json();
+          return retrieve('/api/v1/user/orders', 'error fetching orders');
         })
         .then(data => {
           f = o => {
@@ -300,13 +272,7 @@ evetools = (function(document, window, undefined) {
       marketTypes: [],
 
       fetchData() {
-        fetch('/api/v1/types/search/' + this.filter)
-        .then(resp => {
-          if (!resp.ok) {
-            throw new Error('error fetching search results');
-          }
-          return resp.json();
-        })
+        retrieve('/api/v1/types/search/' + this.filter, 'error fetching search results')
         .then(ids => {
           this.marketTypes = ids.map(id => this.data.types[''+id]);
         });
@@ -360,13 +326,7 @@ evetools = (function(document, window, undefined) {
       },
 
       fetchData() {
-        fetch('/api/v1/types/'+ this.typeID)
-        .then(resp => {
-          if (!resp.ok) {
-            throw new Error('error fetching type details');
-          }
-          return resp.json();
-        })
+        retrieve('/api/v1/types/'+ this.typeID, 'error fetching type details')
         .then(obj => {
           obj.history = obj.history.map(d => {
             return {
@@ -433,28 +393,17 @@ evetools = (function(document, window, undefined) {
   }
 
   window.openTypeInEVE = function(typeID) {
-    fetch('/api/v1/types/'+typeID+'/openInGame', {
+    retrieve('/api/v1/types/'+typeID+'/openInGame', 'error making openInGame API call', {
+      raw: true,
       method: 'POST',
-    })
-    .then(resp => {
-      // It will return 204 No Content, so this is all we need.
-      if (!resp.ok) {
-        throw new Error("error making openInGame API call");
-      }
     });
   },
 
   window.setFavorite = function(typeID, val) {
-    return fetch('/api/v1/types/'+typeID+'/favorite', {
+    return retrieve('/api/v1/types/'+typeID+'/favorite', 'error setting favorite', {
       method: 'PUT',
       body: JSON.stringify({favorite: val}),
-    })
-    .then(resp => {
-      if (!resp.ok) {
-        throw new Error("error setting favorite");
-      }
-      return resp.json();
-    })
+    });
   }
 
   window.renderChart = function(history, height, width) {
