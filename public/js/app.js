@@ -261,6 +261,19 @@ evetools = (function(document, window, undefined) {
           };
         });
       },
+
+      get sections() {
+        return [
+          {
+            name: "Buy Orders",
+            orders: this.orders && this.orders.buy,
+          },
+          {
+            name: "Sell Orders",
+            orders: this.orders && this.orders.sell,
+          },
+        ]
+      }
     }
   }
 
