@@ -56,6 +56,7 @@ type MarketOrder struct {
 	MinVolume     int     `json:"min_volume"`
 	OrderID       int     `json:"order_id"`
 	Price         float64 `json:"price"`
+	State         string  `json:"state,omitempty"`
 	Range         string  `json:"range"`
 	RegionID      int     `json:"region_id"`
 	TypeID        int     `json:"type_id"`
@@ -68,6 +69,21 @@ type MarketOrder struct {
 
 func (c *Client) MarketOrders(ctx context.Context, userID int) ([]*MarketOrder, error) {
 	url := fmt.Sprintf("/characters/%d/orders/", userID)
+	req, err := newESIRequest(ctx, http.MethodGet, url, nil)
+
+	resp, err := c.http.Do(req)
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+
+	var orders []*MarketOrder
+	err = json.NewDecoder(resp.Body).Decode(&orders)
+	return orders, err
+}
+
+func (c *Client) MarketOrderHistory(ctx context.Context, userID int) ([]*MarketOrder, error) {
+	url := fmt.Sprintf("/characters/%d/orders/history/", userID)
 	req, err := newESIRequest(ctx, http.MethodGet, url, nil)
 
 	resp, err := c.http.Do(req)

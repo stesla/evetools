@@ -159,6 +159,7 @@ func NewServer(static http.Handler, db model.DB, sdb sde.DB) *Server {
 	api.Methods("GET").Path("/v1/types/{typeID:[0-9]+}").HandlerFunc(s.GetTypeID)
 	api.Methods("PUT").Path("/v1/types/{typeID:[0-9]+}/favorite").HandlerFunc(s.PutTypeFavorite)
 	api.Methods("POST").Path("/v1/types/{typeID:[0-9]+}/openInGame").HandlerFunc(s.PostOpenInGame)
+	api.Methods("GET").Path("/v1/user/history").HandlerFunc(s.GetUserHistory)
 	api.Methods("GET").Path("/v1/user/orders").HandlerFunc(s.GetUserOrders)
 	api.Methods("PUT").Path("/v1/user/station").HandlerFunc(s.PutUserStation)
 

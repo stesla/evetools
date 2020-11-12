@@ -39,14 +39,17 @@ evetools = (function(document, window, undefined) {
         if (path.startsWith('/groups/'))
           return 'groupDetails';
 
+        if (path.startsWith('/history'))
+          return 'history';
+
+        if (path.startsWith('/orders'))
+          return 'orders';
+
         if (path.startsWith('/search'))
           return 'search';
 
         if (path.startsWith('/types/'))
           return 'typeDetails';
-
-        if (path.startsWith('/orders'))
-          return 'orders';
 
         return 'notFound';
       },
@@ -242,6 +245,42 @@ evetools = (function(document, window, undefined) {
     }
   }
 
+  function setOrderType(o, types) {
+    let type = types[''+o.type_id]
+    o.type = type
+    return o
+  }
+
+  result.history = function() {
+    return {
+      initialize() {
+        staticData.then(data => {
+          this.data = data;
+          return retrieve('/api/v1/user/history?days=30', 'error fetching history');
+        })
+        .then(data => {
+          this.orders = {
+            buy: data.buy.map(o => setOrderType(o, this.data.types)),
+            sell: data.sell.map(o => setOrderType(o, this.data.types)),
+          };
+        });
+      },
+
+      get sections() {
+        return [
+          {
+            name: "Sell Orders",
+            orders: this.orders && this.orders.sell,
+          },
+          {
+            name: "Buy Orders",
+            orders: this.orders && this.orders.buy,
+          },
+        ];
+      }
+    }
+  }
+
   result.orders = function() {
     return {
       data: undefined,
@@ -253,14 +292,9 @@ evetools = (function(document, window, undefined) {
           return retrieve('/api/v1/user/orders', 'error fetching orders');
         })
         .then(data => {
-          f = o => {
-            let type = this.data.types[''+o.type_id];
-            o.type = type;
-            return o;
-          };
           this.orders = {
-            buy: data.buy.map(f),
-            sell: data.sell.map(f),
+            buy: data.buy.map(o => setOrderType(o, this.data.types)),
+            sell: data.sell.map(o => setOrderType(o, this.data.types)),
           };
         });
       },
@@ -268,12 +302,12 @@ evetools = (function(document, window, undefined) {
       get sections() {
         return [
           {
-            name: "Buy Orders",
-            orders: this.orders && this.orders.buy,
-          },
-          {
             name: "Sell Orders",
             orders: this.orders && this.orders.sell,
+          },
+          {
+            name: "Buy Orders",
+            orders: this.orders && this.orders.buy,
           },
         ]
       }
