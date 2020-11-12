@@ -2,17 +2,17 @@
       x-data="evetools.search()"
       x-init="initialize()">
   <form id="search" @submit="handleSearch($event)">
-    <div class="mx-auto flex w-full sm:w-4/5 max-w-screen-sm items-center rounded-md overflow-hidden border border-gray-900">
-      <input x-model="filter" class="px-4 py-2 w-full bg-gray-100 focus:outline-none"
+    <div class="mx-auto flex w-full sm:w-4/5 max-w-screen-sm items-center rounded-xl overflow-hidden border border-gray-500">
+      <input x-model="filter" class="px-4 py-4 w-full bg-gray-100 focus:outline-none"
              placeholder="Search by name...">
-      <button form="search" class="px-4 py-2 bg-blue-500 text-gray-100">
+      <button form="search" class="px-4 py-4 bg-blue-500 text-gray-100">
         Search
       </button>
     </div>
   </form>
-  <div class="mt-8 grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
+  <div class="mt-8 mx-4 grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
     <template x-for="type in marketTypes" :key="type.id">
-      <div class="mt-4 p-4 w-full h-48 flex flex-col justify-between rounded-xl shadow-xl bg-gray-100">
+      <div class="mt-4 p-4 w-full h-48 flex flex-col justify-between border border-gray-500 rounded-xl shadow-xl bg-gray-100">
         <div>
           <img class="h-12 w-12 float-right" :src="imgURL(type)">
           <h2 class="text-lg font-semibold clearfix" x-text="type.name"></h2>

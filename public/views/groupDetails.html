@@ -21,7 +21,7 @@
     <template x-for="child in children" x-ref="child.id">
       <div>
         <template x-if="child.isGroup">
-          <div class="mt-4 p-4 w-full h-40 flex flex-col justify-between rounded-xl shadow-xl bg-gray-100">
+          <div class="mt-4 p-4 w-full h-40 flex flex-col justify-between border border-gray-500 rounded-xl shadow-xl bg-gray-100">
             <div>
               <h2 class="text-lg font-semibold clearfix" x-text="child.name"></h2>
             </div>
@@ -30,7 +30,7 @@
           </div>
         </template>
         <template x-if="child.isType">
-          <div class="mt-4 p-4 w-full h-48 flex flex-col justify-between rounded-xl shadow-xl bg-gray-100">
+          <div class="mt-4 p-4 w-full h-48 flex flex-col justify-between border border-gray-500 rounded-xl shadow-xl bg-gray-100">
             <div>
               <img class="h-12 w-12 float-right" :src="imgURL(child)">
               <h2 class="text-lg font-semibold clearfix" x-text="child.name"></h2>

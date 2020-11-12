@@ -2,7 +2,7 @@
       x-data="evetools.index()"
       x-init="initialize()">
   <h1 class="mb-10 text-3xl text-center text-gray-700 font-bold">My Liquid Assets</h1>
-  <div class="w-64 mx-auto px-4 py-4 rounded-xl shadow-xl bg-gray-100">
+  <div class="w-64 mx-auto px-4 py-4 border border-gray-500 rounded-xl shadow-xl bg-gray-100">
     <dl class="">
       <div>
         <dt class="border-b border-gray-500">Wallet Balance</dt>
@@ -20,7 +20,7 @@
   </div>
 
   <h1 class="mt-10 mb-10 text-3xl text-center text-gray-700 font-bold">My Trading Station</h1>
-  <div class="w-11/12 px-4 max-w-3xl mx-auto bg-gray-100 rounded-xl shadow-xl overflow-hidden">
+  <div class="w-11/12 pl-4 max-w-3xl mx-auto bg-gray-100 border border-gray-500 rounded-xl shadow-xl overflow-hidden">
     <div class="text-center py-4" x-show="!editingStation">
       <span class="leading-none text-lg" x-text="station.name"></span>
       <button class="ml-2" @click="editingStation = true">
@@ -34,7 +34,7 @@
       <form class="flex items-center"
             @click.away="editingStation = false; stationName = ''"
             @submit="$event.preventDefault()">
-        <input class="inline-block w-full px-4 py-4 bg-gray-100 text-gray-900" type="text" id="stations" list="station-list"
+        <input class="inline-block w-full px-4 py-4 bg-gray-100 text-gray-900 focus:outline-none" type="text" id="stations" list="station-list"
                x-model="stationName" @input="fetchStations()" placeholder="Station name...">
         <button class="inline-block px-8 py-4 bg-blue-500 text-gray-300" @click="saveStation()">Save</button>
         <datalist id="station-list">
@@ -49,7 +49,7 @@
   <h1 class="mt-10 mb-10 text-3xl text-center text-gray-700 font-bold">My Favorites</h1>
   <div class="mx-4 grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
     <template x-for="type in favorites" :key="type.id">
-      <div class="mt-4 py-4 w-full flex flex-col justify-between rounded-xl shadow-xl bg-gray-100">
+      <div class="mt-4 py-4 w-full flex flex-col justify-between border border-gray-500 rounded-xl shadow-xl bg-gray-100">
         <div class="px-4">
           <img class="h-12 w-12 float-right" :src="imgURL(type)">
           <h2 class="text-lg font-semibold clearfix" x-text="type.name"></h2>
