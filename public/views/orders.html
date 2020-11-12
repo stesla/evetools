@@ -2,39 +2,36 @@
       x-data="evetools.orders()"
       x-init="initialize()">
   <h1 class="mb-10 text-3xl text-center text-gray-700 font-bold">Buy Orders</h1>
-  <div class="flex flex-col">
+  <div class="mx-4 flex flex-col">
     <div class="-my-2 sm:-mx-6 lg:-mx-8">
       <div class="py-2 align-middle inline-block min-w-full sm:px-6 lg:px-8">
-        <div class="shadow overflow-hidden border-b border-gray-200 sm:rounded-lg"
+        <div class="shadow overflow-hidden border-b border-gray-500 sm:rounded-lg"
              :class="{'border-b': orders, 'shadow': orders}">
           <template x-if="!orders">
             <p class="text-center italic text-gray-500">Loading orders...</p>
           </template>
           <template x-if="orders">
-            <table class="table-fixed min-w-full divide-y divide-gray-200">
+            <table class="table-fixed min-w-full divide-y divide-gray-500">
               <thead>
                 <tr>
-                  <th class="px-6 py-3 bg-gray-50 text-left text-xs leading-4 font-medium text-gray-500 uppercase tracking-wider">
+                  <th class="px-6 py-3 bg-gray-500 text-left text-xs leading-4 font-medium text-gray-100 uppercase tracking-wider">
                     Item
                   </th>
-                  <th class="px-6 py-3 bg-gray-50 text-left text-xs leading-4 font-medium text-gray-500 uppercase tracking-wider">
+                  <th class="px-6 py-3 bg-gray-500 text-left text-xs leading-4 font-medium text-gray-100 uppercase tracking-wider">
                     Station
                   </th>
-                  <th class="w-40 px-6 py-3 bg-gray-50 text-left text-xs leading-4 font-medium text-gray-500 uppercase tracking-wider">
+                  <th class="w-40 px-6 py-3 bg-gray-500 text-left text-xs leading-4 font-medium text-gray-100 uppercase tracking-wider">
                     Expires In
                   </th>
-                  <th class="px-6 py-3 bg-gray-50 text-left text-xs leading-4 font-medium text-gray-500 uppercase tracking-wider">
+                  <th class="px-6 py-3 bg-gray-500 text-right text-xs leading-4 font-medium text-gray-100 uppercase tracking-wider">
                     Price
                   </th>
-                  <th class="px-6 py-3 bg-gray-50 text-left text-xs leading-4 font-medium text-gray-500 uppercase tracking-wider">
-                    Remaining
+                  <th class="px-6 py-3 bg-gray-500 text-center text-xs leading-4 font-medium text-gray-100 uppercase tracking-wider">
+                    Quantity
                   </th>
-                  <th class="px-6 py-3 bg-gray-50 text-left text-xs leading-4 font-medium text-gray-500 uppercase tracking-wider">
-                    Volume
-                  </th>
-                </tr>
+                 </tr>
               </thead>
-              <tbody class="bg-white divide-y divide-gray-200">
+              <tbody class="bg-white divide-y divide-gray-500">
                 <template x-for="order in orders.buy" x-ref="order.order_id">
                   <tr>
                     <td class="px-6 py-4">
@@ -50,20 +47,19 @@
                         </div>
                       </a>
                     </td>
-                    <td class="px-6 py-4 ">
+                    <td class="px-6 py-4">
                       <div class="text-sm leading-5 text-gray-900 italic" x-text="order.station_name"></div>
                     </td>
-                    <td class="px-6 py-4 ">
+                    <td class="px-6 py-4">
                       <div class="text-sm leading-5 text-gray-900" x-text="order.time_remaining"></div>
                     </td>
-                    <td class="px-6 py-4 ">
-                      <div class="text-sm leading-5 text-gray-900 font-semibold" x-text="formatISK(order.price)"></div>
+                    <td class="px-6 py-4">
+                      <div class="text-sm text-right leading-5 text-gray-900 font-semibold" x-text="formatISK(order.price)"></div>
                     </td>
-                    <td class="px-6 py-4 ">
-                      <div class="text-sm leading-5 text-gray-900" x-text="order.volume_remain"></div>
-                    </td>
-                    <td class="px-6 py-4 ">
-                      <div class="text-sm leading-5 text-gray-900" x-text="order.volume_total"</div>
+                    <td class="px-6 py-4">
+                      <div class="text-sm leading-5 text-center text-gray-900">
+                        <span x-text="order.volume_remain"></span> / <span x-text="order.volume_total"></span>
+                      </div>
                     </td>
                   </tr>
                 </template>
@@ -75,39 +71,36 @@
     </div>
   </div>
   <h1 class="my-10 text-3xl text-center text-gray-700 font-bold">Sell Orders</h1>
-  <div class="flex flex-col">
+  <div class="mx-4 flex flex-col">
     <div class="-my-2 sm:-mx-6 lg:-mx-8">
       <div class="py-2 align-middle inline-block min-w-full sm:px-6 lg:px-8">
-        <div class="shadow overflow-hidden border-b border-gray-200 sm:rounded-lg"
+        <div class="shadow overflow-hidden border-b border-gray-500 sm:rounded-lg"
              :class="{'border-b': orders, 'shadow': orders}">
           <template x-if="!orders">
             <p class="text-center italic text-gray-500">Loading orders...</p>
           </template>
           <template x-if="orders">
-            <table class="table-fixed min-w-full divide-y divide-gray-200">
+            <table class="table-fixed min-w-full divide-y divide-gray-500">
               <thead>
                 <tr>
-                  <th class="px-6 py-3 bg-gray-50 text-left text-xs leading-4 font-medium text-gray-500 uppercase tracking-wider">
+                  <th class="px-6 py-3 bg-gray-500 text-left text-xs leading-4 font-medium text-gray-100 uppercase tracking-wider">
                     Item
                   </th>
-                  <th class="px-6 py-3 bg-gray-50 text-left text-xs leading-4 font-medium text-gray-500 uppercase tracking-wider">
+                  <th class="px-6 py-3 bg-gray-500 text-left text-xs leading-4 font-medium text-gray-100 uppercase tracking-wider">
                     Station
                   </th>
-                  <th class="w-48 px-6 py-3 bg-gray-50 text-left text-xs leading-4 font-medium text-gray-500 uppercase tracking-wider">
+                  <th class="w-48 px-6 py-3 bg-gray-500 text-left text-xs leading-4 font-medium text-gray-100 uppercase tracking-wider">
                     Expires In
                   </th>
-                  <th class="px-6 py-3 bg-gray-50 text-left text-xs leading-4 font-medium text-gray-500 uppercase tracking-wider">
+                  <th class="px-6 py-3 bg-gray-500 text-right text-xs leading-4 font-medium text-gray-100 uppercase tracking-wider">
                     Price
                   </th>
-                  <th class="px-6 py-3 bg-gray-50 text-left text-xs leading-4 font-medium text-gray-500 uppercase tracking-wider">
-                    Remaining
-                  </th>
-                  <th class="px-6 py-3 bg-gray-50 text-left text-xs leading-4 font-medium text-gray-500 uppercase tracking-wider">
-                    Volume
+                  <th class="px-6 py-3 bg-gray-500 text-center text-xs leading-4 font-medium text-gray-100 uppercase tracking-wider">
+                    Quantity
                   </th>
                 </tr>
               </thead>
-              <tbody class="bg-white divide-y divide-gray-200">
+              <tbody class="bg-white divide-y divide-gray-500">
                 <template x-for="order in orders.sell" x-ref="order.order_id">
                   <tr>
                     <td class="px-6 py-4 ">
@@ -123,20 +116,19 @@
                         </div>
                       </a>
                     </td>
-                    <td class="px-6 py-4 ">
+                    <td class="px-6 py-4">
                       <div class="text-sm leading-5 text-gray-900 italic" x-text="order.station_name"></div>
                     </td>
-                    <td class="px-6 py-4 ">
+                    <td class="px-6 py-4">
                       <div class="text-sm leading-5 text-gray-900" x-text="order.time_remaining"></div>
                     </td>
-                    <td class="px-6 py-4 ">
-                      <div class="text-sm leading-5 text-gray-900 font-semibold" x-text="formatNumber(order.price)"></div>
+                    <td class="px-6 py-4">
+                      <div class="text-sm text-right leading-5 text-gray-900 font-semibold" x-text="formatNumber(order.price)"></div>
                     </td>
-                    <td class="px-6 py-4 ">
-                      <div class="text-sm leading-5 text-gray-900" x-text="order.volume_remain"></div>
-                    </td>
-                    <td class="px-6 py-4 ">
-                      <div class="text-sm leading-5 text-gray-900" x-text="order.volume_total"</div>
+                    <td class="px-6 py-4">
+                      <div class="text-sm text-center leading-5 text-gray-900">
+                        <span x-text="order.volume_remain"></span> / <span x-text="order.volume_total"></span>
+                      </div>
                     </td>
                    </tr>
                 </template>
