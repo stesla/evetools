@@ -1,7 +1,52 @@
 <main class="mt-10 container mx-auto max-w-6xl"
       x-data="evetools.index()"
       x-init="initialize()">
-  <h1 class="mb-10 text-3xl text-center text-gray-700 font-bold">My Favorites</h1>
+  <h1 class="mb-10 text-3xl text-center text-gray-700 font-bold">My Liquid Assets</h1>
+  <div class="w-1/2 mx-auto px-4 py-4 rounded-xl shadow-xl bg-gray-100">
+    <dl class="flex justify-between">
+      <div>
+        <dt class="border-b border-gray-500">Wallet Balance</dt>
+        <dd class="font-bold" x-text="formatISK(walletBalance)"></dd>
+      </div>
+      <div>
+        <dt class="border-b border-gray-500 text-center">Buy Orders</dt>
+        <dd class="font-bold text-center" x-text="formatISK(buyTotal)"></dd>
+      </div>
+      <div>
+        <dt class="border-b border-gray-500 text-right">Sell Orders</dt>
+        <dd class="font-bold text-right" x-text="formatISK(sellTotal)"></dd>
+      </div>
+    </dl>
+  </div>
+
+  <h1 class="mt-10 mb-10 text-3xl text-center text-gray-700 font-bold">My Trading Station</h1>
+  <div class="max-w-3xl mx-auto">
+    <div class="text-center px-4 py-2 rounded-xl shadow-xl bg-gray-100"
+         x-show="!editingStation">
+      <span class="text-xl" x-text="station.name"></span>
+      <button class="ml-2" @click="editingStation = true">
+        <svg class="h-4 w-4"
+             xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+        </svg>
+      </button>
+    </div>
+    <form class="flex items-center rounded-xl shadow-xl overflow-hidden border border-gray-900"
+          @click.away="editingStation = false; stationName = ''"
+          @submit="$event.preventDefault()"
+          x-show="editingStation">
+      <input class="px-4 py-2 w-full bg-gray-100 text-gray-900" type="text" id="stations" list="station-list"
+             x-model="stationName" @input="fetchStations()" placeholder="Station name...">
+      <button class="px-8 py-2 bg-blue-500 text-gray-300" @click="saveStation()">Save</button>
+      <datalist id="station-list">
+        <template x-for="s in stationList" x-ref="s.id">
+          <option x-text="s.name"></option>
+        </template>
+      </datalist>
+    </form>
+  </div>
+
+  <h1 class="mt-10 mb-10 text-3xl text-center text-gray-700 font-bold">My Favorites</h1>
   <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
     <template x-for="type in favorites" :key="type.id">
       <div class="mt-4 py-4 w-full flex flex-col justify-between rounded-xl shadow-xl bg-gray-100">
@@ -30,31 +75,5 @@
         </div>
       </div>
     </template>
-  </div>
-  <h1 class="mt-32 mb-10 text-3xl text-center text-gray-700 font-bold">My Trading Station</h1>
-  <div class="max-w-3xl mx-auto">
-    <div class="text-center"
-         x-show="!editingStation">
-      <span class="text-xl" x-text="station.name"></span>
-      <button class="ml-2" @click="editingStation = true">
-        <svg class="h-4 w-4"
-             xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-        </svg> 
-      </button>
-    </div>
-    <form class="flex items-center rounded-md overflow-hidden border border-gray-900"
-          @click.away="editingStation = false; stationName = ''"
-          @submit="$event.preventDefault()"
-          x-show="editingStation">
-      <input class="px-4 py-2 w-full bg-gray-100 text-gray-900" type="text" id="stations" list="station-list"
-             x-model="stationName" @input="fetchStations()" placeholder="Station name...">
-      <button class="px-8 py-2 bg-blue-500 text-gray-300" @click="saveStation()">Save</button>
-      <datalist id="station-list">
-        <template x-for="s in stationList" x-ref="s.id">
-          <option x-text="s.name"></option>
-        </template>
-      </datalist>
-    </form>
   </div>
 </main>

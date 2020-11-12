@@ -172,12 +172,29 @@ evetools = (function(document, window, undefined) {
       station: { name: "" },
       stationName: "",
       stations: {},
+      walletBalance: 0,
+      buyTotal: 0,
+      sellTotal: 0,
 
       initialize() {
         currentUser
         .then(user => {
           this.user = user;
           this.station = user.station;
+          this.walletBalance = user.wallet_balance;
+        })
+        .then(() => {
+          return fetch('/api/v1/user/orders');
+        })
+        .then(resp => {
+          if (!resp.ok) {
+            throw new Error("error fetching market orders");
+          }
+          return resp.json();
+        })
+        .then(orders => {
+          this.buyTotal = orders.buy.reduce((a, o) => a + o.escrow, 0);
+          this.sellTotal = orders.sell.reduce((a, x) => a + x.volume_remaining * x.price, 0);
         });
 
         staticData
@@ -401,6 +418,10 @@ evetools = (function(document, window, undefined) {
     if (type.name.match(/(Blueprint|Formula)$/))
       imgType = 'bp';
     return 'https://images.evetech.net/types/' + type.id + '/' + imgType + '?size=128';
+  }
+
+  window.formatISK = function(amt) {
+    return amt.toLocaleString('en-US', { maximumFractionDigits: 2, minimumFractionDigits: 2 });
   }
 
   window.formatNumber = function(amt) {

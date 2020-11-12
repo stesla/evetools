@@ -4,36 +4,10 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"io"
 	"log"
 	"net/http"
-	neturl "net/url"
 	"strconv"
-	"time"
 )
-
-type contextKey int
-
-const AccessTokenKey contextKey = 1
-
-type Client struct {
-	http *http.Client
-}
-
-func NewClient(client *http.Client) *Client {
-	return &Client{
-		http: client,
-	}
-}
-
-type Date struct {
-	time.Time
-}
-
-func (d Date) MarshalJSON() ([]byte, error) {
-	str := d.Format("2006-01-02")
-	return json.Marshal(str)
-}
 
 type HistoryDay struct {
 	Date       string  `json:"date"`
@@ -44,7 +18,7 @@ type HistoryDay struct {
 	Volume     int64   `json:"volume"`
 }
 
-func (e *Client) MarketHistory(ctx context.Context, regionID, typeID int) (result []HistoryDay, err error) {
+func (c *Client) MarketHistory(ctx context.Context, regionID, typeID int) (result []HistoryDay, err error) {
 	url := fmt.Sprintf("/markets/%d/history/", regionID)
 	req, err := newESIRequest(ctx, http.MethodGet, url, nil)
 
@@ -52,7 +26,7 @@ func (e *Client) MarketHistory(ctx context.Context, regionID, typeID int) (resul
 	q.Add("type_id", strconv.Itoa(typeID))
 	req.URL.RawQuery = q.Encode()
 
-	resp, err := e.http.Do(req)
+	resp, err := c.http.Do(req)
 	if err != nil {
 		return nil, err
 	}
@@ -93,11 +67,11 @@ type MarketOrder struct {
 	TimeRemaining string `json:"time_remaining,omitempty"`
 }
 
-func (e *Client) MarketOrders(ctx context.Context, userID int) ([]*MarketOrder, error) {
+func (c *Client) MarketOrders(ctx context.Context, userID int) ([]*MarketOrder, error) {
 	url := fmt.Sprintf("/characters/%d/orders/", userID)
 	req, err := newESIRequest(ctx, http.MethodGet, url, nil)
 
-	resp, err := e.http.Do(req)
+	resp, err := c.http.Do(req)
 	if err != nil {
 		return nil, err
 	}
@@ -110,7 +84,7 @@ func (e *Client) MarketOrders(ctx context.Context, userID int) ([]*MarketOrder, 
 	return orders, err
 }
 
-func (e *Client) MarketPrices(ctx context.Context, stationID, regionID, typeID int) (*Price, error) {
+func (c *Client) MarketPrices(ctx context.Context, stationID, regionID, typeID int) (*Price, error) {
 	var buy, sell float64
 	var page = 1
 
@@ -124,7 +98,7 @@ func (e *Client) MarketPrices(ctx context.Context, stationID, regionID, typeID i
 		q.Add("page", strconv.Itoa(page))
 		req.URL.RawQuery = q.Encode()
 
-		resp, err := e.http.Do(req)
+		resp, err := c.http.Do(req)
 		if err != nil {
 			return nil, err
 		}
@@ -161,7 +135,7 @@ func (e *Client) MarketPrices(ctx context.Context, stationID, regionID, typeID i
 	return &Price{Buy: buy, Sell: sell}, nil
 }
 
-func (e *Client) OpenMarketWindow(ctx context.Context, typeID int) (err error) {
+func (c *Client) OpenMarketWindow(ctx context.Context, typeID int) (crr error) {
 	req, err := newESIRequest(ctx, http.MethodPost, "/ui/openwindow/marketdetails/", nil)
 	if err != nil {
 		return
@@ -171,28 +145,10 @@ func (e *Client) OpenMarketWindow(ctx context.Context, typeID int) (err error) {
 	q.Add("type_id", strconv.Itoa(typeID))
 	req.URL.RawQuery = q.Encode()
 
-	resp, err := e.http.Do(req)
+	resp, err := c.http.Do(req)
 	if err == nil && resp.StatusCode != http.StatusNoContent {
 		return fmt.Errorf("unexpected HTTP status: %s", resp.Status)
 	}
 	resp.Body.Close()
 	return
-}
-
-func newESIRequest(ctx context.Context, method, path string, body io.Reader) (*http.Request, error) {
-	url := "https://esi.evetech.net/latest" + path
-	req, err := http.NewRequestWithContext(ctx, method, url, body)
-	if err != nil {
-		return nil, err
-	}
-
-	q := neturl.Values{}
-	q.Add("datasource", "tranquility")
-	req.URL.RawQuery = q.Encode()
-
-	token := ctx.Value(AccessTokenKey)
-	req.Header.Add("Authorization", fmt.Sprintf("Bearer %s", token))
-	// TODO: maybe have a version variable?
-	req.Header.Add("User-Agent", "evetools 0.0.1 - github.com/stesla/evetools - Stewart Cash")
-	return req, nil
 }

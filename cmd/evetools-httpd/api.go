@@ -36,10 +36,17 @@ func (s *Server) GetCurrentUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	wallet, err := s.esi.WalletBalance(r.Context(), character.ID)
+	if err != nil {
+		apiInternalServerError(w, "WalletBalance", err)
+		return
+	}
+
 	json.NewEncoder(w).Encode(map[string]interface{}{
-		"character": character,
-		"favorites": favorites,
-		"station":   station,
+		"character":      character,
+		"favorites":      favorites,
+		"station":        station,
+		"wallet_balance": wallet,
 	})
 }
 

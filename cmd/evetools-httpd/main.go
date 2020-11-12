@@ -57,6 +57,7 @@ var oauthConfig = oauth2.Config{
 	Scopes: []string{
 		"esi-markets.read_character_orders.v1",
 		"esi-ui.open_window.v1",
+		"esi-wallet.read_character_wallet.v1",
 		"publicData",
 	},
 }
