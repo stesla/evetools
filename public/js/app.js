@@ -78,12 +78,6 @@ evetools = (function(document, window, undefined) {
 
         staticData = retrieve('/data/static.json', 'error fetching static data')
       },
-
-      handleEscape(e) {
-        if (e.key === 'Esc' || e.key === 'Escape') {
-          this.avatarMenuOpen = false;
-        }
-      }
     }
   }
 

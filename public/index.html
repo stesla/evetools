@@ -34,14 +34,13 @@
         <a href="/browse" class="mt-1 block px-2 py-1 text-white font-semibold rounded hover:bg-gray-800 lg:mt-0 lg:ml-2">Find Items</a>
         <a href="/orders" class="mt-1 block px-2 py-1 text-white font-semibold rounded hover:bg-gray-800 lg:mt-0 lg:ml-2">Market Orders</a>
         <a href="/history" class="mt-1 block px-2 py-1 text-white font-semibold rounded hover:bg-gray-800 lg:mt-0 lg:ml-2">Market Order History</a>
-        <div class="hidden lg:block lg:ml-4" class="relative" @keydown.window="handleEscape($event)">
-          <button class="p-1 flex items-center" @click="avatarMenuOpen = !avatarMenuOpen">
-          <span class="mx-2 font-semibold" x-text="user.character.name"></span>
-          <figure class="h-12 w-12 rounded-full overflow-hidden border-2 border-gray-700 focus:outline-none focus:border-gray-500">
-            <img class="h-full w-full object-cover" :src="user.avatarURL" :alt="user.character.name">
-          </figure>
+        <div class="hidden lg:block lg:ml-4" class="relative" @keydown.window.escape="avatarMenuOpen = false" @click.away="avatarMenuOpen = false">
+          <button class="p-1 flex items-center focus:outline-none" @click="avatarMenuOpen = !avatarMenuOpen">
+            <span class="mx-2 font-semibold" x-text="user.character.name"></span>
+            <figure class="h-12 w-12 rounded-full overflow-hidden border-2 border-gray-700 focus:outline-none">
+              <img class="h-full w-full object-cover" :src="user.avatarURL" :alt="user.character.name">
+            </figure>
           </button>
-          <button x-show='avatarMenuOpen' @click="avatarMenuOpen = false" tabindex="-1" class="fixed inset-0 h-full w-full bg-transparent cursor-default"></button>
           <div x-show='avatarMenuOpen' class="absolute right-0 mt-2 py-2 w-32 bg-white rounded-lg shadow-xl">
             <a class="block px-4 py-2 text-gray-900 hover:bg-blue-500 hover:text-gray-100" href="/logout">Logout</a>
           </div>
