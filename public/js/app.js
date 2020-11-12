@@ -194,7 +194,7 @@ evetools = (function(document, window, undefined) {
         })
         .then(orders => {
           this.buyTotal = orders.buy.reduce((a, o) => a + o.escrow, 0);
-          this.sellTotal = orders.sell.reduce((a, x) => a + x.volume_remaining * x.price, 0);
+          this.sellTotal = orders.sell.reduce((a, x) => a + x.volume_remain * x.price, 0);
         });
 
         staticData
