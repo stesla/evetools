@@ -4,7 +4,6 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"log"
 	"net/http"
 	"strconv"
 )
@@ -76,8 +75,6 @@ func (c *Client) MarketOrders(ctx context.Context, userID int) ([]*MarketOrder, 
 		return nil, err
 	}
 	defer resp.Body.Close()
-
-	log.Println(resp)
 
 	var orders []*MarketOrder
 	err = json.NewDecoder(resp.Body).Decode(&orders)
