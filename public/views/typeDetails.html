@@ -3,9 +3,9 @@
       x-init="initialize()">
   <div>
     <a class="text-gray-500 hover:text-gray-700 transition duration-150 ease-in-out inline-flex items-center"
-      href="#" @click="window.history.back(); $event.preventDefault();">
+       href="#" @click="window.history.back(); $event.preventDefault();">
       <svg class="arrow-left w-6 h-6"
-        xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+           xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
       </svg>
       <span class="ml-2">Return to List</span>
@@ -32,37 +32,37 @@
         <template x-if="info">
           <div>
             <div x-show="info">
-              <div class="mx-auto w-3/5">
+              <div class="mx-4">
                 <div class="flex justify-between">
                   <div>
-                    <dt>Margin</dt>
-                    <dd class="font-bold text-center" x-text="formatNumber(info.margin) + '%'"></dd>
+                    <dt class="text-left">Margin</dt>
+                    <dd class="font-bold text-left" x-text="formatNumber(info.margin) + '%'"></dd>
                   </div>
                   <div>
-                    <dt>Volume</dt>
-                    <dd class="font-bold text-center" x-text="formatNumber(info.volume)"></dd>
+                    <dt class="text-left">Volume</dt>
+                    <dd class="font-bold text-left" x-text="formatNumber(info.volume)"></dd>
                   </div>
                   <div>
-                    <dt><span x-text="system.name"></span> Buy</dt>
-                    <dd class="font-bold text-center text-red-500" x-text="formatNumber(info.buy)">
+                    <dt class="text-right"><span x-text="system.name"></span> Buy</dt>
+                    <dd class="font-bold text-right text-red-500" x-text="formatNumber(info.buy)">
                   </div>
                   <div>
-                    <dt><span x-text="system.name"></span> Sell</dt>
-                    <dd class="font-bold text-center text-green-500" x-text="formatNumber(info.sell)">
+                    <dt class="text-right"><span x-text="system.name"></span> Sell</dt>
+                    <dd class="font-bold text-right text-green-500" x-text="formatNumber(info.sell)">
                   </div>
                 </div>
                 <div class="mt-6 flex justify-between">
                   <div>
-                    <dd>Lowest</dt>
-                    <dd class="font-bold text-center" x-text="formatNumber(info.lowest)"></dd>
+                    <dd class="text-left">Lowest</dt>
+                    <dd class="font-bold text-left" x-text="formatNumber(info.lowest)"></dd>
                   </div>
                   <div>
-                    <dd>Average</dt>
+                    <dd class="text-center">Average</dt>
                     <dd class="font-bold text-center" x-text="formatNumber(info.average)"></dd>
                   </div>
                   <div>
-                    <dd>Highest</dt>
-                    <dd class="font-bold text-center" x-text="formatNumber(info.highest)"></dd>
+                    <dd class="text-right">Highest</dt>
+                    <dd class="font-bold text-right" x-text="formatNumber(info.highest)"></dd>
                   </div>
                 </div>
               </div>
