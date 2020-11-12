@@ -19,6 +19,8 @@ import (
 	"github.com/gorilla/mux"
 	"github.com/gorilla/securecookie"
 	"github.com/gorilla/sessions"
+	"github.com/gregjones/httpcache"
+	"github.com/gregjones/httpcache/diskcache"
 	"github.com/lestrrat-go/jwx/jwk"
 	"github.com/lestrrat-go/jwx/jwt"
 	"github.com/spf13/pflag"
@@ -48,6 +50,7 @@ func init() {
 	viper.SetDefault("model.database", "./evetools.sqlite3")
 	viper.SetDefault("sde.database", "./eve-sde.sqlite3")
 	viper.SetDefault("oauth.basePath", "https://login.eveonline.com")
+	viper.SetDefault("http.cache.dir", "./cache")
 
 	gob.Register(oauth2.Token{})
 	gob.Register(model.User{})
@@ -134,6 +137,9 @@ func NewServer(static http.Handler, db model.DB, sdb sde.DB) *Server {
 		static: sdb,
 	}
 	s.esi = esi.NewClient(&s.http)
+
+	cache := diskcache.New(viper.GetString("http.cache.dir"))
+	s.http.Transport = httpcache.NewTransport(cache)
 
 	s.mux.NotFoundHandler = onlyAllowGet(alwaysThisPath("/", static))
 	s.mux.PathPrefix("/css").Handler(static)
