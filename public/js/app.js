@@ -30,6 +30,9 @@ evetools = (function(document, window, undefined) {
 
         let path = window.location.pathname;
 
+        if (path === '/')
+          return 'index';
+
         if (path.startsWith('/browse'))
           return 'browse';
 
@@ -45,7 +48,7 @@ evetools = (function(document, window, undefined) {
         if (path.startsWith('/orders'))
           return 'orders';
 
-        return 'index';
+        return 'notFound';
       },
 
       initialize() {
