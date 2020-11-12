@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/gorilla/mux"
 	"github.com/stesla/evetools/esi"
@@ -139,6 +140,30 @@ func (s *Server) GetUserOrders(w http.ResponseWriter, r *http.Request) {
 	buy := []*esi.MarketOrder{}
 	sell := []*esi.MarketOrder{}
 	for _, order := range orders {
+		station, err := s.static.GetStationByID(order.LocationID)
+		if err != nil {
+			apiInternalServerError(w, "GetStationByID", err)
+			return
+		}
+		order.StationName = station.Name
+
+		issued, err := time.Parse("2006-01-02T15:04:05Z", order.Issued)
+		if err != nil {
+			apiInternalServerError(w, "time.Parse", err)
+			return
+		}
+		expires := issued.Add(time.Duration(order.Duration) * 24 * time.Hour)
+		d := time.Until(expires).Round(time.Second)
+		days := d / (24 * time.Hour)
+		d -= days * 24 * time.Hour
+		hours := d / time.Hour
+		d -= hours * time.Hour
+		minutes := d / time.Minute
+		d -= minutes * time.Minute
+		seconds := d / time.Second
+
+		order.TimeRemaining = fmt.Sprintf("%dd %dh %dm %ds", days, hours, minutes, seconds)
+
 		if order.IsBuyOrder {
 			buy = append(buy, order)
 		} else {

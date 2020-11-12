@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"log"
 	"net/http"
 	neturl "net/url"
 	"strconv"
@@ -87,6 +88,9 @@ type MarketOrder struct {
 	TypeID        int     `json:"type_id"`
 	VolumeRemain  int     `json:"volume_remain"`
 	VolumeTotal   int     `json:"volume_total"`
+
+	StationName   string `json:"station_name,omitempty"`
+	TimeRemaining string `json:"time_remaining,omitempty"`
 }
 
 func (e *Client) MarketOrders(ctx context.Context, userID int) ([]*MarketOrder, error) {
@@ -98,6 +102,8 @@ func (e *Client) MarketOrders(ctx context.Context, userID int) ([]*MarketOrder, 
 		return nil, err
 	}
 	defer resp.Body.Close()
+
+	log.Println(resp)
 
 	var orders []*MarketOrder
 	err = json.NewDecoder(resp.Body).Decode(&orders)

@@ -20,17 +20,20 @@ evetools = (function(document, window, undefined) {
 
         let path = window.location.pathname;
 
-        if (path.startsWith('/groups/'))
-          return 'groupDetails';
-
         if (path.startsWith('/browse'))
           return 'browse';
+
+        if (path.startsWith('/groups/'))
+          return 'groupDetails';
 
         if (path.startsWith('/search'))
           return 'search';
 
         if (path.startsWith('/types/'))
           return 'typeDetails';
+
+        if (path.startsWith('/orders'))
+          return 'orders';
 
         return 'index';
       },
@@ -236,6 +239,37 @@ evetools = (function(document, window, undefined) {
           this.station = station;
           this.stationName = "";
           this.editingStation = false;
+        });
+      },
+    }
+  }
+
+  result.orders = function() {
+    return {
+      data: undefined,
+      orders: undefined,
+
+      initialize() {
+        staticData.then(data => {
+          this.data = data;
+          return fetch('/api/v1/user/orders')
+        })
+        .then(resp => {
+          if (!resp.ok) {
+            throw new Error('error fetching orders');
+          }
+          return resp.json();
+        })
+        .then(data => {
+          f = o => {
+            let type = this.data.types[''+o.type_id];
+            o.type = type;
+            return o;
+          };
+          this.orders = {
+            buy: data.buy.map(f),
+            sell: data.sell.map(f),
+          };
         });
       },
     }
