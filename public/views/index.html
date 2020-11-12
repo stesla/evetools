@@ -2,27 +2,27 @@
       x-data="evetools.index()"
       x-init="initialize()">
   <h1 class="mb-10 text-3xl text-center text-gray-700 font-bold">My Liquid Assets</h1>
-  <div class="w-1/2 mx-auto px-4 py-4 rounded-xl shadow-xl bg-gray-100">
-    <dl class="flex justify-between">
+  <div class="w-64 mx-auto px-4 py-4 rounded-xl shadow-xl bg-gray-100">
+    <dl class="">
       <div>
         <dt class="border-b border-gray-500">Wallet Balance</dt>
         <dd class="font-bold" x-text="formatISK(walletBalance)"></dd>
       </div>
-      <div>
-        <dt class="border-b border-gray-500 text-center">Buy Orders</dt>
-        <dd class="font-bold text-center" x-text="formatISK(buyTotal)"></dd>
+      <div class="mt-3">
+        <dt class="border-b border-gray-500">Buy Orders</dt>
+        <dd class="font-bold" x-text="formatISK(buyTotal)"></dd>
       </div>
-      <div>
-        <dt class="border-b border-gray-500 text-right">Sell Orders</dt>
-        <dd class="font-bold text-right" x-text="formatISK(sellTotal)"></dd>
+      <div class="mt-3">
+        <dt class="border-b border-gray-500">Sell Orders</dt>
+        <dd class="font-bold" x-text="formatISK(sellTotal)"></dd>
       </div>
     </dl>
   </div>
 
   <h1 class="mt-10 mb-10 text-3xl text-center text-gray-700 font-bold">My Trading Station</h1>
-  <div class="max-w-3xl mx-auto bg-gray-100 rounded-xl shadow-xl overflow-hidden">
+  <div class="w-11/12 px-4 max-w-3xl mx-auto bg-gray-100 rounded-xl shadow-xl overflow-hidden">
     <div class="text-center py-4" x-show="!editingStation">
-      <span class="leading-none text-xl" x-text="station.name"></span>
+      <span class="leading-none text-lg" x-text="station.name"></span>
       <button class="ml-2" @click="editingStation = true">
         <svg class="h-4 w-4"
              xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -47,7 +47,7 @@
   </div>
 
   <h1 class="mt-10 mb-10 text-3xl text-center text-gray-700 font-bold">My Favorites</h1>
-  <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
+  <div class="mx-4 grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
     <template x-for="type in favorites" :key="type.id">
       <div class="mt-4 py-4 w-full flex flex-col justify-between rounded-xl shadow-xl bg-gray-100">
         <div class="px-4">
