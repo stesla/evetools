@@ -16,6 +16,7 @@ evetools = (function(document, window, undefined) {
   result.globalState = function() {
     return {
       avatarMenuOpen: false,
+      marketMenuOpen: false,
       loggedIn: false,
       navOpen: false,
       user: {
