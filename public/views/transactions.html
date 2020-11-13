@@ -1,79 +1,48 @@
-<main class="mt-10 mb-10 container mx-auto w-full max-w-screen-xl"
+<main class="mt-10 mb-10 container mx-auto max-w-screen-md"
       x-data="evetools.transactions()"
       x-init="initialize()">
   <div>
     <h1 class="mt-10 mb-10 text-3xl text-center text-gray-700 font-bold">Market Transactions</h1>
     <div class="mx-4 flex flex-col">
-      <div class="-my-2 sm:-mx-6 lg:-mx-8">
-        <div class="py-2 align-middle inline-block min-w-full sm:px-6 lg:px-8">
-          <div class="shadow overflow-hidden border-b border-gray-500 sm:rounded-lg"
-               :class="{'border-b': txns, 'shadow': txns}">
-              <template x-if="!txns">
-                <p class="text-center italic text-gray-500">Loading transactions...</p>
-              </template>
-              <template x-if="txns">
-              <table class="table-fixed min-w-full divide-y divide-gray-500">
-                <thead>
+      <div class="py-2 align-middle inline-block w-full sm:px-6 lg:px-8">
+        <div class="shadow overflow-hidden border-b border-gray-500 rounded-lg"
+             :class="{'border-b': txns, 'shadow': txns}">
+          <template x-if="!txns">
+            <p class="text-center italic text-gray-500">Loading transactions...</p>
+          </template>
+          <template x-if="txns">
+            <table class="table-auto w-full divide-y divide-gray-500">
+              <tbody class="bg-white divide-y divide-gray-500">
+                <template x-for="txn in txns" x-ref="txn.order_id">
                   <tr>
-                    <th class="px-6 py-3 bg-gray-500 text-left text-xs leading-4 font-medium text-gray-100 uppercase tracking-wider">
-                      Item
-                    </th>
-                    <th class="px-6 py-3 bg-gray-500 text-left text-xs leading-4 font-medium text-gray-100 uppercase tracking-wider">
-                      Station
-                    </th>
-                    <th class="w-40 px-6 py-3 bg-gray-500 text-left text-xs leading-4 font-medium text-gray-100 uppercase tracking-wider">
-                      Counterparty
-                    </th>
-                    <th class="px-6 py-3 bg-gray-500 text-right text-xs leading-4 font-medium text-gray-100 uppercase tracking-wider">
-                      Type
-                    </th>
-                    <th class="px-6 py-3 bg-gray-500 text-right text-xs leading-4 font-medium text-gray-100 uppercase tracking-wider">
-                      Price
-                    </th>
-                    <th class="px-6 py-3 bg-gray-500 text-center text-xs leading-4 font-medium text-gray-100 uppercase tracking-wider">
-                      Quantity
-                    </th>
-                   </tr>
-                </thead>
-                <tbody class="bg-white divide-y divide-gray-500">
-                  <template x-for="txn in txns" x-ref="txn.transaction_id">
-                    <tr>
-                      <td class="px-6 py-4">
+                    <td class="overflow-hidden px-6 py-4 flex items-center">
+                      <div class="flex-shrink-0 h-10 w-10">
+                        <img class="h-10 w-10" :src="imgURL(txn.type)" alt="">
+                      </div>
+                      <div>
                         <a :href="hrefType(txn.type_id)">
-                          <div class="flex items-center">
-                            <div class="flex-shrink-0 h-10 w-10">
-                              <img class="h-10 w-10" :src="imgURL(txn.type)" alt="">
-                            </div>
-                            <div class="ml-4">
-                              <div class="text-sm leading-5 font-medium text-gray-900" x-text="txn.type.name">
-                              </div>
-                            </div>
-                          </div>
+                          <div class="ml-4 text-sm leading-5 font-bold text-gray-900" x-text="txn.type.name"></div>
                         </a>
-                      </td>
-                      <td class="px-6 py-4">
-                        <div class="text-sm leading-5 text-gray-900 italic" x-text="txn.station_name"></div>
-                      </td>
-                      <td class="px-6 py-4">
-                        <div class="text-sm leading-5 text-gray-900" x-text="txn.client_name"></div>
-                      </td>
-                      <td class="px-6 py-4">
-                        <div class="text-sm leading-5 text-center text-gray-900" x-text="txn.is_buy ? 'Buy' : 'Sell'"></div>
-                      </td>
-                      <td class="px-6 py-4">
-                        <div class="text-sm text-right leading-5 text-gray-900 font-bold"
-                             :class="{'text-green-500': !txn.is_buy, 'text-red-500': txn.is_buy}"
-                             x-text="formatISK(txn.unit_price)"></div>
-                      </td>
-                     <td class="px-6 py-4">
-                        <div class="text-sm leading-5 text-center text-gray-900" x-text="txn.quantity"></div>
-                      </td>
-                    </tr>
-                  </template>
-                </tbody>
-              </table>
-            </template>
-          </div>
+                        <div class="ml-4 text-sm leading-5 text-gray-900 italic" x-text="txn.station_name"></div>
+                        <div class="ml-4 text-xs">
+                          <span x-text="txn.is_buy ? 'Bought from' : 'Sold to'"></span>
+                          <span x-text="txn.client_name"</span>
+                        </div>
+                      </div>
+                    </td>
+                    <td class="w-40 px-6 py-4 text-right">
+                      <span class="ml-2 font-bold"
+                            :class="{'text-green-500': !txn.is_buy, 'text-red-500': txn.is_buy}"
+                            x-text="formatISK(txn.unit_price)"></span>
+                    </td>
+                    <td class="w-40 px-6 py-4">
+                      <div class="text-sm leading-5 text-right text-gray-900" x-text="txn.quantity"></div>
+                    </td>
+                  </tr>
+                </template>
+              </tbody>
+            </table>
+          </template>
         </div>
       </div>
     </div>
