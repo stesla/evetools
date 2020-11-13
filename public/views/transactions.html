@@ -31,12 +31,13 @@
                       </div>
                     </td>
                     <td class="w-40 px-6 py-4 text-right">
-                      <span class="ml-2 font-bold"
+                      <div class="ml-2 font-bold"
                             :class="{'text-green-500': !txn.is_buy, 'text-red-500': txn.is_buy}"
-                            x-text="formatISK(txn.unit_price)"></span>
-                    </td>
-                    <td class="w-40 px-6 py-4">
-                      <div class="text-sm leading-5 text-right text-gray-900" x-text="txn.quantity"></div>
+                            x-text="formatISK(txn.unit_price)"></div>
+                      <div class="flex flex-row-reverse items-center text-sm leading-5 text-right text-gray-900">
+                        <span class="ml-2" x-text="txn.quantity"></span>
+                        <span>Quantity:</span>
+                      </div>
                     </td>
                   </tr>
                 </template>
