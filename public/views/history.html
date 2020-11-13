@@ -1,74 +1,46 @@
-<main class="mt-10 mb-10 container mx-auto w-full max-w-screen-xl"
+<main class="mt-10 mb-10 container mx-auto max-w-screen-md"
       x-data="evetools.history()"
       x-init="initialize()">
   <template x-for="s in sections">
     <div>
       <h1 class="mt-10 mb-10 text-3xl text-center text-gray-700 font-bold" x-text="s.name"></h1>
       <div class="mx-4 flex flex-col">
-        <div class="-my-2 sm:-mx-6 lg:-mx-8">
-          <div class="py-2 align-middle inline-block min-w-full sm:px-6 lg:px-8">
-            <div class="shadow overflow-hidden border-b border-gray-500 sm:rounded-lg"
-                 :class="{'border-b': s.orders, 'shadow': s.orders}">
-              <template x-if="!s.orders">
-                <p class="text-center italic text-gray-500">Loading orders...</p>
-              </template>
-              <template x-if="s.orders">
-                <table class="table-fixed min-w-full divide-y divide-gray-500">
-                  <thead>
+        <div class="py-2 align-middle inline-block w-full sm:px-6 lg:px-8">
+          <div class="shadow overflow-hidden border-b border-gray-500 rounded-lg"
+               :class="{'border-b': s.orders, 'shadow': s.orders}">
+            <template x-if="!s.orders">
+              <p class="text-center italic text-gray-500">Loading orders...</p>
+            </template>
+            <template x-if="s.orders">
+              <table class="table-auto w-full divide-y divide-gray-500">
+                <tbody class="bg-white divide-y divide-gray-500">
+                  <template x-for="order in s.orders" x-ref="order.order_id">
                     <tr>
-                      <th class="px-6 py-3 bg-gray-500 text-left text-xs leading-4 font-medium text-gray-100 uppercase tracking-wider">
-                        Item
-                      </th>
-                      <th class="px-6 py-3 bg-gray-500 text-left text-xs leading-4 font-medium text-gray-100 uppercase tracking-wider">
-                        Station
-                      </th>
-                      <th class="px-6 py-3 bg-gray-500 text-right text-xs leading-4 font-medium text-gray-100 uppercase tracking-wider">
-                        Price
-                      </th>
-                      <th class="px-6 py-3 bg-gray-500 text-center text-xs leading-4 font-medium text-gray-100 uppercase tracking-wider">
-                        State
-                      </th>
-                      <th class="px-6 py-3 bg-gray-500 text-center text-xs leading-4 font-medium text-gray-100 uppercase tracking-wider">
-                        Quantity
-                      </th>
-                     </tr>
-                  </thead>
-                  <tbody class="bg-white divide-y divide-gray-500">
-                    <template x-for="order in s.orders" x-ref="order.order_id">
-                      <tr>
-                        <td class="px-6 py-4">
+                      <td class="overflow-hidden px-6 py-4 flex items-center">
+                        <div class="flex-shrink-0 h-10 w-10">
+                          <img class="h-10 w-10" :src="imgURL(order.type)" alt="">
+                        </div>
+                        <div>
                           <a :href="hrefType(order.type_id)">
-                            <div class="flex items-center">
-                              <div class="flex-shrink-0 h-10 w-10">
-                                <img class="h-10 w-10" :src="imgURL(order.type)" alt="">
-                              </div>
-                              <div class="ml-4">
-                                <div class="text-sm leading-5 font-medium text-gray-900" x-text="order.type.name">
-                                </div>
-                              </div>
-                            </div>
+                            <div class="ml-4 text-sm leading-5 font-bold text-gray-900" x-text="order.type.name"></div>
                           </a>
-                        </td>
-                        <td class="px-6 py-4">
-                          <div class="text-sm leading-5 text-gray-900 italic" x-text="order.station_name"></div>
-                        </td>
-                        <td class="px-6 py-4">
-                          <div class="text-sm text-right leading-5 text-gray-900 font-semibold" x-text="formatISK(order.price)"></div>
-                        </td>
-                        <td class="px-6 py-4">
-                          <div class="text-sm leading-5 text-center text-gray-900 capitalize" x-text="order.state"></div>
-                        </td>
-                        <td class="px-6 py-4">
-                          <div class="text-sm leading-5 text-center text-gray-900">
-                            <span x-text="order.volume_remain"></span> / <span x-text="order.volume_total"></span>
-                          </div>
-                        </td>
-                      </tr>
-                    </template>
-                  </tbody>
-                </table>
-              </template>
-            </div>
+                          <div class="ml-4 text-sm leading-5 text-gray-900 italic" x-text="order.station_name"></div>
+                          <div class="ml-4 text-xs capitalize" x-text="order.state"></div>
+                        </div>
+                      </td>
+                      <td class="w-40 px-6 py-4 text-right">
+                        <span class="ml-2 font-bold" x-text="formatISK(order.price)"></span>
+                      </td>
+                      <td class="w-40 px-6 py-4">
+                        <div class="text-sm leading-5 text-right text-gray-900">
+                          <span x-text="order.volume_remain"></span>/<span x-text="order.volume_total"></span>
+                        </div>
+                      </td>
+                    </tr>
+                  </template>
+                </tbody>
+              </table>
+            </template>
           </div>
         </div>
       </div>
