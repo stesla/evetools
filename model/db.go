@@ -8,7 +8,7 @@ import (
 )
 
 type DB interface {
-	FavoriteTypes(userID int) ([]int, error)
+	GetFavoriteTypes(userID int) ([]int, error)
 	FindOrCreateUserForCharacter(characterID int, characterName, owner string) (*User, error)
 	GetCharacter(int) (*Character, error)
 	IsFavorite(userID, typeID int) (bool, error)
@@ -30,7 +30,7 @@ func Initialize(dbfilename string) (DB, error) {
 	return &databaseModel{db: db}, nil
 }
 
-func (m *databaseModel) FavoriteTypes(userID int) ([]int, error) {
+func (m *databaseModel) GetFavoriteTypes(userID int) ([]int, error) {
 	const query = "SELECT typeID FROM favorites WHERE userID = ?"
 	rows, err := m.db.Query(query, userID)
 	if err != nil {

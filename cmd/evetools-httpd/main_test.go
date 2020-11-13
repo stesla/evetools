@@ -263,7 +263,7 @@ func (*testDB) IsFavorite(int, int) (bool, error) {
 	return false, ErrNotImplemented
 }
 
-func (*testDB) FavoriteTypes(int) ([]int, error) {
+func (*testDB) GetFavoriteTypes(int) ([]int, error) {
 	return []int{587, 10244, 11198, 603}, nil
 }
 

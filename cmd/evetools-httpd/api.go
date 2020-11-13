@@ -31,7 +31,7 @@ func (s *Server) GetCurrentUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	favorites, err := s.db.FavoriteTypes(user.ID)
+	favorites, err := s.db.GetFavoriteTypes(user.ID)
 	if err != nil {
 		apiInternalServerError(w, "FavoriteTypes", err)
 		return
