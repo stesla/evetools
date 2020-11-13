@@ -98,15 +98,17 @@ func (s *Server) GetTypeID(w http.ResponseWriter, r *http.Request) {
 	var volume int64
 	var lowest, average, highest float64
 	for _, day := range history {
-		lowest += day.Lowest
+		if lowest == 0 || lowest > day.Lowest {
+			lowest = day.Lowest
+		}
+		if day.Highest > highest {
+			highest = day.Highest
+		}
 		average += day.Average
-		highest += day.Highest
 		volume += day.Volume
 	}
 	if l := len(history); l > 0 {
-		lowest /= float64(l)
 		average /= float64(l)
-		highest /= float64(l)
 		volume /= int64(l)
 	}
 
