@@ -246,6 +246,10 @@ evetools = (function(document, window, undefined) {
     return o
   }
 
+  function byTypeName(a, b) {
+    return a.type.name < b.type.name ? -1 : 1;
+  }
+
   result.history = function() {
     return {
       initialize() {
@@ -265,11 +269,11 @@ evetools = (function(document, window, undefined) {
         return [
           {
             name: "Sell Orders",
-            orders: this.orders && this.orders.sell,
+            orders: this.orders && this.orders.sell.sort(byTypeName)
           },
           {
             name: "Buy Orders",
-            orders: this.orders && this.orders.buy,
+            orders: this.orders && this.orders.buy.sort(byTypeName)
           },
         ];
       }
@@ -295,14 +299,14 @@ evetools = (function(document, window, undefined) {
       },
 
       get sections() {
-        return [
+         return [
           {
             name: "Sell Orders",
-            orders: this.orders && this.orders.sell,
+            orders: this.orders && this.orders.sell.sort(byTypeName),
           },
           {
-            name: "Buy Orders",
-            orders: this.orders && this.orders.buy,
+           name: "Buy Orders",
+            orders: this.orders && this.orders.buy.sort(byTypeName),
           },
         ]
       }
