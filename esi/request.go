@@ -35,7 +35,9 @@ func newESIRequest(ctx context.Context, method, path string, body io.Reader) (*h
 	req.URL.RawQuery = q.Encode()
 
 	token := ctx.Value(AccessTokenKey)
-	req.Header.Add("Authorization", fmt.Sprintf("Bearer %s", token))
+	if token != nil {
+		req.Header.Add("Authorization", fmt.Sprintf("Bearer %s", token))
+	}
 	// TODO: maybe have a version variable?
 	req.Header.Add("User-Agent", "evetools 0.0.1 - github.com/stesla/evetools - Stewart Cash")
 	return req, nil

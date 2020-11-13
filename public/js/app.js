@@ -49,6 +49,9 @@ evetools = (function(document, window, undefined) {
         if (path.startsWith('/search'))
           return 'search';
 
+        if (path.startsWith('/transactions'))
+          return 'transactions';
+
         if (path.startsWith('/types/'))
           return 'typeDetails';
 
@@ -240,7 +243,7 @@ evetools = (function(document, window, undefined) {
     }
   }
 
-  function setOrderType(o, types) {
+  function setTypeFromID(o, types) {
     let type = types[''+o.type_id]
     o.type = type
     return o
@@ -259,8 +262,8 @@ evetools = (function(document, window, undefined) {
         })
         .then(data => {
           this.orders = {
-            buy: data.buy.map(o => setOrderType(o, this.data.types)),
-            sell: data.sell.map(o => setOrderType(o, this.data.types)),
+            buy: data.buy.map(o => setTypeFromID(o, this.data.types)),
+            sell: data.sell.map(o => setTypeFromID(o, this.data.types)),
           };
         });
       },
@@ -292,8 +295,8 @@ evetools = (function(document, window, undefined) {
         })
         .then(data => {
           this.orders = {
-            buy: data.buy.map(o => setOrderType(o, this.data.types)),
-            sell: data.sell.map(o => setOrderType(o, this.data.types)),
+            buy: data.buy.map(o => setTypeFromID(o, this.data.types)),
+            sell: data.sell.map(o => setTypeFromID(o, this.data.types)),
           };
         });
       },
@@ -338,6 +341,23 @@ evetools = (function(document, window, undefined) {
         })
         .then(() => {
           if (this.filter) this.fetchData();
+        });
+      },
+    }
+  }
+
+  result.transactions = function() {
+    return {
+      data: undefined,
+      txns: undefined,
+
+      initialize() {
+        staticData.then(data => {
+          this.data = data
+          return  retrieve('/api/v1/user/transactions', 'error fetching wallet transactions')
+        })
+        .then(txns => {
+          this.txns = txns.map(t => setTypeFromID(t, this.data.types));
         });
       },
     }

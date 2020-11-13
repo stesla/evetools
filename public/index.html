@@ -13,8 +13,7 @@
 </head>
 <body class="bg-gray-300 text-gray-900"
       x-data="evetools.globalState()"
-      x-init="initialize()"
-      x-cloak>
+      x-init="initialize()">
 
   <header class="lg:px-4 lg:py-2 lg:flex lg:items-center lg:justify-between lg:h-16 bg-gray-900 text-gray-300">
     <div class="flex items-center justify-between px-4 py-3 lg:p-0">
@@ -32,7 +31,7 @@
       <div class="px-2 py-2 lg:flex lg:items-center lg:p-0">
         <a href="/" class="block px-2 py-1 text-gray-100 font-semibold rounded hover:bg-gray-800">Home</a>
         <a href="/browse" class="mt-1 block px-2 py-1 text-gray-100 font-semibold rounded hover:bg-gray-800 lg:mt-0 lg:ml-2">Find Items</a>
-
+        <a href="/transactions" class="mt-1 block px-2 py-1 text-gray-100 font-semibold rounded hover:bg-gray-800 lg:mt-0 lg:ml-2">Wallet Transactions</a>
         <!-- BEGIN market menu -->
         <div class="mt-2 border-t border-gray-800 lg:hidden">
           <dd class="mt-1 px-2 py-1 block text-gray-500 font-semibold rounded">Market</dd>
@@ -45,7 +44,7 @@
           <button class="px-1 py-4 focus:outline-none font-semibold" @click="marketMenuOpen = !marketMenuOpen">
             Market
           </button>
-          <div x-show='marketMenuOpen' class="absolute right-0 mt-2 py-2 w-40 bg-white rounded-lg shadow-xl">
+          <div x-cloak x-show='marketMenuOpen' class="absolute right-0 mt-2 py-2 w-40 bg-white rounded-lg shadow-xl">
             <a href="/orders" class="block px-4 py-2 text-gray-900 hover:bg-blue-500 hover:text-gray-100">Current Orders</a>
             <a href="/history" class="block px-4 py-2 text-gray-900 hover:bg-blue-500 hover:text-gray-100">Order History</a>
           </div>
@@ -60,7 +59,7 @@
               <img class="h-full w-full object-cover" :src="user.avatarURL" :alt="user.character.name">
             </figure>
           </button>
-          <div x-show='avatarMenuOpen' class="absolute right-0 mt-2 py-2 w-32 bg-white rounded-lg shadow-xl">
+          <div x-cloak x-show='avatarMenuOpen' class="absolute right-0 mt-2 py-2 w-32 bg-white rounded-lg shadow-xl">
             <a class="block px-4 py-2 text-gray-900 hover:bg-blue-500 hover:text-gray-100" href="/logout">Logout</a>
           </div>
         </div>

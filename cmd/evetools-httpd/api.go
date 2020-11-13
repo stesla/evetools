@@ -3,7 +3,6 @@ package main
 import (
 	"context"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"net/http"
 	"strconv"
@@ -54,7 +53,7 @@ func (s *Server) GetCurrentUser(w http.ResponseWriter, r *http.Request) {
 func (s *Server) GetStations(w http.ResponseWriter, r *http.Request) {
 	query := strings.TrimSpace(r.FormValue("q"))
 	if len(query) < 3 {
-		apiError(w, errors.New("q must be at least three characters"), http.StatusBadRequest)
+		apiError(w, fmt.Errorf("q must be at least three characters"), http.StatusBadRequest)
 		return
 	}
 
@@ -142,6 +141,33 @@ func (s *Server) GetUserHistory(w http.ResponseWriter, r *http.Request) {
 
 func (s *Server) GetUserOrders(w http.ResponseWriter, r *http.Request) {
 	s.serveMarketOrders(w, r, s.esi.GetMarketOrders)
+}
+
+func (s *Server) GetUserTransactions(w http.ResponseWriter, r *http.Request) {
+	user := currentUser(r)
+
+	txns, err := s.esi.GetWalletTransactions(r.Context(), user.ActiveCharacterID)
+	if err != nil {
+		apiInternalServerError(w, "GetWalletTransactions", err)
+		return
+	}
+
+	for _, txn := range txns {
+		txn.ClientName, err = s.esi.GetCharacterName(txn.ClientID)
+		if err != nil {
+			apiInternalServerError(w, "GetCharacterName", err)
+			return
+		}
+
+		station, err := s.static.GetStationByID(txn.LocationID)
+		if err != nil {
+			apiInternalServerError(w, "GetStationByID", err)
+			return
+		}
+		txn.StationName = station.Name
+	}
+
+	json.NewEncoder(w).Encode(txns)
 }
 
 func (s *Server) PostOpenInGame(w http.ResponseWriter, r *http.Request) {
@@ -257,7 +283,7 @@ func (s *Server) serveMarketOrders(w http.ResponseWriter, r *http.Request, f fun
 	var days time.Duration
 	if str := r.FormValue("days"); str != "" {
 		if i, err := strconv.Atoi(str); err != nil {
-			apiError(w, errors.New("'days' must be an integer"), http.StatusBadRequest)
+			apiError(w, fmt.Errorf("'days' must be an integer"), http.StatusBadRequest)
 			return
 		} else {
 			days = time.Duration(i)

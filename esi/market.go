@@ -67,8 +67,8 @@ type MarketOrder struct {
 	TimeRemaining string `json:"time_remaining,omitempty"`
 }
 
-func (c *client) GetMarketOrders(ctx context.Context, userID int) ([]*MarketOrder, error) {
-	url := fmt.Sprintf("/characters/%d/orders/", userID)
+func (c *client) GetMarketOrders(ctx context.Context, characterID int) ([]*MarketOrder, error) {
+	url := fmt.Sprintf("/characters/%d/orders/", characterID)
 	req, err := newESIRequest(ctx, http.MethodGet, url, nil)
 
 	resp, err := c.http.Do(req)
@@ -82,8 +82,8 @@ func (c *client) GetMarketOrders(ctx context.Context, userID int) ([]*MarketOrde
 	return orders, err
 }
 
-func (c *client) GetMarketOrderHistory(ctx context.Context, userID int) ([]*MarketOrder, error) {
-	url := fmt.Sprintf("/characters/%d/orders/history/", userID)
+func (c *client) GetMarketOrderHistory(ctx context.Context, characterID int) ([]*MarketOrder, error) {
+	url := fmt.Sprintf("/characters/%d/orders/history/", characterID)
 	req, err := newESIRequest(ctx, http.MethodGet, url, nil)
 
 	resp, err := c.http.Do(req)
