@@ -88,11 +88,11 @@ evetools = (function(document, window, undefined) {
   // Views
 
   function byName(a, b) {
-    if (a.name < b.name)
-      return -1;
-    else if (a.name > b.name)
-      return 1;
-    return 0;
+    return a.name < b.name ? -1 : 1;
+  }
+
+  function byOrderID(a, b) {
+    return a.order_id < b.order_id ? -1 : 1;
   }
 
   result.browse = function() {
@@ -272,11 +272,11 @@ evetools = (function(document, window, undefined) {
         return [
           {
             name: "Sell Orders",
-            orders: this.orders && this.orders.sell.sort(byTypeName)
+            orders: this.orders && this.orders.sell.sort(byOrderID).reverse()
           },
           {
             name: "Buy Orders",
-            orders: this.orders && this.orders.buy.sort(byTypeName)
+            orders: this.orders && this.orders.buy.sort(byOrderID).reverse()
           },
         ];
       }
