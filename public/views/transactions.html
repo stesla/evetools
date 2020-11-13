@@ -34,7 +34,7 @@
                       <div class="ml-2 font-bold"
                             :class="{'text-green-500': !txn.is_buy, 'text-red-500': txn.is_buy}"
                             x-text="formatISK(txn.unit_price)"></div>
-                      <div class="flex flex-row-reverse items-center text-sm leading-5 text-right text-gray-900">
+                      <div class="flex flex-row-reverse items-center text-xs leading-5 text-right text-gray-900">
                         <span class="ml-2" x-text="txn.quantity"></span>
                         <span>Quantity:</span>
                       </div>

@@ -30,10 +30,11 @@
                       </td>
                       <td class="w-40 px-6 py-4 text-right">
                         <span class="ml-2 font-bold" x-text="formatISK(order.price)"></span>
-                      </td>
-                      <td class="w-40 px-6 py-4">
-                        <div class="text-sm leading-5 text-right text-gray-900">
-                          <span x-text="order.volume_remain"></span>/<span x-text="order.volume_total"></span>
+                        <div class="flex flex-row-reverse items-center text-xs">
+                          <div class="ml-2">
+                            <span x-text="order.volume_remain"></span>/<span x-text="order.volume_total"></span>
+                          </div>
+                          <span>Volume:</span>
                         </div>
                       </td>
                     </tr>
