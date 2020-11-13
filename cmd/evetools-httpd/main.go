@@ -124,7 +124,7 @@ func initOAuthConfig() error {
 
 type Server struct {
 	http   http.Client
-	esi    *esi.Client
+	esi    esi.Client
 	mux    *mux.Router
 	db     model.DB
 	static sde.DB

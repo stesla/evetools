@@ -14,16 +14,6 @@ type contextKey int
 
 const AccessTokenKey contextKey = 1
 
-type Client struct {
-	http *http.Client
-}
-
-func NewClient(client *http.Client) *Client {
-	return &Client{
-		http: client,
-	}
-}
-
 type Date struct {
 	time.Time
 }

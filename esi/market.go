@@ -17,7 +17,7 @@ type HistoryDay struct {
 	Volume     int64   `json:"volume"`
 }
 
-func (c *Client) GetPriceHistory(ctx context.Context, regionID, typeID int) (result []HistoryDay, err error) {
+func (c *client) GetPriceHistory(ctx context.Context, regionID, typeID int) (result []HistoryDay, err error) {
 	url := fmt.Sprintf("/markets/%d/history/", regionID)
 	req, err := newESIRequest(ctx, http.MethodGet, url, nil)
 
@@ -67,7 +67,7 @@ type MarketOrder struct {
 	TimeRemaining string `json:"time_remaining,omitempty"`
 }
 
-func (c *Client) GetMarketOrders(ctx context.Context, userID int) ([]*MarketOrder, error) {
+func (c *client) GetMarketOrders(ctx context.Context, userID int) ([]*MarketOrder, error) {
 	url := fmt.Sprintf("/characters/%d/orders/", userID)
 	req, err := newESIRequest(ctx, http.MethodGet, url, nil)
 
@@ -82,7 +82,7 @@ func (c *Client) GetMarketOrders(ctx context.Context, userID int) ([]*MarketOrde
 	return orders, err
 }
 
-func (c *Client) GetMarketOrderHistory(ctx context.Context, userID int) ([]*MarketOrder, error) {
+func (c *client) GetMarketOrderHistory(ctx context.Context, userID int) ([]*MarketOrder, error) {
 	url := fmt.Sprintf("/characters/%d/orders/history/", userID)
 	req, err := newESIRequest(ctx, http.MethodGet, url, nil)
 
@@ -97,7 +97,7 @@ func (c *Client) GetMarketOrderHistory(ctx context.Context, userID int) ([]*Mark
 	return orders, err
 }
 
-func (c *Client) GetMarketPrices(ctx context.Context, stationID, regionID, typeID int) (*Price, error) {
+func (c *client) GetMarketPrices(ctx context.Context, stationID, regionID, typeID int) (*Price, error) {
 	var buy, sell float64
 	var page = 1
 
@@ -148,7 +148,7 @@ func (c *Client) GetMarketPrices(ctx context.Context, stationID, regionID, typeI
 	return &Price{Buy: buy, Sell: sell}, nil
 }
 
-func (c *Client) OpenMarketWindow(ctx context.Context, typeID int) (crr error) {
+func (c *client) OpenMarketWindow(ctx context.Context, typeID int) (crr error) {
 	req, err := newESIRequest(ctx, http.MethodPost, "/ui/openwindow/marketdetails/", nil)
 	if err != nil {
 		return

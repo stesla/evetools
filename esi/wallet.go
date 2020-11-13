@@ -7,7 +7,7 @@ import (
 	"net/http"
 )
 
-func (c *Client) GetWalletBalance(ctx context.Context, userID int) (balance float64, err error) {
+func (c *client) GetWalletBalance(ctx context.Context, userID int) (balance float64, err error) {
 	url := fmt.Sprintf("/characters/%d/wallet/", userID)
 	req, err := newESIRequest(ctx, http.MethodGet, url, nil)
 	if err != nil {
