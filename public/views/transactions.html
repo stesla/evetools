@@ -15,7 +15,7 @@
               <tbody class="bg-white divide-y divide-gray-500">
                 <template x-for="txn in txns" x-ref="txn.order_id">
                   <tr>
-                    <td class="overflow-hidden px-6 py-4 flex items-center">
+                    <td class="px-4 py-4 flex items-center">
                       <div class="flex-shrink-0 h-10 w-10">
                         <img class="h-10 w-10" :src="imgURL(txn.type)" alt="">
                       </div>
@@ -30,7 +30,7 @@
                         </div>
                       </div>
                     </td>
-                    <td class="w-40 px-6 py-4 text-right">
+                    <td class="w-40 px-4 py-4 text-right">
                       <div class="ml-2 font-bold"
                             :class="{'text-green-500': !txn.is_buy, 'text-red-500': txn.is_buy}"
                             x-text="formatISK(txn.unit_price)"></div>

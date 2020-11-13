@@ -16,7 +16,7 @@
                 <tbody class="bg-white divide-y divide-gray-500">
                   <template x-for="order in s.orders" x-ref="order.order_id">
                     <tr>
-                      <td class="px-6 py-4 flex items-center">
+                      <td class="px-4 py-4 flex items-center">
                         <div class="flex-shrink-0 h-10 w-10">
                           <img class="h-10 w-10" :src="imgURL(order.type)" alt="">
                         </div>
@@ -28,7 +28,7 @@
                           <div class="ml-4 text-xs" x-text="order.time_remaining"></div>
                         </div>
                       </td>
-                      <td class="w-40 px-6 py-4 text-right">
+                      <td class="w-40 px-4 py-4 text-right">
                         <span class="ml-2 font-bold" x-text="formatISK(order.price)"></span>
                         <div class="flex flex-row-reverse items-center text-xs">
                           <div class="ml-2">
