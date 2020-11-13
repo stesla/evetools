@@ -37,7 +37,7 @@ func (s *Server) GetCurrentUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	wallet, err := s.esi.WalletBalance(r.Context(), character.ID)
+	wallet, err := s.esi.GetWalletBalance(r.Context(), character.ID)
 	if err != nil {
 		apiInternalServerError(w, "WalletBalance", err)
 		return
@@ -84,13 +84,13 @@ func (s *Server) GetTypeID(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	price, err := s.esi.MarketPrices(r.Context(), station.ID, station.Region.ID, id)
+	price, err := s.esi.GetMarketPrices(r.Context(), station.ID, station.Region.ID, id)
 	if err != nil {
 		apiInternalServerError(w, "JitaPrices", err)
 		return
 	}
 
-	history, err := s.esi.MarketHistory(r.Context(), station.Region.ID, id)
+	history, err := s.esi.GetPriceHistory(r.Context(), station.Region.ID, id)
 	if err != nil {
 		apiInternalServerError(w, "JitaHistory", err)
 		return
@@ -137,11 +137,11 @@ func (s *Server) GetTypeSearch(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *Server) GetUserHistory(w http.ResponseWriter, r *http.Request) {
-	s.serveMarketOrders(w, r, s.esi.MarketOrderHistory)
+	s.serveMarketOrders(w, r, s.esi.GetMarketOrderHistory)
 }
 
 func (s *Server) GetUserOrders(w http.ResponseWriter, r *http.Request) {
-	s.serveMarketOrders(w, r, s.esi.MarketOrders)
+	s.serveMarketOrders(w, r, s.esi.GetMarketOrders)
 }
 
 func (s *Server) PostOpenInGame(w http.ResponseWriter, r *http.Request) {

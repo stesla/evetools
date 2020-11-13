@@ -17,7 +17,7 @@ type HistoryDay struct {
 	Volume     int64   `json:"volume"`
 }
 
-func (c *Client) MarketHistory(ctx context.Context, regionID, typeID int) (result []HistoryDay, err error) {
+func (c *Client) GetPriceHistory(ctx context.Context, regionID, typeID int) (result []HistoryDay, err error) {
 	url := fmt.Sprintf("/markets/%d/history/", regionID)
 	req, err := newESIRequest(ctx, http.MethodGet, url, nil)
 
@@ -67,7 +67,7 @@ type MarketOrder struct {
 	TimeRemaining string `json:"time_remaining,omitempty"`
 }
 
-func (c *Client) MarketOrders(ctx context.Context, userID int) ([]*MarketOrder, error) {
+func (c *Client) GetMarketOrders(ctx context.Context, userID int) ([]*MarketOrder, error) {
 	url := fmt.Sprintf("/characters/%d/orders/", userID)
 	req, err := newESIRequest(ctx, http.MethodGet, url, nil)
 
@@ -82,7 +82,7 @@ func (c *Client) MarketOrders(ctx context.Context, userID int) ([]*MarketOrder, 
 	return orders, err
 }
 
-func (c *Client) MarketOrderHistory(ctx context.Context, userID int) ([]*MarketOrder, error) {
+func (c *Client) GetMarketOrderHistory(ctx context.Context, userID int) ([]*MarketOrder, error) {
 	url := fmt.Sprintf("/characters/%d/orders/history/", userID)
 	req, err := newESIRequest(ctx, http.MethodGet, url, nil)
 
@@ -97,7 +97,7 @@ func (c *Client) MarketOrderHistory(ctx context.Context, userID int) ([]*MarketO
 	return orders, err
 }
 
-func (c *Client) MarketPrices(ctx context.Context, stationID, regionID, typeID int) (*Price, error) {
+func (c *Client) GetMarketPrices(ctx context.Context, stationID, regionID, typeID int) (*Price, error) {
 	var buy, sell float64
 	var page = 1
 
