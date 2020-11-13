@@ -15,41 +15,6 @@ import (
 	"github.com/stesla/evetools/sde"
 )
 
-func (s *Server) GetCurrentUser(w http.ResponseWriter, r *http.Request) {
-	user := currentUser(r)
-
-	character, err := s.db.GetCharacter(user.ActiveCharacterID)
-	if err != nil {
-		apiInternalServerError(w, "GetCharacter", err)
-		return
-	}
-
-	station, err := s.static.GetStationByID(user.StationID)
-	if err != nil {
-		apiInternalServerError(w, "GetStationByID", err)
-		return
-	}
-
-	favorites, err := s.db.GetFavoriteTypes(user.ID)
-	if err != nil {
-		apiInternalServerError(w, "FavoriteTypes", err)
-		return
-	}
-
-	wallet, err := s.esi.GetWalletBalance(r.Context(), character.ID)
-	if err != nil {
-		apiInternalServerError(w, "WalletBalance", err)
-		return
-	}
-
-	json.NewEncoder(w).Encode(map[string]interface{}{
-		"character":      character,
-		"favorites":      favorites,
-		"station":        station,
-		"wallet_balance": wallet,
-	})
-}
-
 func (s *Server) GetStations(w http.ResponseWriter, r *http.Request) {
 	query := strings.TrimSpace(r.FormValue("q"))
 	if len(query) < 3 {
@@ -135,6 +100,41 @@ func (s *Server) GetTypeSearch(w http.ResponseWriter, r *http.Request) {
 	}
 
 	json.NewEncoder(w).Encode(items)
+}
+
+func (s *Server) GetUserCurrent(w http.ResponseWriter, r *http.Request) {
+	user := currentUser(r)
+
+	character, err := s.db.GetCharacter(user.ActiveCharacterID)
+	if err != nil {
+		apiInternalServerError(w, "GetCharacter", err)
+		return
+	}
+
+	station, err := s.static.GetStationByID(user.StationID)
+	if err != nil {
+		apiInternalServerError(w, "GetStationByID", err)
+		return
+	}
+
+	favorites, err := s.db.GetFavoriteTypes(user.ID)
+	if err != nil {
+		apiInternalServerError(w, "FavoriteTypes", err)
+		return
+	}
+
+	wallet, err := s.esi.GetWalletBalance(r.Context(), character.ID)
+	if err != nil {
+		apiInternalServerError(w, "WalletBalance", err)
+		return
+	}
+
+	json.NewEncoder(w).Encode(map[string]interface{}{
+		"character":      character,
+		"favorites":      favorites,
+		"station":        station,
+		"wallet_balance": wallet,
+	})
 }
 
 func (s *Server) GetUserHistory(w http.ResponseWriter, r *http.Request) {

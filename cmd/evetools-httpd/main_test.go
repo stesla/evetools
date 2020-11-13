@@ -42,7 +42,7 @@ func TestMain(m *testing.M) {
 }
 
 func TestCurrentUserUnauthenticated(t *testing.T) {
-	req, _ := http.NewRequest("GET", "/api/v1/currentUser", nil)
+	req, _ := http.NewRequest("GET", "/api/v1/user/current", nil)
 	resp := handleRequest(t, req)
 	assert.Equal(t, http.StatusUnauthorized, resp.StatusCode)
 }
@@ -173,7 +173,7 @@ func TestCurrentUserAuthenticated(t *testing.T) {
 		"name":         "Bob Awox",
 	})
 
-	req, _ := http.NewRequest("GET", "/api/v1/currentUser", nil)
+	req, _ := http.NewRequest("GET", "/api/v1/user/current", nil)
 	setSessionCookie(req, map[interface{}]interface{}{
 		"token": &oauth2.Token{
 			AccessToken:  string(compact),
