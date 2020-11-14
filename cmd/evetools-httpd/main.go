@@ -154,7 +154,6 @@ func NewServer(static http.Handler, db model.DB, sdb sde.DB) *Server {
 	api.Use(haveLoggedInUser)
 	api.Use(contentType("application/json").Middleware)
 	api.Methods("GET").Path("/v1/stations").HandlerFunc(s.GetStations)
-	api.Methods("GET").Path("/v1/types/search/{filter}").HandlerFunc(s.GetTypeSearch)
 	api.Methods("GET").Path("/v1/types/{typeID:[0-9]+}").HandlerFunc(s.GetTypeID)
 	api.Methods("PUT").Path("/v1/types/{typeID:[0-9]+}/favorite").HandlerFunc(s.PutTypeFavorite)
 	api.Methods("POST").Path("/v1/types/{typeID:[0-9]+}/openInGame").HandlerFunc(s.PostOpenInGame)

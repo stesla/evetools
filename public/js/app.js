@@ -328,14 +328,16 @@ evetools = (function(document, window, undefined) {
   result.search = function() {
     const urlParams = new URLSearchParams(window.location.search);
     return {
-      types: undefined,
       filter: urlParams.get('q'),
       marketTypes: [],
 
       fetchData() {
-        retrieve('/api/v1/types/search/' + this.filter, 'error fetching search results')
-        .then(ids => {
-          this.marketTypes = ids.map(id => this.types[''+id]);
+        sdeTypes.then(types => {
+          ids = Object.values(types).filter(t => {
+            let filter = this.filter.toLowerCase();
+            return t.name.toLowerCase().includes(filter);
+          }).map(t => t.id);
+          this.marketTypes = ids.map(id => types[''+id]);
         });
       },
 
@@ -346,12 +348,7 @@ evetools = (function(document, window, undefined) {
 
       initialize() {
         document.title += ' - Search for "' + this.filter + '"';
-        sdeTypes.then(types => {
-          this.types = types;
-        })
-        .then(() => {
-          if (this.filter) this.fetchData();
-        });
+        if (this.filter) this.fetchData();
       },
     }
   }

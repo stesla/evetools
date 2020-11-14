@@ -150,18 +150,6 @@ func (s *Server) GetTypeID(w http.ResponseWriter, r *http.Request) {
 	})
 }
 
-func (s *Server) GetTypeSearch(w http.ResponseWriter, r *http.Request) {
-	vars := mux.Vars(r)
-
-	items, err := s.static.SearchTypesByName(vars["filter"])
-	if err != nil {
-		apiInternalServerError(w, "GetMarketTypes", err)
-		return
-	}
-
-	json.NewEncoder(w).Encode(items)
-}
-
 func (s *Server) GetUserCurrent(w http.ResponseWriter, r *http.Request) {
 	user := currentUser(r)
 

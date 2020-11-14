@@ -301,8 +301,6 @@ func (*testDB) SetActiveCharacter(userID, characterID int) error     { return Er
 
 type testSDB struct{}
 
-func (*testSDB) GetMarketGroups() (map[int]*sde.MarketGroup, error)    { return nil, ErrNotImplemented }
-func (*testSDB) GetMarketTypes() (map[int]*sde.MarketType, error)      { return nil, ErrNotImplemented }
 func (*testSDB) GetStations(q string) (map[string]*sde.Station, error) { return nil, ErrNotImplemented }
 func (*testSDB) GetStationByID(stationID int) (*sde.Station, error) {
 	return &sde.Station{
@@ -312,4 +310,3 @@ func (*testSDB) GetStationByID(stationID int) (*sde.Station, error) {
 		Name:   "Planet I - Moon 2 - Fake Station",
 	}, nil
 }
-func (*testSDB) SearchTypesByName(filter string) ([]int, error) { return nil, ErrNotImplemented }
