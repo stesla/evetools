@@ -16,6 +16,7 @@ type DB interface {
 	GetCharactersForUser(int) (map[int]*Character, error)
 	IsFavorite(userID, typeID int) (bool, error)
 	RemoveUserAssociation(characterID int) error
+	SaveRefreshToken(characterID int, token string) error
 	SaveUserStation(userID, stationID int) error
 	SetActiveCharacter(userID, characterID int) error
 	SetFavorite(userID, typeID int, val bool) error
@@ -166,6 +167,7 @@ func (m *databaseModel) FindOrCreateUserForCharacter(characterID int, characterN
 		StationID:         stationID,
 	}, tx.Commit()
 }
+
 func (m *databaseModel) GetCharacter(characterID int) (*Character, error) {
 	const query = `SELECT characterName, owner, userID, refreshToken FROM characters WHERE characterID = ?`
 
@@ -202,6 +204,12 @@ func (m *databaseModel) GetCharactersForUser(userID int) (map[int]*Character, er
 func (m *databaseModel) RemoveUserAssociation(characterID int) error {
 	const query = `DELETE FROM characters WHERE characterID = ?`
 	_, err := m.db.Exec(query, characterID)
+	return err
+}
+
+func (m *databaseModel) SaveRefreshToken(characterID int, token string) error {
+	const query = `UPDATE characters SET refreshToken = ? WHERE characterID = ?`
+	_, err := m.db.Exec(query, token, characterID)
 	return err
 }
 

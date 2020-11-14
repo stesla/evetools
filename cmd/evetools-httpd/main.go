@@ -278,9 +278,8 @@ func (s *Server) LoginCallback(w http.ResponseWriter, r *http.Request) {
 			internalServerError(w, "FindOrCreateuserForCharacter", err)
 			return
 		}
-		log.Println("REFRESH:", character.Name, character.RefreshToken)
 
-		token, err := refreshToken(r.Context(), character.RefreshToken)
+		token, err = refreshToken(r.Context(), character.RefreshToken)
 		if err != nil {
 			internalServerError(w, "refreshToken", err)
 			return
@@ -289,6 +288,12 @@ func (s *Server) LoginCallback(w http.ResponseWriter, r *http.Request) {
 		session.Values["user"] = user
 		session.Values["token"] = token
 	}
+
+	if err = s.db.SaveRefreshToken(characterID, token.RefreshToken); err != nil {
+		internalServerError(w, "SaveRefreshToken", err)
+		return
+	}
+
 	if err := session.Save(r, w); err != nil {
 		internalServerError(w, "save session", err)
 		return

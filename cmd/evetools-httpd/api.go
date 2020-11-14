@@ -47,6 +47,12 @@ func (s *Server) ActivateUserCharacter(w http.ResponseWriter, r *http.Request) {
 		apiInternalServerError(w, "refreshToken", err)
 		return
 	}
+
+	if err = s.db.SaveRefreshToken(character.ID, token.RefreshToken); err != nil {
+		apiInternalServerError(w, "SaveRefreshToken", err)
+		return
+	}
+
 	session.Values["token"] = token
 
 	if err := session.Save(r, w); err != nil {

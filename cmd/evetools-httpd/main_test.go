@@ -294,9 +294,10 @@ func (*testDB) GetCharactersForUser(userID int) (map[int]*model.Character, error
 	}, nil
 }
 
-func (*testDB) RemoveUserAssociation(characterID int) error      { return ErrNotImplemented }
-func (*testDB) SaveUserStation(userID, stationID int) error      { return ErrNotImplemented }
-func (*testDB) SetActiveCharacter(userID, characterID int) error { return ErrNotImplemented }
+func (*testDB) RemoveUserAssociation(characterID int) error          { return ErrNotImplemented }
+func (*testDB) SaveRefreshToken(characterID int, token string) error { return nil }
+func (*testDB) SaveUserStation(userID, stationID int) error          { return ErrNotImplemented }
+func (*testDB) SetActiveCharacter(userID, characterID int) error     { return ErrNotImplemented }
 
 type testSDB struct{}
 
