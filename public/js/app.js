@@ -445,7 +445,7 @@ evetools = (function(document, window, undefined) {
   // Helper Functions
 
   window.avatarURL = function(id) {
-    return 'https://images.evetech.net/characters/' + id + '/portrait?size=128';
+    return id && 'https://images.evetech.net/characters/' + id + '/portrait?size=128';
   }
 
   window.hrefGroup = function(id) {
