@@ -115,6 +115,7 @@ evetools = (function(document, window, undefined) {
         staticData.then(data => {
           this.data = data
         });
+        document.title += " - Find Items"
       }
     }
   }
@@ -155,6 +156,7 @@ evetools = (function(document, window, undefined) {
           this.data = data;
           this.group = data.groups[''+this.groupID];
           this.parent = data.groups[''+this.group.parentID];
+          document.title += " - " + this.group.name;
         });
       },
     }
@@ -174,6 +176,7 @@ evetools = (function(document, window, undefined) {
       sellTotal: 0,
 
       initialize() {
+        document.title += " - Dashboard"
         currentUser
         .then(user => {
           this.user = user;
@@ -261,6 +264,7 @@ evetools = (function(document, window, undefined) {
   result.history = function() {
     return {
       initialize() {
+        document.title += ' - Market Order History'
         staticData.then(data => {
           this.data = data;
           return retrieve('/api/v1/user/history?days=30', 'error fetching history');
@@ -294,6 +298,7 @@ evetools = (function(document, window, undefined) {
       orders: undefined,
 
       initialize() {
+        document.title += ' - Market Orders'
         staticData.then(data => {
           this.data = data;
           return retrieve('/api/v1/user/orders', 'error fetching orders');
@@ -341,6 +346,7 @@ evetools = (function(document, window, undefined) {
       },
 
       initialize() {
+        document.title += ' - Search for "' + this.filter + '"';
         staticData.then(data => {
           this.data = data;
         })
@@ -357,6 +363,7 @@ evetools = (function(document, window, undefined) {
       txns: undefined,
 
       initialize() {
+        document.title += ' - Market Transactions'
         staticData.then(data => {
           this.data = data
           return  retrieve('/api/v1/user/transactions', 'error fetching wallet transactions')
@@ -429,6 +436,7 @@ evetools = (function(document, window, undefined) {
           this.data = data;
           this.type = data.types[''+this.typeID];
           this.group = data.groups[''+this.type.groupID];
+          document.title += ' - ' + this.type.name;
         });
       }
     }
