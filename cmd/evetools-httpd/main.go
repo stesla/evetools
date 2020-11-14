@@ -282,7 +282,7 @@ func (s *Server) LoginCallback(w http.ResponseWriter, r *http.Request) {
 
 		token, err := refreshToken(r.Context(), character.RefreshToken)
 		if err != nil {
-			apiInternalServerError(w, "refreshToken", err)
+			internalServerError(w, "refreshToken", err)
 			return
 		}
 
