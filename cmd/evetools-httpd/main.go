@@ -260,14 +260,35 @@ func (s *Server) LoginCallback(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	user, err := s.db.FindOrCreateUserForCharacter(characterID, characterName, ownerToken)
-	if err != nil {
-		internalServerError(w, "FindOrCreateUserForCharacter", err)
-		return
-	}
+	if user, ok := session.Values["user"].(model.User); ok {
+		if err := s.db.AssociateWithUser(user.ID, characterID, characterName, ownerToken, token.RefreshToken); err != nil {
+			internalServerError(w, "AssociateWithUser", err)
+			return
+		}
+	} else {
+		user, err := s.db.FindOrCreateUserForCharacter(characterID, characterName, ownerToken, token.RefreshToken)
+		if err != nil {
+			internalServerError(w, "FindOrCreateUserForCharacter", err)
+			return
+		}
+		character, err := s.db.GetCharacter(user.ActiveCharacterID)
+		if err != nil {
+			internalServerError(w, "FindOrCreateuserForCharacter", err)
+			return
+		}
+		log.Println("REFRESH:", character.Name, character.RefreshToken)
 
-	session.Values["user"] = user
-	session.Values["token"] = token
+		oldTok := oauth2.Token{RefreshToken: character.RefreshToken}
+		tokSrc := oauthConfig.TokenSource(r.Context(), &oldTok)
+		token, err := tokSrc.Token()
+		if err != nil {
+			internalServerError(w, "RefreshToken", err)
+			return
+		}
+
+		session.Values["user"] = user
+		session.Values["token"] = token
+	}
 	if err := session.Save(r, w); err != nil {
 		internalServerError(w, "save session", err)
 		return

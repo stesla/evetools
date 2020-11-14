@@ -3,13 +3,15 @@ package model
 import (
 	"database/sql"
 	"errors"
+	"log"
 
 	_ "github.com/mattn/go-sqlite3"
 )
 
 type DB interface {
+	AssociateWithUser(userID, characterID int, characterName, owner, refreshToken string) error
 	GetFavoriteTypes(userID int) ([]int, error)
-	FindOrCreateUserForCharacter(characterID int, characterName, owner string) (*User, error)
+	FindOrCreateUserForCharacter(characterID int, characterName, owner, refreshToken string) (*User, error)
 	GetCharacter(int) (*Character, error)
 	GetCharactersForUser(int) (map[int]*Character, error)
 	IsFavorite(userID, typeID int) (bool, error)
@@ -29,6 +31,40 @@ func Initialize(dbfilename string) (DB, error) {
 		return nil, err
 	}
 	return &databaseModel{db: db}, nil
+}
+
+func (m *databaseModel) AssociateWithUser(userID, characterID int, characterName, owner, refreshToken string) (err error) {
+	tx, err := m.db.Begin()
+	if err != nil {
+		return
+	}
+	defer func() {
+		if err != nil {
+			tx.Rollback()
+		} else {
+			err = tx.Commit()
+		}
+	}()
+
+	var uid sql.NullInt32
+	query := "SELECT userID FROM characters WHERE characterID = ? AND userID IS NOT NULL"
+	if err = tx.QueryRow(query, characterID).Scan(&uid); err == sql.ErrNoRows {
+		query = `INSERT INTO characters
+			   (userID, characterID, characterName, owner, refreshToken)
+			   VALUES (?, ?, ?, ?, ?)`
+		_, err = tx.Exec(query, userID, characterID, characterName, owner, refreshToken)
+	} else if err != nil {
+		return
+	} else if !uid.Valid {
+		query = `UPDATE characters 
+				 SET userID = ?, characterName = ?, owner = ?, refreshToken = ?
+				 WHERE characterID = ?`
+		_, err = tx.Exec(query, userID, characterName, owner, refreshToken, characterID)
+	} else if int(uid.Int32) != userID {
+		log.Println(uid.Int32, userID, characterID, characterName)
+		err = errors.New("character already associated with another user")
+	}
+	return
 }
 
 func (m *databaseModel) GetFavoriteTypes(userID int) ([]int, error) {
@@ -70,10 +106,11 @@ func (m *databaseModel) SetFavorite(userID int, typeID int, val bool) (err error
 }
 
 type Character struct {
-	ID     int    `json:"id"`
-	Name   string `json:"name"`
-	Owner  string `json:"-"`
-	UserID int    `json:"-"`
+	ID           int    `json:"id"`
+	Name         string `json:"name"`
+	Owner        string `json:"-"`
+	UserID       int    `json:"-"`
+	RefreshToken string `json:"-"`
 }
 
 type User struct {
@@ -82,13 +119,13 @@ type User struct {
 	StationID         int `json:"stationID"`
 }
 
-func (m *databaseModel) FindOrCreateUserForCharacter(characterID int, characterName, owner string) (*User, error) {
-	const getUserID = `SELECT c.userID, u.stationID
+func (m *databaseModel) FindOrCreateUserForCharacter(characterID int, characterName, owner, refreshToken string) (*User, error) {
+	const getUserID = `SELECT c.userID, u.stationID, u.activeCharacterID 
 					   FROM characters AS c JOIN users AS u ON c.userID = u.ID
 					   WHERE characterID = ? AND owner = ?`
 	const createCharacter = `INSERT INTO characters 
-							 (characterID, characterName, owner, userID)
-							 VALUES (?, ?, ?, ?)`
+							 (characterID, characterName, owner, userID, refreshToken)
+							 VALUES (?, ?, ?, ?, ?)`
 	const createUser = `INSERT INTO users (activeCharacterID) VALUES (?)`
 
 	tx, err := m.db.Begin()
@@ -98,7 +135,9 @@ func (m *databaseModel) FindOrCreateUserForCharacter(characterID int, characterN
 
 	var userID int
 	var stationID int = 60003760 // Jita IV - Moon 4 - Caldari Navy Assembly Plant
-	if err = tx.QueryRow(getUserID, characterID, owner).Scan(&userID, &stationID); err == sql.ErrNoRows {
+	var activeID int
+	if err = tx.QueryRow(getUserID, characterID, owner).Scan(&userID, &stationID, &activeID); err == sql.ErrNoRows {
+		activeID = characterID
 		var r sql.Result
 		r, err = tx.Exec(createUser, characterID)
 		if err != nil {
@@ -110,7 +149,7 @@ func (m *databaseModel) FindOrCreateUserForCharacter(characterID int, characterN
 		id, err = r.LastInsertId()
 		userID = int(id)
 
-		_, err = tx.Exec(createCharacter, characterID, characterName, owner, userID)
+		_, err = tx.Exec(createCharacter, characterID, characterName, owner, userID, refreshToken)
 		if err != nil {
 			tx.Rollback()
 			return nil, err
@@ -121,20 +160,22 @@ func (m *databaseModel) FindOrCreateUserForCharacter(characterID int, characterN
 	}
 	return &User{
 		ID:                userID,
-		ActiveCharacterID: characterID,
+		ActiveCharacterID: activeID,
 		StationID:         stationID,
 	}, tx.Commit()
 }
 func (m *databaseModel) GetCharacter(characterID int) (*Character, error) {
-	const query = `SELECT characterName, owner, userID FROM characters WHERE characterID = ?`
+	const query = `SELECT characterName, owner, userID, refreshToken FROM characters WHERE characterID = ?`
 
+	var refresh sql.NullString
 	c := &Character{ID: characterID}
-	err := m.db.QueryRow(query, characterID).Scan(&c.Name, &c.Owner, &c.UserID)
+	err := m.db.QueryRow(query, characterID).Scan(&c.Name, &c.Owner, &c.UserID, &refresh)
 	if err == sql.ErrNoRows {
 		return nil, ErrNotFound
 	} else if err != nil {
 		return nil, err
 	}
+	c.RefreshToken = refresh.String
 	return c, nil
 }
 

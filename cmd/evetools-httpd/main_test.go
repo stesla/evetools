@@ -261,19 +261,18 @@ type testDB struct{}
 
 var ErrNotImplemented = errors.New("not implemented")
 
-func (*testDB) IsFavorite(int, int) (bool, error) {
-	return false, ErrNotImplemented
+func (*testDB) AssociateWithUser(userID, characterID int, characterName, owner, refreshToken string) error {
+	return ErrNotImplemented
 }
 
 func (*testDB) GetFavoriteTypes(int) ([]int, error) {
 	return []int{587, 10244, 11198, 603}, nil
 }
 
-func (*testDB) SetFavorite(int, int, bool) error {
-	return ErrNotImplemented
-}
+func (*testDB) IsFavorite(int, int) (bool, error) { return false, ErrNotImplemented }
+func (*testDB) SetFavorite(int, int, bool) error  { return ErrNotImplemented }
 
-func (*testDB) FindOrCreateUserForCharacter(characterID int, characterName, owner string) (*model.User, error) {
+func (*testDB) FindOrCreateUserForCharacter(characterID int, characterName, owner, refreshToken string) (*model.User, error) {
 	return &model.User{
 		ID:                42,
 		ActiveCharacterID: characterID,
@@ -283,8 +282,9 @@ func (*testDB) FindOrCreateUserForCharacter(characterID int, characterName, owne
 
 func (*testDB) GetCharacter(characterID int) (*model.Character, error) {
 	return &model.Character{
-		ID:   characterID,
-		Name: "Bob Awox",
+		ID:           characterID,
+		Name:         "Bob Awox",
+		RefreshToken: "REFRESH",
 	}, nil
 }
 
