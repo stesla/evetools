@@ -15,6 +15,7 @@ type DB interface {
 	GetCharacter(int) (*Character, error)
 	GetCharactersForUser(int) (map[int]*Character, error)
 	IsFavorite(userID, typeID int) (bool, error)
+	RemoveUserAssociation(characterID int) error
 	SaveUserStation(userID, stationID int) error
 	SetFavorite(userID, typeID int, val bool) error
 }
@@ -195,6 +196,12 @@ func (m *databaseModel) GetCharactersForUser(userID int) (map[int]*Character, er
 		result[c.ID] = c
 	}
 	return result, rows.Err()
+}
+
+func (m *databaseModel) RemoveUserAssociation(characterID int) error {
+	const query = `DELETE FROM characters WHERE characterID = ?`
+	_, err := m.db.Exec(query, characterID)
+	return err
 }
 
 func (m *databaseModel) SaveUserStation(userID, stationID int) error {

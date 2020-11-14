@@ -15,6 +15,18 @@ import (
 	"github.com/stesla/evetools/sde"
 )
 
+func (s *Server) DeleteUserCharacter(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	cid, _ := strconv.Atoi(vars["cid"])
+
+	err := s.db.RemoveUserAssociation(cid)
+	if err != nil {
+		apiInternalServerError(w, "RemoveUserAssociation", err)
+		return
+	}
+	w.WriteHeader(http.StatusNoContent)
+}
+
 func (s *Server) GetStations(w http.ResponseWriter, r *http.Request) {
 	query := strings.TrimSpace(r.FormValue("q"))
 	if len(query) < 3 {

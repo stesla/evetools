@@ -473,7 +473,17 @@ evetools = (function(document, window, undefined) {
       raw: true,
       method: 'POST',
     });
-  },
+  }
+
+  window.removeCharacter = function(cid) {
+    retrieve('/api/v1/user/characters/' + cid, 'error deleting character', {
+      raw: true,
+      method: 'DELETE',
+    })
+    .then(() => {
+      location.reload(true);
+    });
+  }
 
   window.setFavorite = function(typeID, val) {
     return retrieve('/api/v1/types/'+typeID+'/favorite', 'error setting favorite', {
