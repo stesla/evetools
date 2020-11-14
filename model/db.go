@@ -56,7 +56,7 @@ func (m *databaseModel) AssociateWithUser(userID, characterID int, characterName
 	} else if err != nil {
 		return
 	} else if !uid.Valid {
-		query = `UPDATE characters 
+		query = `UPDATE characters
 				 SET userID = ?, characterName = ?, owner = ?, refreshToken = ?
 				 WHERE characterID = ?`
 		_, err = tx.Exec(query, userID, characterName, owner, refreshToken, characterID)
@@ -120,7 +120,7 @@ type User struct {
 }
 
 func (m *databaseModel) FindOrCreateUserForCharacter(characterID int, characterName, owner, refreshToken string) (*User, error) {
-	const getUserID = `SELECT c.userID, u.stationID, u.activeCharacterID 
+	const getUserID = `SELECT c.userID, u.stationID, u.activeCharacterID
 					   FROM characters AS c JOIN users AS u ON c.userID = u.ID
 					   WHERE characterID = ? AND owner = ?`
 	const createCharacter = `INSERT INTO characters 

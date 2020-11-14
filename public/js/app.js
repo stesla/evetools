@@ -61,7 +61,6 @@ evetools = (function(document, window, undefined) {
       initialize() {
         currentUser = retrieve('/api/v1/user/current', 'error fetching current user')
         .then(user => {
-          user.avatarURL = 'https://images.evetech.net/characters/' + user.active_character + '/portrait?size=128';
           user.character = user.characters[user.active_character];
           this.user = user;
           this.loggedIn = true;
@@ -164,6 +163,7 @@ evetools = (function(document, window, undefined) {
   result.index = function() {
     return {
       data: undefined,
+      characters: {},
       editingStation: false,
       favorites: [],
       station: { name: "" },
@@ -177,6 +177,7 @@ evetools = (function(document, window, undefined) {
         currentUser
         .then(user => {
           this.user = user;
+          this.characters = user.characters;
           this.station = user.station;
           this.walletBalance = user.wallet_balance;
         })
@@ -211,9 +212,12 @@ evetools = (function(document, window, undefined) {
         });
       },
 
+      get characterList() {
+        return Object.values(this.characters).sort(byName);
+      },
+
       get stationList() {
-        vals = Object.values(this.stations);
-        return vals;
+        return Object.values(this.stations);
       },
 
       toggleFavorite(type) {
@@ -431,6 +435,10 @@ evetools = (function(document, window, undefined) {
   }
 
   // Helper Functions
+
+  window.avatarURL = function(id) {
+    return 'https://images.evetech.net/characters/' + id + '/portrait?size=128';
+  }
 
   window.hrefGroup = function(id) {
     return '/groups/' + id;

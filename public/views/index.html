@@ -1,7 +1,21 @@
 <main class="mt-10 mb-10 container mx-auto max-w-6xl"
       x-data="evetools.index()"
       x-init="initialize()">
-  <h1 class="mb-10 text-3xl text-center text-gray-700 font-bold">My Liquid Assets</h1>
+  <h1 class="mb-10 text-3xl text-center text-gray-700 font-bold">My Characters</h1>
+  <div class="mx-4 mt-10 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+    <template x-for="c in characterList" x-ref="character.id">
+      <div class="px-4 py-4 bg-gray-100 border-b border-gray-500 rounded-xl shadow-xl">
+        <div class="flex items-center justify-between">
+          <div class="w-4/5 xl:w-8/12 ml-2 font-bold text-lg" x-text="c.name"></div>
+          <div class="w-16 h-16 border-2 border-gray-500 rounded-full overflow-hidden">
+            <img class="h-full w-full object-cover" :src="avatarURL(c.id)">
+          </div>
+        <div>
+      </div>
+    </template>
+  </div>
+
+  <h1 class="mt-10 mb-10 text-3xl text-center text-gray-700 font-bold">My Liquid Assets</h1>
   <div class="w-64 mx-auto px-4 py-4 border border-gray-500 rounded-xl shadow-xl bg-gray-100">
     <dl class="">
       <div>
