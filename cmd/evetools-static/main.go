@@ -2,61 +2,193 @@ package main
 
 import (
 	"encoding/json"
+	"flag"
 	"fmt"
 	"os"
+	"path"
 	"path/filepath"
 
-	"github.com/stesla/evetools/sde"
+	yaml "gopkg.in/yaml.v2"
 )
 
-func usage() {
+var (
+	sdeDir        = flag.String("in", "./data/sde", "directory in which to look for the SDE YAML files")
+	outDir        = flag.String("out", "./public/data", "directory into which JSON files should be placed")
+	convertTypes  = flag.Bool("types", false, "convert market types")
+	convertGroups = flag.Bool("groups", false, "convert market groups")
+)
+
+func usage() error {
 	program := filepath.Base(os.Args[0])
-	fmt.Fprintf(os.Stderr, "USAGE: %s SDE.SQLITE3 > static.json", program)
+	return fmt.Errorf("USAGE: %s [-in DIR] [-out DIR]", program)
+}
+
+func die(err error) {
+	fmt.Fprintf(os.Stderr, err.Error())
+	os.Exit(1)
 }
 
 func main() {
-	if len(os.Args) < 2 {
-		usage()
-		os.Exit(1)
+	flag.Parse()
+
+	if (*sdeDir) == "" || (*outDir) == "" {
+		die(usage())
 	}
 
-	db, err := sde.Initialize(os.Args[1])
+	var err error
+	var types map[int]*JsonType
+
+	if *convertTypes || *convertGroups {
+		types, err = loadTypes(*sdeDir)
+		if err != nil {
+			die(fmt.Errorf("error loading types: %v", err))
+		}
+	}
+
+	if *convertTypes {
+		err = saveTypes(*outDir, types)
+		if err != nil {
+			die(fmt.Errorf("error saving types: %v", err))
+		}
+	}
+
+	if *convertGroups {
+		groups, root, err := loadGroups(types)
+		if err != nil {
+			die(fmt.Errorf("error loading groups: %v", err))
+		}
+
+		err = saveGroups(*outDir, groups, root)
+		if err != nil {
+			die(fmt.Errorf("error saving groups: %v", err))
+		}
+	}
+}
+
+type YamlType struct {
+	MarketGroupID int  `yaml:"marketGroupID"`
+	Published     bool `yaml:"published"`
+
+	Name struct {
+		English string `yaml:"en"`
+	} `yaml:"name"`
+
+	Description struct {
+		English string `yaml:"en"`
+	} `yaml:"description"`
+}
+
+type JsonType struct {
+	ID            int    `json:"id"`
+	MarketGroupID int    `json:"market_group_id"`
+	Name          string `json:"name"`
+	Description   string `json:"description"`
+}
+
+func loadTypes(dir string) (map[int]*JsonType, error) {
+	input, err := os.Open(path.Join(dir, "fsd", "typeIDs.yaml"))
 	if err != nil {
-		fmt.Fprintln(os.Stderr, "error loading database file:", err)
-		os.Exit(1)
+		return nil, fmt.Errorf("error opening typeIDS.yaml: %v", err)
+	}
+	defer input.Close()
+	var yamlTypes map[int]YamlType
+	if err := yaml.NewDecoder(input).Decode(&yamlTypes); err != nil {
+		return nil, fmt.Errorf("error decoding typeIDs.yaml: %v", err)
 	}
 
-	groups, err := db.GetMarketGroups()
+	var jsonTypes = map[int]*JsonType{}
+	for id, yt := range yamlTypes {
+		if yt.Published {
+			jsonTypes[id] = &JsonType{
+				ID:            id,
+				MarketGroupID: yt.MarketGroupID,
+				Name:          yt.Name.English,
+				Description:   yt.Description.English,
+			}
+		}
+	}
+	return jsonTypes, err
+}
+
+func saveTypes(dir string, jsonTypes map[int]*JsonType) error {
+	output, err := os.Create(path.Join(dir, "types.json"))
 	if err != nil {
-		fmt.Fprintln(os.Stderr, "error loading market groups:", err)
-		os.Exit(1)
+		return fmt.Errorf("error opening types.json: %v", err)
+	}
+	defer output.Close()
+	return json.NewEncoder(output).Encode(&jsonTypes)
+}
+
+type YamlGroup struct {
+	ParentID int `yaml:"parentGroupID"`
+
+	Name struct {
+		English string `yaml:"en"`
+	} `yaml:"nameID"`
+
+	Description struct {
+		English string `yaml:"en"`
+	} `yaml:"descriptionID"`
+}
+
+type JsonGroup struct {
+	ID          int    `json:"id"`
+	ParentID    int    `json:"parent_id,omitempty"`
+	Name        string `json:"name"`
+	Description string `json:"description"`
+
+	Groups []int `json:"groups"`
+	Types  []int `json:"types"`
+}
+
+func loadGroups(types map[int]*JsonType) (map[int]*JsonGroup, []int, error) {
+	input, err := os.Open(path.Join(*sdeDir, "fsd", "marketGroups.yaml"))
+	if err != nil {
+		return nil, nil, fmt.Errorf("error opening sde/fse/marketGroups.yaml: %v", err)
+	}
+	defer input.Close()
+	var yamlGroups map[int]YamlGroup
+	if err := yaml.NewDecoder(input).Decode(&yamlGroups); err != nil {
+		return nil, nil, fmt.Errorf("error decoding marketGroups.yaml: %v", err)
 	}
 
-	var roots = []int{}
+	var jsonGroups = map[int]*JsonGroup{}
+	for id, yg := range yamlGroups {
+		jsonGroups[id] = &JsonGroup{
+			ID:          id,
+			ParentID:    yg.ParentID,
+			Name:        yg.Name.English,
+			Description: yg.Description.English,
+		}
+	}
 
-	for _, g := range groups {
-		if g.ParentID == nil {
-			roots = append(roots, g.ID)
+	var root []int
+	for id, jg := range jsonGroups {
+		if jg.ParentID == 0 {
+			root = append(root, id)
 			continue
 		}
-		p := groups[*g.ParentID]
-		p.Groups = append(p.Groups, g.ID)
+		pg := jsonGroups[jg.ParentID]
+		pg.Groups = append(pg.Groups, id)
 	}
 
-	types, err := db.GetMarketTypes()
+	for id, jt := range types {
+		if pg, found := jsonGroups[jt.MarketGroupID]; found {
+			pg.Types = append(pg.Types, id)
+		}
+	}
+
+	return jsonGroups, root, nil
+}
+
+func saveGroups(dir string, jsonGroups map[int]*JsonGroup, root []int) error {
+	output, err := os.Create(path.Join(dir, "marketGroups.json"))
 	if err != nil {
-		fmt.Fprintln(os.Stderr, "error loading market types:", err)
-		os.Exit(1)
+		return fmt.Errorf("error opening marketGroups.json: %v", err)
 	}
-
-	for _, t := range types {
-		g := groups[t.GroupID]
-		g.Types = append(g.Types, t.ID)
-	}
-
-	json.NewEncoder(os.Stdout).Encode(map[string]interface{}{
-		"root":   roots,
-		"groups": groups,
-		"types":  types,
+	defer output.Close()
+	return json.NewEncoder(output).Encode(map[string]interface{}{
+		"groups": jsonGroups,
+		"root":   root,
 	})
 }
