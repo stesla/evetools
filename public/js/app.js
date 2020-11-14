@@ -468,6 +468,16 @@ evetools = (function(document, window, undefined) {
     window.location = '/search?q=' + q;
   }
 
+  window.makeActiveCharacter = function(cid) {
+    retrieve('/api/v1/user/characters/' + cid + '/activate', 'error activating user', {
+      raw: true,
+      method: 'POST',
+    })
+    .then(() => {
+      location.reload(true);
+    });
+  }
+
   window.openTypeInEVE = function(typeID) {
     retrieve('/api/v1/types/'+typeID+'/openInGame', 'error making openInGame API call', {
       raw: true,

@@ -72,9 +72,13 @@ func currentUser(r *http.Request) model.User {
 	return r.Context().Value(CurrentUserKey).(model.User)
 }
 
+func getSession(r *http.Request) (*sessions.Session, error) {
+	return store.Get(r, viper.GetString("httpd.session.name"))
+}
+
 func haveLoggedInUser(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		session, err := store.Get(r, viper.GetString("httpd.session.name"))
+		session, err := getSession(r)
 		if err != nil {
 			apiInternalServerError(w, "store.Get", err)
 			return
@@ -107,4 +111,14 @@ func haveLoggedInUser(next http.Handler) http.Handler {
 		ctx = context.WithValue(ctx, esi.AccessTokenKey, newTok.AccessToken)
 		next.ServeHTTP(w, r.WithContext(ctx))
 	})
+}
+
+func refreshToken(ctx context.Context, refreshToken string) (*oauth2.Token, error) {
+	oldTok := oauth2.Token{RefreshToken: refreshToken}
+	tokSrc := oauthConfig.TokenSource(ctx, &oldTok)
+	token, err := tokSrc.Token()
+	if err != nil {
+		return nil, err
+	}
+	return token, nil
 }

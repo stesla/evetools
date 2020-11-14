@@ -2,7 +2,7 @@
       x-data="evetools.index()"
       x-init="initialize()">
   <h1 class="mb-10 text-3xl text-center text-gray-700 font-bold">My Characters</h1>
-  <div class="mx-4 mt-10 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+  <div class="mx-4 mt-10 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
     <template x-for="c in characterList" x-ref="character.id">
       <div class="py-3 bg-gray-100 border-b border-gray-500 rounded-xl shadow-xl">
         <div class="px-4 flex items-center justify-between">
@@ -11,8 +11,9 @@
             <img class="h-full w-full object-cover" :src="avatarURL(c.id)">
           </figure>
         </div>
-        <div class="mt-4 border-t-2 pt-2 px-4 border-gray-300">
-          <a href="#" @click="removeCharacter(c.id)" class="font-semibold text-sm text-red-500">Remove</a>
+        <div class="mt-4 border-t-2 pt-2 px-4 border-gray-300 flex flex-center justify-between">
+          <a href="#" @click="removeCharacter(c.id)" class="font-bold text-sm text-red-500">Remove</a>
+          <a href="#" @click="makeActiveCharacter(c.id)" class="font-bold text-sm">Make Active</a>
         </div>
       </div>
     </template>

@@ -17,6 +17,7 @@ type DB interface {
 	IsFavorite(userID, typeID int) (bool, error)
 	RemoveUserAssociation(characterID int) error
 	SaveUserStation(userID, stationID int) error
+	SetActiveCharacter(userID, characterID int) error
 	SetFavorite(userID, typeID int, val bool) error
 }
 
@@ -207,5 +208,11 @@ func (m *databaseModel) RemoveUserAssociation(characterID int) error {
 func (m *databaseModel) SaveUserStation(userID, stationID int) error {
 	const query = `UPDATE users SET stationID = ? WHERE id = ?`
 	_, err := m.db.Exec(query, stationID, userID)
+	return err
+}
+
+func (m *databaseModel) SetActiveCharacter(userID, characterID int) error {
+	const query = `UPDATE users SET activeCharacterID = ? WHERE id = ?`
+	_, err := m.db.Exec(query, characterID, userID)
 	return err
 }
