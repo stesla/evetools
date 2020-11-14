@@ -61,8 +61,9 @@ evetools = (function(document, window, undefined) {
       initialize() {
         currentUser = retrieve('/api/v1/user/current', 'error fetching current user')
         .then(user => {
-          user.avatarURL = 'https://images.evetech.net/characters/' + user.character.id + '/portrait?size=128';
-          this.user = user
+          user.avatarURL = 'https://images.evetech.net/characters/' + user.active_character + '/portrait?size=128';
+          user.character = user.characters[user.active_character];
+          this.user = user;
           this.loggedIn = true;
           return user;
         })

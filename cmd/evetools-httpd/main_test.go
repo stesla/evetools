@@ -190,12 +190,14 @@ func TestCurrentUserAuthenticated(t *testing.T) {
 	assert.Equal("application/json", resp.Header.Get("Content-Type"))
 
 	var obj struct {
-		Character   model.Character `json:"character"`
-		StationName string          `json:"stationName"`
+		Characters map[int]model.Character `json:"characters"`
 	}
 	json.NewDecoder(resp.Body).Decode(&obj)
-	assert.Equal(1234567890, obj.Character.ID)
-	assert.Equal("Bob Awox", obj.Character.Name)
+	assert.Equal(1, len(obj.Characters))
+	c, ok := obj.Characters[1234567890]
+	assert.Equal(true, ok)
+	assert.Equal(1234567890, c.ID)
+	assert.Equal("Bob Awox", c.Name)
 }
 
 type failHandler struct {
@@ -283,6 +285,12 @@ func (*testDB) GetCharacter(characterID int) (*model.Character, error) {
 	return &model.Character{
 		ID:   characterID,
 		Name: "Bob Awox",
+	}, nil
+}
+
+func (*testDB) GetCharactersForUser(userID int) (map[int]*model.Character, error) {
+	return map[int]*model.Character{
+		1234567890: {ID: 1234567890, Name: "Bob Awox"},
 	}, nil
 }
 

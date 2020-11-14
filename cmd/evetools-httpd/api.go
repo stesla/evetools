@@ -105,9 +105,16 @@ func (s *Server) GetTypeSearch(w http.ResponseWriter, r *http.Request) {
 func (s *Server) GetUserCurrent(w http.ResponseWriter, r *http.Request) {
 	user := currentUser(r)
 
-	character, err := s.db.GetCharacter(user.ActiveCharacterID)
+	characters, err := s.db.GetCharactersForUser(user.ID)
 	if err != nil {
-		apiInternalServerError(w, "GetCharacter", err)
+		apiInternalServerError(w, "GetCharactersForUser", err)
+		return
+	}
+
+	character, found := characters[user.ActiveCharacterID]
+	if !found {
+		err = fmt.Errorf("could not find user for id %d", user.ActiveCharacterID)
+		apiInternalServerError(w, "GetCharactersForUser", err)
 		return
 	}
 
@@ -130,10 +137,11 @@ func (s *Server) GetUserCurrent(w http.ResponseWriter, r *http.Request) {
 	}
 
 	json.NewEncoder(w).Encode(map[string]interface{}{
-		"character":      character,
-		"favorites":      favorites,
-		"station":        station,
-		"wallet_balance": wallet,
+		"active_character": user.ActiveCharacterID,
+		"characters":       characters,
+		"favorites":        favorites,
+		"station":          station,
+		"wallet_balance":   wallet,
 	})
 }
 

@@ -11,6 +11,7 @@ type DB interface {
 	GetFavoriteTypes(userID int) ([]int, error)
 	FindOrCreateUserForCharacter(characterID int, characterName, owner string) (*User, error)
 	GetCharacter(int) (*Character, error)
+	GetCharactersForUser(int) (map[int]*Character, error)
 	IsFavorite(userID, typeID int) (bool, error)
 	SaveUserStation(userID, stationID int) error
 	SetFavorite(userID, typeID int, val bool) error
@@ -72,7 +73,7 @@ type Character struct {
 	ID     int    `json:"id"`
 	Name   string `json:"name"`
 	Owner  string `json:"-"`
-	UserID string `json:"-"`
+	UserID int    `json:"-"`
 }
 
 type User struct {
@@ -124,7 +125,6 @@ func (m *databaseModel) FindOrCreateUserForCharacter(characterID int, characterN
 		StationID:         stationID,
 	}, tx.Commit()
 }
-
 func (m *databaseModel) GetCharacter(characterID int) (*Character, error) {
 	const query = `SELECT characterName, owner, userID FROM characters WHERE characterID = ?`
 
@@ -136,6 +136,24 @@ func (m *databaseModel) GetCharacter(characterID int) (*Character, error) {
 		return nil, err
 	}
 	return c, nil
+}
+
+func (m *databaseModel) GetCharactersForUser(userID int) (map[int]*Character, error) {
+	const query = `SELECT characterID, characterName FROM characters WHERE userID = ?`
+
+	rows, err := m.db.Query(query, userID)
+	if err != nil {
+		return nil, err
+	}
+	result := map[int]*Character{}
+	for rows.Next() {
+		c := &Character{UserID: userID}
+		if err = rows.Scan(&c.ID, &c.Name); err != nil {
+			return nil, err
+		}
+		result[c.ID] = c
+	}
+	return result, rows.Err()
 }
 
 func (m *databaseModel) SaveUserStation(userID, stationID int) error {
