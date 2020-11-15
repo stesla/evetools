@@ -12,10 +12,11 @@ import (
 )
 
 var (
-	sdeDir        = flag.String("in", "./data/sde", "directory in which to look for the SDE YAML files")
-	outDir        = flag.String("out", "./public/data", "directory into which JSON files should be placed")
-	convertTypes  = flag.Bool("types", false, "convert market types")
-	convertGroups = flag.Bool("groups", false, "convert market groups")
+	sdeDir          = flag.String("in", "./data/sde", "directory in which to look for the SDE YAML files")
+	outDir          = flag.String("out", "./public/data", "directory into which JSON files should be placed")
+	convertTypes    = flag.Bool("types", false, "convert market types")
+	convertGroups   = flag.Bool("groups", false, "convert market groups")
+	convertStations = flag.Bool("stations", false, "convert stations")
 )
 
 func usage() error {
@@ -61,6 +62,18 @@ func main() {
 		err = saveGroups(*outDir, groups, root)
 		if err != nil {
 			die(fmt.Errorf("error saving groups: %v", err))
+		}
+	}
+
+	if *convertStations {
+		stations, err := loadStations(*sdeDir)
+		if err != nil {
+			die(fmt.Errorf("error loading stations: %v", err))
+		}
+
+		err = saveStations(*outDir, stations)
+		if err != nil {
+			die(fmt.Errorf("error saving stations: %v", err))
 		}
 	}
 }
@@ -144,7 +157,7 @@ type JsonGroup struct {
 func loadGroups(types map[int]*JsonType) (map[int]*JsonGroup, []int, error) {
 	input, err := os.Open(path.Join(*sdeDir, "fsd", "marketGroups.yaml"))
 	if err != nil {
-		return nil, nil, fmt.Errorf("error opening sde/fse/marketGroups.yaml: %v", err)
+		return nil, nil, fmt.Errorf("error opening marketGroups.yaml: %v", err)
 	}
 	defer input.Close()
 	var yamlGroups map[int]YamlGroup
@@ -191,4 +204,38 @@ func saveGroups(dir string, jsonGroups map[int]*JsonGroup, root []int) error {
 		"groups": jsonGroups,
 		"root":   root,
 	})
+}
+
+type Station struct {
+	ID       int    `yaml:"stationID" json:"id"`
+	Name     string `yaml:"stationName" json:"name"`
+	RegionID int    `yaml:"regionID" json:"region_id"`
+	SystemID int    `yaml:"solarSystemID" json:"system_id"`
+}
+
+func loadStations(dir string) (map[string]Station, error) {
+	input, err := os.Open(path.Join(dir, "bsd", "staStations.yaml"))
+	if err != nil {
+		return nil, fmt.Errorf("error opening staStations.yaml: %v", err)
+	}
+	defer input.Close()
+	var yamlStations []Station
+	if err := yaml.NewDecoder(input).Decode(&yamlStations); err != nil {
+		return nil, fmt.Errorf("error decoding staStations.yaml: %v", err)
+	}
+
+	var stations = map[string]Station{}
+	for _, station := range yamlStations {
+		stations[station.Name] = station
+	}
+	return stations, nil
+}
+
+func saveStations(dir string, stations map[string]Station) error {
+	output, err := os.Create(path.Join(dir, "stations.json"))
+	if err != nil {
+		return fmt.Errorf("error opening stations.json: %v", err)
+	}
+	defer output.Close()
+	return json.NewEncoder(output).Encode(&stations)
 }

@@ -14,6 +14,7 @@ evetools = (function(document, window, undefined) {
   var currentUser = retrieve('/api/v1/user/current', 'error fetching current user');
   var sdeTypes = retrieve('/data/types.json', 'error fetching sde types');
   var sdeMarketGroups = retrieve('/data/marketGroups.json', 'error fetching sde market groups');
+  var sdeStations = retrieve('/data/stations.json', 'error fetching sde stations');
 
   result.globalState = function() {
     return {
@@ -208,12 +209,13 @@ evetools = (function(document, window, undefined) {
         if (this.stationName.length < 3) {
           return;
         }
-        const params = new URLSearchParams();
-        params.append("q", this.stationName);
-        const uri = '/api/v1/stations?' + params.toString();
-        retrieve(uri, 'error fetching stations')
-        .then(stations => {
-          this.stations = stations;
+        sdeStations.then(stations => {
+          this.stations = Object.values(stations).filter(s => {
+            return s.name.toLowerCase().includes(this.stationName.toLowerCase());
+          }).reduce((m, s) => {
+            m[s.name] = s;
+            return m;
+          }, {});
         });
       },
 
