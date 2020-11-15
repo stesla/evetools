@@ -21,8 +21,8 @@ viewData = (function(window, document, undefined) {
     get parentGroups() {
       const arr = [];
       var g = this.group
-      while (g.parentID) {
-        g = this.marketGroups.groups[g.parentID];
+      while (g.parent_id) {
+        g = this.marketGroups.groups[g.parent_id];
         arr.unshift(g);
       }
       return arr

@@ -7,6 +7,7 @@ viewData = (function(window, document, undefined) {
     groupID: match[1],
     marketGroups: { root: [] },
     types: {},
+    favorites: [],
     filter: "",
     parent: { name: "" },
 
@@ -30,6 +31,10 @@ viewData = (function(window, document, undefined) {
     },
 
     initialize() {
+      evetools.currentUser.then(user => {
+        this.favorites = user.favorites;
+      });
+
       evetools.sdeMarketGroups().then(data => {
         this.marketGroups = data;
         this.group = data.groups[''+this.groupID];
@@ -39,6 +44,22 @@ viewData = (function(window, document, undefined) {
 
       evetools.sdeTypes().then(types => {
         this.types = types;
+      });
+    },
+
+    isFavorite(typeID) {
+      return this.favorites.find(id => id === typeID)
+    },
+
+    toggleFavorite(type) {
+      let val = !this.isFavorite(type.id);
+      setFavorite(type.id, val)
+      .then(() => {
+        if (val) {
+          this.favorites.push(type.id);
+        } else {
+          this.favorites = this.favorites.filter(x => x !== type.id);
+        }
       });
     },
   }
