@@ -12,9 +12,27 @@ evetools = (function(document, window, undefined) {
   }
 
   var currentUser = retrieve('/api/v1/user/current', 'error fetching current user');
-  var sdeTypes = retrieve('/data/types.json', 'error fetching sde types');
-  var sdeMarketGroups = retrieve('/data/marketGroups.json', 'error fetching sde market groups');
-  var sdeStations = retrieve('/data/stations.json', 'error fetching sde stations');
+
+  var _sdeTypes
+  function sdeTypes() {
+    if (!_sdeTypes)
+      _sdeTypes = retrieve('/data/types.json', 'error fetching sde types');
+    return _sdeTypes
+  }
+
+  var _sdeMarketGroups
+  function sdeMarketGroups() {
+    if (!_sdeMarketGroups)
+      _sdeMarketGroups = retrieve('/data/marketGroups.json', 'error fetching sde market groups');
+    return _sdeMarketGroups;
+  }
+
+  var _sdeStations
+  function sdeStations() {
+    if (!_sdeStations)
+      _sdeStations = retrieve('/data/stations.json', 'error fetching sde stations');
+    return _sdeStations;
+  }
 
   result.globalState = function() {
     return {
@@ -111,7 +129,7 @@ evetools = (function(document, window, undefined) {
       },
 
       initialize() {
-        sdeMarketGroups.then(data => {
+        sdeMarketGroups().then(data => {
           this.data = data
         });
         document.title += " - Find Items"
@@ -132,7 +150,7 @@ evetools = (function(document, window, undefined) {
       parent: { name: "" },
 
       get children() {
-        if (!this.group)
+        if (!this.group || Object.keys(this.types).length == 0)
           return [];
 
         if (this.group.groups) {
@@ -141,7 +159,6 @@ evetools = (function(document, window, undefined) {
             g.isGroup = true;
             return g
           }).sort(byName);
-          return []
         } else if (this.group.types) {
           return this.group.types.map(id => {
             let t = this.types[''+id];
@@ -152,14 +169,14 @@ evetools = (function(document, window, undefined) {
       },
 
       initialize() {
-        sdeMarketGroups.then(data => {
+        sdeMarketGroups().then(data => {
           this.marketGroups = data;
           this.group = data.groups[''+this.groupID];
           this.parent = data.groups[''+this.group.parent_id];
           document.title += " - " + this.group.name;
         });
 
-        sdeTypes.then(types => {
+        sdeTypes().then(types => {
           this.types = types;
         });
       },
@@ -196,7 +213,7 @@ evetools = (function(document, window, undefined) {
           this.sellTotal = orders.sell.reduce((a, x) => a + x.volume_remain * x.price, 0);
         });
 
-        sdeTypes.then(types => {
+        sdeTypes().then(types => {
           this.favorites = this.user.favorites.map(id => {
             let type = types[""+id];
             type.favorite = true;
@@ -209,7 +226,7 @@ evetools = (function(document, window, undefined) {
         if (this.stationName.length < 3) {
           return;
         }
-        sdeStations.then(stations => {
+        sdeStations().then(stations => {
           this.stations = Object.values(stations).filter(s => {
             return s.name.toLowerCase().includes(this.stationName.toLowerCase());
           }).reduce((m, s) => {
@@ -269,7 +286,7 @@ evetools = (function(document, window, undefined) {
     return {
       initialize() {
         document.title += ' - Market Order History'
-        sdeTypes.then(types => {
+        sdeTypes().then(types => {
           this.types = types;
           return retrieve('/api/v1/user/history?days=30', 'error fetching history');
         })
@@ -300,7 +317,7 @@ evetools = (function(document, window, undefined) {
     return {
       initialize() {
         document.title += ' - Market Orders'
-        sdeTypes.then(types => {
+        sdeTypes().then(types => {
           this.types = types;
           return retrieve('/api/v1/user/orders', 'error fetching orders');
         })
@@ -334,7 +351,7 @@ evetools = (function(document, window, undefined) {
       marketTypes: [],
 
       fetchData() {
-        sdeTypes.then(types => {
+        sdeTypes().then(types => {
           ids = Object.values(types).filter(t => {
             let filter = this.filter.toLowerCase();
             return t.name.toLowerCase().includes(filter);
@@ -361,7 +378,7 @@ evetools = (function(document, window, undefined) {
 
       initialize() {
         document.title += ' - Market Transactions'
-        sdeTypes.then(types => {
+        sdeTypes().then(types => {
           this.types = types;
           return  retrieve('/api/v1/user/transactions', 'error fetching wallet transactions')
         })
@@ -377,7 +394,7 @@ evetools = (function(document, window, undefined) {
     let match = window.location.pathname.match(typeRE);
 
     return {
-      group: undefined,
+      group: {},
       type: undefined,
       typeID: match[1],
       info: undefined,
@@ -392,7 +409,6 @@ evetools = (function(document, window, undefined) {
       },
 
       get parentGroups() {
-        if (!this.group) return [];
         const arr = [];
         var g = this.group
         while (g.parentID) {
@@ -428,10 +444,10 @@ evetools = (function(document, window, undefined) {
           this.favorite = obj.favorite;
         });
 
-        sdeTypes.then(types => {
+        sdeTypes().then(types => {
           this.type = types[''+this.typeID];
           document.title += ' - ' + this.type.name;
-          return sdeMarketGroups
+          return sdeMarketGroups()
         })
         .then(marketGroups => {
           this.marketGroups = marketGroups
