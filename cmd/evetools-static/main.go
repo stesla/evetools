@@ -17,6 +17,7 @@ var (
 	convertTypes    = flag.Bool("types", false, "convert market types")
 	convertGroups   = flag.Bool("groups", false, "convert market groups")
 	convertStations = flag.Bool("stations", false, "convert stations")
+	convertSystems  = flag.Bool("systems", false, "convert systems")
 )
 
 func usage() error {
@@ -74,6 +75,18 @@ func main() {
 		err = saveStations(*outDir, stations)
 		if err != nil {
 			die(fmt.Errorf("error saving stations: %v", err))
+		}
+	}
+
+	if *convertSystems {
+		systems, err := loadSystems(*sdeDir)
+		if err != nil {
+			die(fmt.Errorf("error loading systems: %v", err))
+		}
+
+		err = saveSystems(*outDir, systems)
+		if err != nil {
+			die(fmt.Errorf("error saving systems: %v", err))
 		}
 	}
 }
@@ -236,4 +249,52 @@ func saveStations(dir string, stations map[int]Station) error {
 	}
 	defer output.Close()
 	return json.NewEncoder(output).Encode(&stations)
+}
+
+type SolarSystem struct {
+	ID   int    `json:"id" yaml:"solarSystemID"`
+	Name string `json:"name"`
+}
+
+func loadSystems(dir string) (map[int]SolarSystem, error) {
+	glob := path.Join(dir, "fsd", "universe", "*", "*", "*", "*", "solarsystem.staticdata")
+	paths, err := filepath.Glob(glob)
+	if err != nil {
+		return nil, fmt.Errorf("error listing solar systems: %v", err)
+	}
+
+	var systems = map[int]SolarSystem{}
+	for _, p := range paths {
+		s, err := loadSolarSystem(p)
+		if err != nil {
+			return nil, fmt.Errorf("error parsing solar system: %v", err)
+		}
+		systems[s.ID] = s
+	}
+
+	return systems, nil
+}
+
+func loadSolarSystem(path string) (SolarSystem, error) {
+	input, err := os.Open(path)
+	if err != nil {
+		return SolarSystem{}, fmt.Errorf("error opening solar system data: %v", err)
+	}
+	defer input.Close()
+
+	dir, _ := filepath.Split(path)
+	ss := SolarSystem{
+		Name: filepath.Base(dir),
+	}
+	err = yaml.NewDecoder(input).Decode(&ss)
+	return ss, err
+}
+
+func saveSystems(dir string, systems map[int]SolarSystem) error {
+	output, err := os.Create(path.Join(dir, "systems.json"))
+	if err != nil {
+		return fmt.Errorf("error opening systems.json: %v", err)
+	}
+	defer output.Close()
+	return json.NewEncoder(output).Encode(&systems)
 }

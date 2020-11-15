@@ -34,6 +34,13 @@ evetools = (function(document, window, undefined) {
     return _sdeStations;
   }
 
+  var _sdeSystems
+  function sdeSystems() {
+    if (!_sdeSystems)
+      _sdeSystems = retrieve('/data/systems.json', 'error fetching sde systems');
+    return _sdeSystems;
+  }
+
   result.globalState = function() {
     return {
       avatarMenuOpen: false,
@@ -421,9 +428,14 @@ evetools = (function(document, window, undefined) {
       },
 
       initialize() {
-        currentUser.then(user =>
-          this.system = user.station.system
-        );
+        currentUser.then(user => {
+          sdeStations().then(stations => {
+            station = stations[''+user.station.id];
+            sdeSystems().then(systems => {
+              this.system = systems[''+station.system_id]
+            });
+          });
+        });
 
         const observer = new MutationObserver(() => {
           let div = document.getElementById("chart");
