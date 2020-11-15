@@ -12,7 +12,6 @@ var db *sql.DB
 var ErrNotFound = errors.New("Not Found")
 
 type DB interface {
-	GetStations(q string) (map[string]*Station, error)
 	GetStationByID(stationID int) (*Station, error)
 }
 
@@ -40,10 +39,6 @@ type Station struct {
 	Name   string `json:"name"`
 	Region Region `json:"region"`
 	System System `json:"system"`
-}
-
-func (s *staticDB) GetStations(q string) (map[string]*Station, error) {
-	return s.getStations("WHERE stationName LIKE ?", "%"+q+"%")
 }
 
 func (s *staticDB) getStations(clause string, args ...interface{}) (map[string]*Station, error) {

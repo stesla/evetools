@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"net/http"
 	"strconv"
-	"strings"
 	"time"
 
 	"github.com/gorilla/mux"
@@ -73,22 +72,6 @@ func (s *Server) DeleteUserCharacter(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	w.WriteHeader(http.StatusNoContent)
-}
-
-func (s *Server) GetStations(w http.ResponseWriter, r *http.Request) {
-	query := strings.TrimSpace(r.FormValue("q"))
-	if len(query) < 3 {
-		apiError(w, fmt.Errorf("q must be at least three characters"), http.StatusBadRequest)
-		return
-	}
-
-	stations, err := s.static.GetStations(query)
-	if err != nil {
-		apiInternalServerError(w, "GetStations", err)
-		return
-	}
-
-	json.NewEncoder(w).Encode(&stations)
 }
 
 func (s *Server) GetTypeID(w http.ResponseWriter, r *http.Request) {

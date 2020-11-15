@@ -213,25 +213,23 @@ type Station struct {
 	SystemID int    `yaml:"solarSystemID" json:"system_id"`
 }
 
-func loadStations(dir string) (map[string]Station, error) {
+func loadStations(dir string) (map[int]Station, error) {
 	input, err := os.Open(path.Join(dir, "bsd", "staStations.yaml"))
 	if err != nil {
 		return nil, fmt.Errorf("error opening staStations.yaml: %v", err)
 	}
 	defer input.Close()
 	var yamlStations []Station
-	if err := yaml.NewDecoder(input).Decode(&yamlStations); err != nil {
-		return nil, fmt.Errorf("error decoding staStations.yaml: %v", err)
-	}
+	err = yaml.NewDecoder(input).Decode(&yamlStations)
 
-	var stations = map[string]Station{}
-	for _, station := range yamlStations {
-		stations[station.Name] = station
+	var stations = map[int]Station{}
+	for _, s := range yamlStations {
+		stations[s.ID] = s
 	}
-	return stations, nil
+	return stations, err
 }
 
-func saveStations(dir string, stations map[string]Station) error {
+func saveStations(dir string, stations map[int]Station) error {
 	output, err := os.Create(path.Join(dir, "stations.json"))
 	if err != nil {
 		return fmt.Errorf("error opening stations.json: %v", err)

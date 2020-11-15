@@ -257,14 +257,16 @@ evetools = (function(document, window, undefined) {
           this.editingStation = false;
           return;
         }
-        let station = this.stations[this.stationName];
-        retrieve('/api/v1/user/station', 'error saving station', {
-          raw: true,
-          method: 'PUT',
-          body: JSON.stringify(station),
+        sdeStations().then(stations => {
+          let station = Object.values(stations).find(s => s.name == this.stationName);
+          this.station = station;
+          return retrieve('/api/v1/user/station', 'error saving station', {
+            raw: true,
+            method: 'PUT',
+            body: JSON.stringify(station),
+          });
         })
         .then(() => {
-          this.station = station;
           this.stationName = "";
           this.editingStation = false;
         });
