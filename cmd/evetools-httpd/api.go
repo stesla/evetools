@@ -11,7 +11,6 @@ import (
 	"github.com/gorilla/mux"
 	"github.com/stesla/evetools/esi"
 	"github.com/stesla/evetools/model"
-	"github.com/stesla/evetools/sde"
 )
 
 func (s *Server) ActivateUserCharacter(w http.ResponseWriter, r *http.Request) {
@@ -76,14 +75,21 @@ func (s *Server) DeleteUserCharacter(w http.ResponseWriter, r *http.Request) {
 
 func (s *Server) GetTypeID(w http.ResponseWriter, r *http.Request) {
 	user := currentUser(r)
-	station, err := s.static.GetStationByID(user.StationID)
-	if err != nil {
-		apiInternalServerError(w, "GetStationByID", err)
-		return
-	}
 
 	vars := mux.Vars(r)
 	id, _ := strconv.Atoi(vars["typeID"])
+
+	locationID, err := strconv.Atoi(r.FormValue("location_id"))
+	if err != nil {
+		apiError(w, fmt.Errorf("location_id must be an integer"), http.StatusBadRequest)
+		return
+	}
+
+	regionID, err := strconv.Atoi(r.FormValue("region_id"))
+	if err != nil {
+		apiError(w, fmt.Errorf("region_id must be an integer"), http.StatusBadRequest)
+		return
+	}
 
 	isFavorite, err := s.db.IsFavorite(user.ID, id)
 	if err != nil && err != model.ErrNotFound {
@@ -91,13 +97,13 @@ func (s *Server) GetTypeID(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	price, err := s.esi.GetMarketPrices(r.Context(), station.ID, station.Region.ID, id)
+	price, err := s.esi.GetMarketPrices(r.Context(), locationID, regionID, id)
 	if err != nil {
 		apiInternalServerError(w, "JitaPrices", err)
 		return
 	}
 
-	history, err := s.esi.GetPriceHistory(r.Context(), station.Region.ID, id)
+	history, err := s.esi.GetPriceHistory(r.Context(), regionID, id)
 	if err != nil {
 		apiInternalServerError(w, "JitaHistory", err)
 		return
@@ -149,12 +155,6 @@ func (s *Server) GetUserCurrent(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	station, err := s.static.GetStationByID(user.StationID)
-	if err != nil {
-		apiInternalServerError(w, "GetStationByID", err)
-		return
-	}
-
 	favorites, err := s.db.GetFavoriteTypes(user.ID)
 	if err != nil {
 		apiInternalServerError(w, "FavoriteTypes", err)
@@ -171,7 +171,7 @@ func (s *Server) GetUserCurrent(w http.ResponseWriter, r *http.Request) {
 		"active_character": user.ActiveCharacterID,
 		"characters":       characters,
 		"favorites":        favorites,
-		"station":          station,
+		"station_id":       user.StationID,
 		"wallet_balance":   wallet,
 	})
 }
@@ -199,13 +199,6 @@ func (s *Server) GetUserTransactions(w http.ResponseWriter, r *http.Request) {
 			apiInternalServerError(w, "GetCharacterName", err)
 			return
 		}
-
-		station, err := s.static.GetStationByID(txn.LocationID)
-		if err != nil {
-			apiInternalServerError(w, "GetStationByID", err)
-			return
-		}
-		txn.StationName = station.Name
 	}
 
 	json.NewEncoder(w).Encode(txns)
@@ -246,7 +239,9 @@ func (s *Server) PutTypeFavorite(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *Server) PutUserStation(w http.ResponseWriter, r *http.Request) {
-	var station sde.Station
+	var station struct {
+		ID int `json:"id"`
+	}
 	err := json.NewDecoder(r.Body).Decode(&station)
 	if err != nil {
 		err = fmt.Errorf("error parsing request body: %v", err)
@@ -269,7 +264,7 @@ func (s *Server) PutUserStation(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	w.WriteHeader(http.StatusAccepted)
+	w.WriteHeader(http.StatusNoContent)
 }
 
 func (s *Server) processOrders(orders []*esi.MarketOrder, days time.Duration) (buy, sell []*esi.MarketOrder, _ error) {
@@ -296,12 +291,6 @@ func (s *Server) processOrders(orders []*esi.MarketOrder, days time.Duration) (b
 		seconds := d / time.Second
 
 		order.TimeRemaining = fmt.Sprintf("%dd %dh %dm %ds", days, hours, minutes, seconds)
-
-		station, err := s.static.GetStationByID(order.LocationID)
-		if err != nil {
-			return nil, nil, err
-		}
-		order.StationName = station.Name
 
 		if order.IsBuyOrder {
 			buy = append(buy, order)

@@ -22,7 +22,6 @@ import (
 	"github.com/spf13/viper"
 
 	"github.com/stesla/evetools/model"
-	"github.com/stesla/evetools/sde"
 	"github.com/stretchr/testify/assert"
 	"golang.org/x/oauth2"
 )
@@ -211,7 +210,7 @@ func (h *failHandler) ServeHTTP(http.ResponseWriter, *http.Request) {
 
 func handleRequest(t *testing.T, r *http.Request) *http.Response {
 	w := httptest.NewRecorder()
-	s := NewServer(&failHandler{t}, &testDB{}, &testSDB{})
+	s := NewServer(&failHandler{t}, &testDB{})
 	s.http.Transport = mrt
 	s.ServeHTTP(w, r)
 	mrt.Reset()
@@ -298,15 +297,3 @@ func (*testDB) RemoveUserAssociation(characterID int) error          { return Er
 func (*testDB) SaveRefreshToken(characterID int, token string) error { return nil }
 func (*testDB) SaveUserStation(userID, stationID int) error          { return ErrNotImplemented }
 func (*testDB) SetActiveCharacter(userID, characterID int) error     { return ErrNotImplemented }
-
-type testSDB struct{}
-
-func (*testSDB) GetStations(q string) (map[string]*sde.Station, error) { return nil, ErrNotImplemented }
-func (*testSDB) GetStationByID(stationID int) (*sde.Station, error) {
-	return &sde.Station{
-		ID:     76543210,
-		Region: sde.Region{ID: 12345678},
-		System: sde.System{ID: 43218765},
-		Name:   "Planet I - Moon 2 - Fake Station",
-	}, nil
-}

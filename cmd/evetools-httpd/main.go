@@ -27,7 +27,6 @@ import (
 	"github.com/spf13/viper"
 	"github.com/stesla/evetools/esi"
 	"github.com/stesla/evetools/model"
-	"github.com/stesla/evetools/sde"
 )
 
 type contextKey int
@@ -80,11 +79,6 @@ func main() {
 		log.Fatalf("error initializing model: %s", err)
 	}
 
-	static, err := sde.Initialize(viper.GetString("sde.database"))
-	if err != nil {
-		log.Fatalf("error initializing SDE: %s", err)
-	}
-
 	if err := initOAuthConfig(); err != nil {
 		log.Fatalf("error initializing oauth: %s", err)
 	}
@@ -92,7 +86,7 @@ func main() {
 	store = sessions.NewCookieStore([]byte(viper.GetString("httpd.session.auth_key")))
 
 	staticFiles := http.Dir(viper.GetString("httpd.static.dir"))
-	var handler http.Handler = NewServer(http.FileServer(staticFiles), db, static)
+	var handler http.Handler = NewServer(http.FileServer(staticFiles), db)
 	handler = handlers.LoggingHandler(os.Stdout, handler)
 	handler = handlers.ProxyHeaders(handler)
 
@@ -123,18 +117,16 @@ func initOAuthConfig() error {
 }
 
 type Server struct {
-	http   http.Client
-	esi    esi.Client
-	mux    *mux.Router
-	db     model.DB
-	static sde.DB
+	http http.Client
+	esi  esi.Client
+	mux  *mux.Router
+	db   model.DB
 }
 
-func NewServer(static http.Handler, db model.DB, sdb sde.DB) *Server {
+func NewServer(static http.Handler, db model.DB) *Server {
 	s := &Server{
-		mux:    mux.NewRouter(),
-		db:     db,
-		static: sdb,
+		mux: mux.NewRouter(),
+		db:  db,
 	}
 	s.esi = esi.NewClient(&s.http)
 

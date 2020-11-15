@@ -32,7 +32,6 @@ type WalletTransaction struct {
 	IsPersonal    bool    `json:"is_personal"`
 	JournalRefID  int     `json:"journal_ref_id"`
 	LocationID    int     `json:"location_id"`
-	StationName   string  `json:"station_name,omitempty"`
 	Quantity      int     `json:"quantity"`
 	TransactionID int     `json:"transaction_id"`
 	TypeID        int     `json:"type_id"`

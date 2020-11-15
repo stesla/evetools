@@ -209,7 +209,6 @@ evetools = (function(document, window, undefined) {
         .then(user => {
           this.user = user;
           this.characters = user.characters;
-          this.station = user.station;
           this.walletBalance = user.wallet_balance;
         })
         .then(() => {
@@ -218,6 +217,10 @@ evetools = (function(document, window, undefined) {
         .then(orders => {
           this.buyTotal = orders.buy.reduce((a, o) => a + o.escrow, 0);
           this.sellTotal = orders.sell.reduce((a, x) => a + x.volume_remain * x.price, 0);
+        });
+
+        sdeStations().then(stations => {
+          this.station = stations[''+this.user.station_id];
         });
 
         sdeTypes().then(types => {
@@ -281,14 +284,16 @@ evetools = (function(document, window, undefined) {
     }
   }
 
-  function setTypeFromID(o, types) {
-    let type = types[''+o.type_id]
-    o.type = type
-    return o
-  }
-
   function byTypeName(a, b) {
     return a.type.name < b.type.name ? -1 : 1;
+  }
+
+  function setOrderFields(o, types, stations) {
+    let type = types[''+o.type_id]
+    let station = stations[''+o.location_id]
+    o.type = type;
+    o.station_name = station.name;
+    return o;
   }
 
   result.history = function() {
@@ -297,12 +302,16 @@ evetools = (function(document, window, undefined) {
         document.title += ' - Market Order History'
         sdeTypes().then(types => {
           this.types = types;
+          return sdeStations();
+        })
+        .then(stations => {
+          this.stations = stations;
           return retrieve('/api/v1/user/history?days=30', 'error fetching history');
         })
         .then(data => {
           this.orders = {
-            buy: data.buy.map(o => setTypeFromID(o, this.types)),
-            sell: data.sell.map(o => setTypeFromID(o, this.types)),
+            buy: data.buy.map(o => setOrderFields(o, this.types, this.stations)),
+            sell: data.sell.map(o => setOrderFields(o, this.types, this.stations)),
           };
         });
       },
@@ -328,12 +337,16 @@ evetools = (function(document, window, undefined) {
         document.title += ' - Market Orders'
         sdeTypes().then(types => {
           this.types = types;
+          return sdeStations();
+        })
+        .then(stations => {
+          this.stations = stations;
           return retrieve('/api/v1/user/orders', 'error fetching orders');
         })
         .then(data => {
           this.orders = {
-            buy: data.buy.map(o => setTypeFromID(o, this.types)),
-            sell: data.sell.map(o => setTypeFromID(o, this.types)),
+            buy: data.buy.map(o => setOrderFields(o, this.types, this.stations)),
+            sell: data.sell.map(o => setOrderFields(o, this.types, this.stations)),
           };
         });
       },
@@ -389,10 +402,14 @@ evetools = (function(document, window, undefined) {
         document.title += ' - Market Transactions'
         sdeTypes().then(types => {
           this.types = types;
+          return sdeStations();
+        })
+        .then(stations => {
+          this.stations = stations;
           return  retrieve('/api/v1/user/transactions', 'error fetching wallet transactions')
         })
         .then(txns => {
-          this.txns = txns.map(t => setTypeFromID(t, this.types));
+          this.txns = txns.map(t => setOrderFields(t, this.types, this.stations));
         });
       },
     }
@@ -408,6 +425,7 @@ evetools = (function(document, window, undefined) {
       typeID: match[1],
       info: undefined,
       favorite: false,
+      station: undefined,
       system: { name: "" },
 
       toggleFavorite() {
@@ -428,15 +446,6 @@ evetools = (function(document, window, undefined) {
       },
 
       initialize() {
-        currentUser.then(user => {
-          sdeStations().then(stations => {
-            station = stations[''+user.station.id];
-            sdeSystems().then(systems => {
-              this.system = systems[''+station.system_id]
-            });
-          });
-        });
-
         const observer = new MutationObserver(() => {
           let div = document.getElementById("chart");
           if (div) {
@@ -444,9 +453,27 @@ evetools = (function(document, window, undefined) {
             renderChart(this.info.history, 400, div.clientWidth);
           }
         });
+
         observer.observe(document.querySelector('main'), { childList: true, subtree: true });
 
-        retrieve('/api/v1/types/'+ this.typeID, 'error fetching type details')
+        currentUser.then(user => {
+          this.user = user;
+          return sdeStations();
+        })
+        .then(stations => {
+          this.station = stations[''+this.user.station_id];
+          return sdeSystems();
+        })
+        .then(systems => {
+          this.system = systems[''+this.station.system_id]
+        })
+        .then(() => {
+          const params = new URLSearchParams();
+          params.set("location_id", this.station.id);
+          params.set("region_id", this.system.region_id);
+          const url = '/api/v1/types/' + this.typeID + '?' + params.toString();
+          return retrieve(url);
+        })
         .then(obj => {
           obj.history = obj.history.map(d => {
             return {

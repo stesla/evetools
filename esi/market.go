@@ -63,7 +63,6 @@ type MarketOrder struct {
 	VolumeRemain  int     `json:"volume_remain"`
 	VolumeTotal   int     `json:"volume_total"`
 
-	StationName   string `json:"station_name,omitempty"`
 	TimeRemaining string `json:"time_remaining,omitempty"`
 }
 
