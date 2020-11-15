@@ -72,6 +72,9 @@ evetools = (function(document, window, undefined) {
         if (path.startsWith('/search'))
           return 'search';
 
+        if (path.startsWith('/settings'))
+          return 'settings';
+
         if (path.startsWith('/transactions'))
           return 'transactions';
 

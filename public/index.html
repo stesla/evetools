@@ -60,7 +60,7 @@
             </figure>
           </button>
           <div x-cloak x-show='avatarMenuOpen' class="absolute right-0 mt-2 py-2 w-40 bg-white rounded-lg shadow-xl">
-            <a class="block px-4 py-2 text-gray-900 hover:bg-blue-500 hover:text-gray-100" href="/login">Add Character</a>
+            <a class="block px-4 py-2 text-gray-900 hover:bg-blue-500 hover:text-gray-100" href="/settings">Settings</a>
             <a class="block px-4 py-2 text-gray-900 hover:bg-blue-500 hover:text-gray-100" href="/logout">Logout</a>
           </div>
         </div>
@@ -71,8 +71,8 @@
           <span class="ml-3 font-semibold text-gray-300" x-text="user.character.name"></span>
         </div>
         <div class="mt-4">
-          <a href="/login" class="block text-gray-500 hover:text-gray-300">Add Character</a>
-          <a href="/logout" class="mt-2 block text-gray-500 hover:text-gray-300">Logout</a>
+          <a class="block text-gray-500 hover:text-gray-300" href="/settings">Settings</a>
+          <a class="mt-2 block text-gray-500 hover:text-gray-300" href="/logout">Logout</a>
         </div>
       </div>
       <!-- END avatar menu -->
