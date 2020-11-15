@@ -1,4 +1,6 @@
 viewData = (function(window, document, undefined) {
+  var characters = retrieve('/api/v1/user/characters', 'error fetching characters');
+
   return {
     data: undefined,
     characters: {},
@@ -16,7 +18,6 @@ viewData = (function(window, document, undefined) {
       evetools.currentUser
       .then(user => {
         this.user = user;
-        this.characters = user.characters;
         this.walletBalance = user.wallet_balance;
       })
       .then(() => {
@@ -25,6 +26,10 @@ viewData = (function(window, document, undefined) {
       .then(orders => {
         this.buyTotal = orders.buy.reduce((a, o) => a + o.escrow, 0);
         this.sellTotal = orders.sell.reduce((a, x) => a + x.volume_remain * x.price, 0);
+      });
+
+      characters.then(chars => {
+        this.characters = chars;
       });
 
       evetools.sdeStations().then(stations => {

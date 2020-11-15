@@ -139,7 +139,7 @@ func (s *Server) GetTypeID(w http.ResponseWriter, r *http.Request) {
 	})
 }
 
-func (s *Server) GetUserCurrent(w http.ResponseWriter, r *http.Request) {
+func (s *Server) GetUserCharacters(w http.ResponseWriter, r *http.Request) {
 	user := currentUser(r)
 
 	characters, err := s.db.GetCharactersForUser(user.ID)
@@ -148,10 +148,15 @@ func (s *Server) GetUserCurrent(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	character, found := characters[user.ActiveCharacterID]
-	if !found {
-		err = fmt.Errorf("could not find user for id %d", user.ActiveCharacterID)
-		apiInternalServerError(w, "GetCharactersForUser", err)
+	json.NewEncoder(w).Encode(characters)
+}
+
+func (s *Server) GetUserCurrent(w http.ResponseWriter, r *http.Request) {
+	user := currentUser(r)
+
+	character, err := s.db.GetCharacter(user.ActiveCharacterID)
+	if err != nil {
+		apiInternalServerError(w, "GetCharacter", err)
 		return
 	}
 
@@ -168,11 +173,10 @@ func (s *Server) GetUserCurrent(w http.ResponseWriter, r *http.Request) {
 	}
 
 	json.NewEncoder(w).Encode(map[string]interface{}{
-		"active_character": user.ActiveCharacterID,
-		"characters":       characters,
-		"favorites":        favorites,
-		"station_id":       user.StationID,
-		"wallet_balance":   wallet,
+		"character":      character,
+		"favorites":      favorites,
+		"station_id":     user.StationID,
+		"wallet_balance": wallet,
 	})
 }
 

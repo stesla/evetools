@@ -83,7 +83,6 @@ evetools = (function(document, window, undefined) {
 
       initialize() {
         currentUser.then(user => {
-          user.character = user.characters[user.active_character];
           this.user = user;
           this.loggedIn = true;
           return user;
