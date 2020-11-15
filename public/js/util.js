@@ -10,7 +10,7 @@
   }
 
   window.avatarURL = function(id) {
-    return id && 'https://images.evetech.net/characters/' + id + '/portrait?size=128';
+      return id ? 'https://images.evetech.net/characters/' + id + '/portrait?size=128' : undefined;
   }
 
   window.byName = function(a, b) {
