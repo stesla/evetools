@@ -18,6 +18,7 @@ var (
 	convertGroups   = flag.Bool("groups", false, "convert market groups")
 	convertStations = flag.Bool("stations", false, "convert stations")
 	convertSystems  = flag.Bool("systems", false, "convert systems")
+	convertCorps    = flag.Bool("corps", false, "convert corps")
 )
 
 func usage() error {
@@ -87,6 +88,18 @@ func main() {
 		err = saveSystems(*outDir, systems)
 		if err != nil {
 			die(fmt.Errorf("error saving systems: %v", err))
+		}
+	}
+
+	if *convertCorps {
+		corps, err := loadCorps(*sdeDir)
+		if err != nil {
+			die(fmt.Errorf("error loading corps: %v", err))
+		}
+
+		err = saveCorps(*outDir, corps)
+		if err != nil {
+			die(fmt.Errorf("error saving corps: %v", err))
 		}
 	}
 }
@@ -222,6 +235,7 @@ func saveGroups(dir string, jsonGroups map[int]*JsonGroup, root []int) error {
 type Station struct {
 	ID       int    `yaml:"stationID" json:"id"`
 	Name     string `yaml:"stationName" json:"name"`
+	CorpID   int    `yaml:"corporationID", json:"corp_id"`
 	RegionID int    `yaml:"regionID" json:"region_id"`
 	SystemID int    `yaml:"solarSystemID" json:"system_id"`
 }
@@ -332,4 +346,52 @@ func saveSystems(dir string, systems map[int]SolarSystem) error {
 	}
 	defer output.Close()
 	return json.NewEncoder(output).Encode(&systems)
+}
+
+type YamlCorp struct {
+	FactionID int `yaml:"factionID"`
+	Name      struct {
+		English string `yaml:"en"`
+	} `yaml:"nameID"`
+}
+
+type JsonCorp struct {
+	ID        int    `json:"id"`
+	Name      string `json:"string"`
+	FactionID int    `json:"faction_id"`
+}
+
+func loadCorps(dir string) (map[int]YamlCorp, error) {
+	input, err := os.Open(path.Join(dir, "fsd", "npcCorporations.yaml"))
+	if err != nil {
+		return nil, fmt.Errorf("error opening npcCorporations.yaml: %v", err)
+	}
+	defer input.Close()
+
+	var result map[int]YamlCorp
+	err = yaml.NewDecoder(input).Decode(&result)
+	return result, err
+}
+
+func saveCorps(dir string, corps map[int]YamlCorp) error {
+	output, err := os.Create(path.Join(dir, "corporations.json"))
+	if err != nil {
+		return fmt.Errorf("error opening corporations.json: %v", err)
+	}
+	defer output.Close()
+
+	out := map[int]JsonCorp{}
+	for id, yc := range corps {
+		if yc.FactionID == 0 {
+			continue
+		}
+		jc := JsonCorp{
+			ID:        id,
+			Name:      yc.Name.English,
+			FactionID: yc.FactionID,
+		}
+		out[id] = jc
+	}
+
+	return json.NewEncoder(output).Encode(&out)
 }
