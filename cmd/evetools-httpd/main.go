@@ -59,6 +59,7 @@ var oauthConfig = oauth2.Config{
 	Scopes: []string{
 		"esi-markets.read_character_orders.v1",
 		"esi-ui.open_window.v1",
+		"esi-characters.read_standings.v1",
 		"esi-wallet.read_character_wallet.v1",
 		"publicData",
 	},
@@ -154,6 +155,7 @@ func NewServer(static http.Handler, db model.DB) *Server {
 	api.Methods("GET").Path("/v1/user/current").HandlerFunc(s.GetUserCurrent)
 	api.Methods("GET").Path("/v1/user/history").HandlerFunc(s.GetUserHistory)
 	api.Methods("GET").Path("/v1/user/orders").HandlerFunc(s.GetUserOrders)
+	api.Methods("GET").Path("/v1/user/standings").HandlerFunc(s.GetUserStandings)
 	api.Methods("PUT").Path("/v1/user/station").HandlerFunc(s.PutUserStation)
 	api.Methods("GET").Path("/v1/user/transactions").HandlerFunc(s.GetUserTransactions)
 
