@@ -76,39 +76,41 @@ func getSession(r *http.Request) (*sessions.Session, error) {
 	return store.Get(r, viper.GetString("httpd.session.name"))
 }
 
+var errNotAuth = errors.New("not authorized")
+
 func haveLoggedInUser(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		var ctx = r.Context()
+
 		session, err := getSession(r)
 		if err != nil {
 			apiInternalServerError(w, "store.Get", err)
 			return
 		}
-
-		errNotAuth := errors.New("not authorized")
-
-		user, ok := session.Values["user"].(model.User)
-		if !ok {
-			apiError(w, errNotAuth, http.StatusUnauthorized)
-			return
-		}
+		ctx = context.WithValue(ctx, CurrentSessionKey, session)
 
 		oldTok, ok := session.Values["token"].(oauth2.Token)
 		if !ok {
 			apiError(w, errNotAuth, http.StatusUnauthorized)
 			return
 		}
-
 		tokSrc := oauthConfig.TokenSource(r.Context(), &oldTok)
 		newTok, err := tokSrc.Token()
 		if err != nil {
 			apiError(w, errNotAuth, http.StatusUnauthorized)
 			return
 		}
-
-		ctx := r.Context()
-		ctx = context.WithValue(ctx, CurrentSessionKey, session)
-		ctx = context.WithValue(ctx, CurrentUserKey, user)
 		ctx = context.WithValue(ctx, esi.AccessTokenKey, newTok.AccessToken)
+
+		if r.URL.Path != "/api/v1/verify" {
+			user, ok := session.Values["user"].(model.User)
+			if !ok {
+				apiError(w, errNotAuth, http.StatusUnauthorized)
+				return
+			}
+			ctx = context.WithValue(ctx, CurrentUserKey, user)
+		}
+
 		next.ServeHTTP(w, r.WithContext(ctx))
 	})
 }

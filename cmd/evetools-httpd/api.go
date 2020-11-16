@@ -177,6 +177,19 @@ func (s *Server) GetUserWalletBalance(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(wallet)
 }
 
+func (s *Server) GetVerify(w http.ResponseWriter, r *http.Request) {
+	verify, err := s.esi.Verify(r.Context())
+	if err != nil {
+		apiError(w, fmt.Errorf("not authorized"), http.StatusUnauthorized)
+		return
+	}
+
+	json.NewEncoder(w).Encode(map[string]interface{}{
+		"character_id":   verify.CharacterID,
+		"character_name": verify.CharacterName,
+	})
+}
+
 func (s *Server) PostOpenInGame(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	typeID, _ := strconv.Atoi(vars["typeID"])

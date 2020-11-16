@@ -3,6 +3,8 @@ evetools = (function(document, window, undefined) {
 
   const plainViews = ['login', 'notFound'];
 
+  var verify = window.retrieve('/api/v1/verify', 'error verifying auth');
+
   var currentUser = window.retrieve('/api/v1/user/current', 'error fetching current user');
   result.currentUser = currentUser;
 
@@ -44,10 +46,7 @@ evetools = (function(document, window, undefined) {
       marketMenuOpen: false,
       loggedIn: false,
       navOpen: false,
-      user: {
-        character: { name: "", id: 0},
-        sationName: "",
-      },
+      character: { name: "", id: 0 },
 
       get currentView() {
         if (!this.loggedIn) {
@@ -87,8 +86,11 @@ evetools = (function(document, window, undefined) {
       },
 
       initialize() {
-        currentUser.then(user => {
-          this.user = user;
+        verify.then(user => {
+          this.character = {
+            id: user.character_id,
+            name: user.character_name,
+          }
           this.loggedIn = true;
           return user;
         })
