@@ -208,7 +208,7 @@ func (s *Server) LoginCallback(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if _, ok := session.Values["user"].(model.User); !ok {
-		user, err := s.db.GetUserForVerifiedToken(token, verify)
+		user, err := s.db.FindOrCreateUserForCharacter(verify)
 		if err != nil {
 			internalServerError(w, "GetUserForVerifiedToken", err)
 			return

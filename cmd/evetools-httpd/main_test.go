@@ -261,14 +261,6 @@ func (*testDB) GetFavoriteTypes(int) ([]int, error) {
 func (*testDB) IsFavorite(int, int) (bool, error) { return false, ErrNotImplemented }
 func (*testDB) SetFavorite(int, int, bool) error  { return ErrNotImplemented }
 
-func (*testDB) FindOrCreateUserForCharacter(characterID int, characterName, owner, refreshToken string) (*model.User, error) {
-	return &model.User{
-		ID:                42,
-		ActiveCharacterID: characterID,
-	}, nil
-	return nil, ErrNotImplemented
-}
-
 func (*testDB) GetCharacterByOwnerHash(hash string) (*model.Character, error) {
 	return &model.Character{
 		ID:                 1,
@@ -282,7 +274,7 @@ func (*testDB) GetCharactersForUser(userID int) (map[int]*model.Character, error
 	return nil, ErrNotImplemented
 }
 
-func (m *testDB) GetUserForVerifiedToken(token *oauth2.Token, verify esi.VerifyOK) (*model.User, error) {
+func (m *testDB) FindOrCreateUserForCharacter(verify esi.VerifyOK) (*model.User, error) {
 	return &model.User{
 		ID:                  1,
 		ActiveCharacterHash: verify.CharacterOwnerHash,

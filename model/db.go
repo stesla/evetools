@@ -3,7 +3,6 @@ package model
 import (
 	"database/sql"
 	"errors"
-	"golang.org/x/oauth2"
 
 	_ "github.com/mattn/go-sqlite3"
 	"github.com/stesla/evetools/esi"
@@ -13,7 +12,7 @@ type DB interface {
 	GetFavoriteTypes(userID int) ([]int, error)
 	GetCharacterByOwnerHash(string) (*Character, error)
 	GetCharactersForUser(int) (map[int]*Character, error)
-	GetUserForVerifiedToken(token *oauth2.Token, verify esi.VerifyOK) (*User, error)
+	FindOrCreateUserForCharacter(verify esi.VerifyOK) (*User, error)
 	IsFavorite(userID, typeID int) (bool, error)
 	SaveUserStation(userID, stationID int) error
 	SetFavorite(userID, typeID int, val bool) error
@@ -115,7 +114,7 @@ func (m *databaseModel) GetCharactersForUser(userID int) (map[int]*Character, er
 	return result, rows.Err()
 }
 
-func (m *databaseModel) GetUserForVerifiedToken(token *oauth2.Token, verify esi.VerifyOK) (u *User, err error) {
+func (m *databaseModel) FindOrCreateUserForCharacter(verify esi.VerifyOK) (u *User, err error) {
 	tx, err := m.db.Begin()
 	if err != nil {
 		return nil, err
