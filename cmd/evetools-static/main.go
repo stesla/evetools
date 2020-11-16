@@ -235,7 +235,7 @@ func saveGroups(dir string, jsonGroups map[int]*JsonGroup, root []int) error {
 type Station struct {
 	ID       int    `yaml:"stationID" json:"id"`
 	Name     string `yaml:"stationName" json:"name"`
-	CorpID   int    `yaml:"corporationID", json:"corp_id"`
+	CorpID   int    `yaml:"corporationID" json:"corp_id"`
 	RegionID int    `yaml:"regionID" json:"region_id"`
 	SystemID int    `yaml:"solarSystemID" json:"system_id"`
 }
