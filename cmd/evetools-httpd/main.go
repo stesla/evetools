@@ -145,8 +145,6 @@ func NewServer(static http.Handler, db model.DB) *Server {
 	api.Methods("GET").Path("/v1/types/{typeID:[0-9]+}").HandlerFunc(s.GetTypeID)
 	api.Methods("PUT").Path("/v1/types/{typeID:[0-9]+}/favorite").HandlerFunc(s.PutTypeFavorite)
 	api.Methods("POST").Path("/v1/types/{typeID:[0-9]+}/openInGame").HandlerFunc(s.PostOpenInGame)
-	api.Methods("DELETE").Path("/v1/user/characters/{cid:[0-9]+}").HandlerFunc(s.DeleteUserCharacter)
-	api.Methods("POST").Path("/v1/user/characters/{cid:[0-9]+}/activate").HandlerFunc(s.ActivateUserCharacter)
 	api.Methods("GET").Path("/v1/user/characters").HandlerFunc(s.GetUserCharacters)
 	api.Methods("GET").Path("/v1/user/current").HandlerFunc(s.GetUserCurrent)
 	api.Methods("GET").Path("/v1/user/history").HandlerFunc(s.GetUserHistory)
@@ -175,7 +173,9 @@ func (s *Server) Login(w http.ResponseWriter, r *http.Request) {
 		internalServerError(w, "session.Save", err)
 		return
 	}
-	url := oauthConfig.AuthCodeURL(state)
+	var scopelessConfig = oauthConfig
+	scopelessConfig.Scopes = nil
+	url := scopelessConfig.AuthCodeURL(state)
 	http.Redirect(w, r, url, http.StatusFound)
 }
 
@@ -200,47 +200,13 @@ func (s *Server) LoginCallback(w http.ResponseWriter, r *http.Request) {
 	}
 
 	ctx := context.WithValue(r.Context(), esi.AccessTokenKey, token.AccessToken)
-	verify, err := s.esi.Verify(ctx)
+	_, err = s.esi.Verify(ctx)
 	if err != nil {
 		internalServerError(w, "Verify", err)
 		return
 	}
 
-	characterID := verify.CharacterID
-	characterName := verify.CharacterName
-	ownerToken := verify.CharacterOwnerHash
-
-	if user, ok := session.Values["user"].(model.User); ok {
-		if err := s.db.AssociateWithUser(user.ID, characterID, characterName, ownerToken, token.RefreshToken); err != nil {
-			internalServerError(w, "AssociateWithUser", err)
-			return
-		}
-	} else {
-		user, err := s.db.FindOrCreateUserForCharacter(characterID, characterName, ownerToken, token.RefreshToken)
-		if err != nil {
-			internalServerError(w, "FindOrCreateUserForCharacter", err)
-			return
-		}
-		character, err := s.db.GetCharacter(user.ActiveCharacterID)
-		if err != nil {
-			internalServerError(w, "FindOrCreateuserForCharacter", err)
-			return
-		}
-
-		token, err = refreshToken(r.Context(), character.RefreshToken)
-		if err != nil {
-			internalServerError(w, "refreshToken", err)
-			return
-		}
-
-		session.Values["user"] = user
-		session.Values["token"] = token
-	}
-
-	if err = s.db.SaveRefreshToken(characterID, token.RefreshToken); err != nil {
-		internalServerError(w, "SaveRefreshToken", err)
-		return
-	}
+	session.Values["token"] = token
 
 	if err := session.Save(r, w); err != nil {
 		internalServerError(w, "save session", err)

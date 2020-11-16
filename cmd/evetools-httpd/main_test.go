@@ -65,7 +65,6 @@ func TestLogin(t *testing.T) {
 		assert.Equal("code", q.Get("response_type"))
 		assert.Equal("REDIRECT_URL", q.Get("redirect_uri"))
 		assert.Equal("CLIENT_ID", q.Get("client_id"))
-		assert.NotEmpty(q.Get("scope"), "scope")
 		assert.NotEmpty(q.Get("state"), "state")
 	}
 }

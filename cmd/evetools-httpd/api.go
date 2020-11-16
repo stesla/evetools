@@ -13,66 +13,6 @@ import (
 	"github.com/stesla/evetools/model"
 )
 
-func (s *Server) ActivateUserCharacter(w http.ResponseWriter, r *http.Request) {
-	vars := mux.Vars(r)
-	cid, _ := strconv.Atoi(vars["cid"])
-
-	session, err := getSession(r)
-	if err != nil {
-		apiInternalServerError(w, "store.Get", err)
-		return
-	}
-
-	character, err := s.db.GetCharacter(cid)
-	if err == model.ErrNotFound {
-		apiError(w, fmt.Errorf("character not found"), http.StatusNotFound)
-		return
-	} else if err != nil {
-		apiInternalServerError(w, "GetCharacter", err)
-		return
-	}
-
-	user := currentUser(r)
-	if err = s.db.SetActiveCharacter(user.ID, cid); err != nil {
-		apiInternalServerError(w, "SetActiveCharacter", err)
-		return
-	}
-	user.ActiveCharacterID = cid
-	session.Values["user"] = user
-
-	token, err := refreshToken(r.Context(), character.RefreshToken)
-	if err != nil {
-		apiInternalServerError(w, "refreshToken", err)
-		return
-	}
-
-	if err = s.db.SaveRefreshToken(character.ID, token.RefreshToken); err != nil {
-		apiInternalServerError(w, "SaveRefreshToken", err)
-		return
-	}
-
-	session.Values["token"] = token
-
-	if err := session.Save(r, w); err != nil {
-		internalServerError(w, "save session", err)
-		return
-	}
-
-	w.WriteHeader(http.StatusNoContent)
-}
-
-func (s *Server) DeleteUserCharacter(w http.ResponseWriter, r *http.Request) {
-	vars := mux.Vars(r)
-	cid, _ := strconv.Atoi(vars["cid"])
-
-	err := s.db.RemoveUserAssociation(cid)
-	if err != nil {
-		apiInternalServerError(w, "RemoveUserAssociation", err)
-		return
-	}
-	w.WriteHeader(http.StatusNoContent)
-}
-
 func (s *Server) GetTypeID(w http.ResponseWriter, r *http.Request) {
 	user := currentUser(r)
 
