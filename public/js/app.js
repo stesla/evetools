@@ -1,6 +1,8 @@
 evetools = (function(document, window, undefined) {
   var result = {};
 
+  const plainViews = ['login', 'notFound'];
+
   var currentUser = window.retrieve('/api/v1/user/current', 'error fetching current user');
   result.currentUser = currentUser;
 
@@ -92,15 +94,19 @@ evetools = (function(document, window, undefined) {
         })
         .catch(() => {})
         .then(() => {
-          const url = '/js/'+this.currentView+'.js';
-          return retrieve(url, 'error fetching viewData', { raw: true });
+          if (!plainViews.includes(this.currentView)) {
+            const url = '/js/'+this.currentView+'.js';
+            return retrieve(url, 'error fetching viewData', { raw: true });
+          }
         })
-        .then(resp => resp.blob())
+        .then(resp => resp ? resp.blob() : undefined)
         .then(blob => {
-          const script = document.createElement('script'),
-                src = URL.createObjectURL(blob);
-          script.src = src;
-          document.body.appendChild(script);
+          if (blob) {
+            const script = document.createElement('script'),
+                  src = URL.createObjectURL(blob);
+            script.src = src;
+            document.body.appendChild(script);
+          }
         })
         .then(() => {
           const url = '/views/'+this.currentView+'.html';
