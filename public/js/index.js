@@ -18,7 +18,6 @@ viewData = (function(window, document, undefined) {
     let factionStanding = standings.find(s =>
       s.from_type === 'faction' && s.from_id == corp.faction_id);
     
-    console.log(brokerRelations, factionStanding, corpStanding);
     if (brokerRelations)
       fee -= 0.003 * brokerRelations.active_skill_level;
     if (factionStanding)
