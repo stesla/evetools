@@ -250,6 +250,10 @@ type testDB struct{}
 
 var ErrNotImplemented = errors.New("not implemented")
 
+func (m *testDB) CreateCharacterForUser(int, esi.VerifyOK) (*model.Character, error) {
+	return nil, ErrNotImplemented
+}
+
 func (m *testDB) CreateUserForCharacter(verify esi.VerifyOK) (*model.User, error) {
 	return &model.User{
 		ID:                  1,

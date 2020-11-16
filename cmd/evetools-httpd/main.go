@@ -207,19 +207,24 @@ func (s *Server) LoginCallback(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if _, ok := session.Values["user"].(model.User); !ok {
-		var user *model.User
+	character, err := s.db.GetCharacterByOwnerHash(verify.CharacterOwnerHash)
+	if err != nil && err != model.ErrNotFound {
+		internalServerError(w, "GetCharacterByOwnerHash", err)
+		return
+	}
+
+	if user, ok := session.Values["user"].(model.User); !ok {
 		// initial login is setting up the session
-		character, err := s.db.GetCharacterByOwnerHash(verify.CharacterOwnerHash)
-		if err == model.ErrNotFound {
+		var user *model.User
+		log.Println("%r", character)
+
+		if character == nil {
+			// new-to-us character
 			user, err = s.db.CreateUserForCharacter(verify)
 			if err != nil {
 				internalServerError(w, "CreateUserForCharacter", err)
 				return
 			}
-		} else if err != nil {
-			internalServerError(w, "GetCharacterByOwnerHash", err)
-			return
 		} else {
 			user, err = s.db.GetUser(character.UserID)
 			if err != nil {
@@ -230,6 +235,15 @@ func (s *Server) LoginCallback(w http.ResponseWriter, r *http.Request) {
 
 		session.Values["user"] = user
 		session.Values["token"] = token
+	} else {
+		// already logged in, add the character if we don't already have it
+		if character == nil {
+			character, err = s.db.CreateCharacterForUser(user.ID, verify)
+			if err != nil {
+				internalServerError(w, "CreateCharacterForUser", err)
+				return
+			}
+		}
 	}
 
 	if err := session.Save(r, w); err != nil {

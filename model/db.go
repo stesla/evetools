@@ -9,7 +9,8 @@ import (
 )
 
 type DB interface {
-	CreateUserForCharacter(verify esi.VerifyOK) (*User, error)
+	CreateCharacterForUser(int, esi.VerifyOK) (*Character, error)
+	CreateUserForCharacter(esi.VerifyOK) (*User, error)
 	GetCharacterByOwnerHash(string) (*Character, error)
 	GetCharactersForUser(int) (map[int]*Character, error)
 	GetFavoriteTypes(userID int) ([]int, error)
@@ -90,18 +91,18 @@ type User struct {
 	StationID         int `json:"stationID"`
 }
 
-func (m *databaseModel) GetCharacterByOwnerHash(hash string) (c *Character, err error) {
+func (m *databaseModel) GetCharacterByOwnerHash(hash string) (*Character, error) {
 	const query = `SELECT id, characterID, characterName, userID FROM characters WHERE characterOwnerHash = ?`
-	c = &Character{CharacterOwnerHash: hash}
-	err = m.db.QueryRow(query, hash).Scan(&c.ID, &c.CharacterID, &c.CharacterName, &c.UserID)
+	c := &Character{CharacterOwnerHash: hash}
+	err := m.db.QueryRow(query, hash).Scan(&c.ID, &c.CharacterID, &c.CharacterName, &c.UserID)
 	if err == sql.ErrNoRows {
-		err = ErrNotFound
+		return nil, ErrNotFound
 	}
-	return
+	return c, nil
 }
 
 func (m *databaseModel) GetCharactersForUser(userID int) (map[int]*Character, error) {
-	const query = `SELECT characterID, characterName FROM characters WHERE userID = ?`
+	const query = `SELECT id, characterID, characterName FROM characters WHERE userID = ?`
 
 	rows, err := m.db.Query(query, userID)
 	if err != nil {
@@ -110,10 +111,10 @@ func (m *databaseModel) GetCharactersForUser(userID int) (map[int]*Character, er
 	result := map[int]*Character{}
 	for rows.Next() {
 		c := &Character{UserID: userID}
-		if err = rows.Scan(&c.CharacterID, &c.CharacterName); err != nil {
+		if err = rows.Scan(&c.ID, &c.CharacterID, &c.CharacterName); err != nil {
 			return nil, err
 		}
-		result[c.ID] = c
+		result[c.CharacterID] = c
 	}
 	return result, rows.Err()
 }
@@ -126,9 +127,30 @@ func (m *databaseModel) GetUser(userID int) (*User, error) {
 	err := m.db.QueryRow(selectUser, userID).
 		Scan(&u.ActiveCharacterHash, &u.ActiveCharacterID, &u.StationID)
 	if err == sql.ErrNoRows {
-		err = ErrNotFound
+		return nil, ErrNotFound
 	}
-	return u, err
+	return u, nil
+}
+
+const createCharacter = `INSERT INTO characters (characterID, characterName, characterOwnerHash, userID)
+						 VALUES (?, ?, ?, ?)`
+
+func (m *databaseModel) CreateCharacterForUser(userID int, verify esi.VerifyOK) (*Character, error) {
+	r, err := m.db.Exec(createCharacter, verify.CharacterID, verify.CharacterName, verify.CharacterOwnerHash, userID)
+	if err != nil {
+		return nil, err
+	}
+	cid, err := r.LastInsertId()
+	if err != nil {
+		return nil, err
+	}
+	return &Character{
+		ID:                 int(cid),
+		CharacterID:        verify.CharacterID,
+		CharacterName:      verify.CharacterName,
+		CharacterOwnerHash: verify.CharacterOwnerHash,
+		UserID:             userID,
+	}, nil
 }
 
 func (m *databaseModel) CreateUserForCharacter(verify esi.VerifyOK) (u *User, err error) {
@@ -145,8 +167,6 @@ func (m *databaseModel) CreateUserForCharacter(verify esi.VerifyOK) (u *User, er
 	}()
 
 	const createUser = `INSERT INTO users (activeCharacterHash) VALUES (?)`
-	const createCharacter = `INSERT INTO characters (characterID, characterName, characterOwnerHash, userID)
-							 VALUES (?, ?, ?, ?)`
 
 	r, err := tx.Exec(createUser, verify.CharacterOwnerHash)
 	if err != nil {
