@@ -188,6 +188,18 @@ func (s *Server) GetUserOrders(w http.ResponseWriter, r *http.Request) {
 	s.serveMarketOrders(w, r, s.esi.GetMarketOrders)
 }
 
+func (s *Server) GetUserSkills(w http.ResponseWriter, r *http.Request) {
+	user := currentUser(r)
+
+	skills, err := s.esi.GetCharacterSkills(r.Context(), user.ActiveCharacterID)
+	if err != nil {
+		apiInternalServerError(w, "GetCharacterSkills", err)
+		return
+	}
+
+	json.NewEncoder(w).Encode(skills)
+}
+
 func (s *Server) GetUserStandings(w http.ResponseWriter, r *http.Request) {
 	user := currentUser(r)
 

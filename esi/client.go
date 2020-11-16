@@ -7,6 +7,7 @@ import (
 
 type Client interface {
 	GetCharacterName(characterID int) (string, error)
+	GetCharacterSkills(ctx context.Context, characterID int) ([]Skill, error)
 	GetCharacterStandings(ctx context.Context, characterID int) ([]Standing, error)
 	GetMarketOrderHistory(ctx context.Context, characterID int) ([]*MarketOrder, error)
 	GetMarketOrders(ctx context.Context, characterID int) ([]*MarketOrder, error)

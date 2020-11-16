@@ -27,6 +27,31 @@ func (c *client) GetCharacterName(characterID int) (string, error) {
 	return character.Name, err
 }
 
+type Skill struct {
+	ID          int `json:"skill_id"`
+	ActiveLevel int `json:"active_skill_level"`
+}
+
+func (c *client) GetCharacterSkills(ctx context.Context, characterID int) ([]Skill, error) {
+	url := fmt.Sprintf("/characters/%d/skills/", characterID)
+	req, err := newESIRequest(ctx, http.MethodGet, url, nil)
+	if err != nil {
+		return nil, err
+	}
+
+	resp, err := c.http.Do(req)
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+
+	var obj struct {
+		Skills []Skill `json:"skills"`
+	}
+	err = json.NewDecoder(resp.Body).Decode(&obj)
+	return obj.Skills, err
+}
+
 type Standing struct {
 	FromID   int     `json:"from_id"`
 	FromType string  `json:"from_type"`
