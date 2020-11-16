@@ -1,7 +1,7 @@
 <main class="mt-10 mb-10 container mx-auto max-w-6xl"
       x-data="viewData"
       x-init="initialize()">
-  <h1 class="mt-10 text-3xl text-center text-gray-700 font-bold">My Liquid Assets</h1>
+  <h1 class="mt-10 text-3xl text-center text-gray-700 font-bold">My Important Numbers</h1>
   <div class="mt-4 w-64 mx-auto px-4 py-4 border border-gray-500 rounded-xl shadow-xl bg-gray-100">
     <dl class="">
       <div>
@@ -15,6 +15,10 @@
       <div class="mt-3">
         <dt class="border-b border-gray-500">Sell Orders</dt>
         <dd class="font-bold" x-text="formatISK(sellTotal)"></dd>
+      </div>
+      <div class="mt-3">
+        <dt class="border-b border-gray-500">Broker Fee</dt>
+        <dd class="font-bold" x-text="formatPercent(brokerFee)"></dd>
       </div>
     </dl>
   </div>

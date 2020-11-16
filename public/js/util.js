@@ -33,12 +33,23 @@
     return 'https://images.evetech.net/types/' + type.id + '/' + imgType + '?size=128';
   }
 
+  window.formatDecimal = function(amt, maxDigit, minDigit) {
+    return amt.toLocaleString('en-US', { 
+      maximumFractionDigits: maxDigit, 
+      minimumFractionDigits: minDigit,
+    });
+  }
+
   window.formatISK = function(amt) {
-    return amt.toLocaleString('en-US', { maximumFractionDigits: 2, minimumFractionDigits: 2 });
+    return formatDecimal(amt, 2, 2);
   }
 
   window.formatNumber = function(amt) {
-    return amt.toLocaleString('en-US', { maximumFractionDigits: 2 });
+    return formatDecimal(amt, 2)
+  }
+
+  window.formatPercent = function(amt) {
+    return formatDecimal(100 * amt, 2, 2) + "%"
   }
 
   window.handleSearch = function(q) {
