@@ -2,6 +2,7 @@ package esi
 
 import (
 	"context"
+	"encoding/json"
 	"net/http"
 )
 
@@ -16,6 +17,7 @@ type Client interface {
 	GetWalletBalance(ctx context.Context, characterID int) (balance float64, err error)
 	GetWalletTransactions(ctx context.Context, characterID int) ([]*WalletTransaction, error)
 	OpenMarketWindow(ctx context.Context, typeID int) (crr error)
+	Verify(ctx context.Context) (VerifyOK, error)
 }
 
 type client struct {
@@ -24,4 +26,30 @@ type client struct {
 
 func NewClient(http *http.Client) Client {
 	return &client{http: http}
+}
+
+type VerifyOK struct {
+	CharacterID        int
+	CharacterName      string
+	CharacterOwnerHash string
+	ClientID           string
+	ExpiresOn          string
+	Scopes             string
+	TokenType          string
+}
+
+func (c *client) Verify(ctx context.Context) (result VerifyOK, err error) {
+	req, err := newMetaRequest(ctx, http.MethodGet, "/verify/", nil)
+	if err != nil {
+		return
+	}
+
+	resp, err := c.http.Do(req)
+	if err != nil {
+		return
+	}
+	defer resp.Body.Close()
+
+	err = json.NewDecoder(resp.Body).Decode(&result)
+	return
 }

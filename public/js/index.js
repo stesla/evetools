@@ -4,6 +4,7 @@ viewData = (function(window, document, undefined) {
   var orders = retrieve('/api/v1/user/orders', 'error fetching market orders');
   var skills = retrieve('/api/v1/user/skills', 'error fetching skills');
   var standings = retrieve('/api/v1/user/standings', 'error fetching standings');
+  var wallet = retrieve('/api/v1/user/walletBalance', 'error fetching wallet balance');
 
   const brokerRelationsID = 3446;
 
@@ -39,20 +40,23 @@ viewData = (function(window, document, undefined) {
     initialize() {
       document.title += " - Dashboard"
 
+      wallet.then(balance => {
+        this.walletBalance = balance;
+      });
+
+      orders.then(orders => {
+        this.buyTotal = orders.buy.reduce((a, o) => a + o.escrow, 0);
+        this.sellTotal = orders.sell.reduce((a, x) => a + x.volume_remain * x.price, 0);
+      });
+
       evetools.sdeTypes().then(types => {
         evetools.currentUser.then(user => {
-          this.walletBalance = user.wallet_balance;
           this.favorites = user.favorites.map(id => {
             let type = types[""+id];
             type.favorite = true;
             return type;
           }).sort(byName);
         });
-      });
-
-      orders.then(orders => {
-        this.buyTotal = orders.buy.reduce((a, o) => a + o.escrow, 0);
-        this.sellTotal = orders.sell.reduce((a, x) => a + x.volume_remain * x.price, 0);
       });
 
       stations.then(stations => {

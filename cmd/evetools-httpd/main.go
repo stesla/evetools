@@ -5,13 +5,10 @@ import (
 	"crypto/rand"
 	"encoding/base64"
 	"encoding/gob"
-	"encoding/json"
 	"fmt"
 	"log"
 	"net/http"
 	"os"
-	"strconv"
-	"strings"
 
 	"golang.org/x/oauth2"
 
@@ -21,8 +18,6 @@ import (
 	"github.com/gorilla/sessions"
 	"github.com/gregjones/httpcache"
 	"github.com/gregjones/httpcache/diskcache"
-	"github.com/lestrrat-go/jwx/jwk"
-	"github.com/lestrrat-go/jwx/jwt"
 	"github.com/spf13/pflag"
 	"github.com/spf13/viper"
 	"github.com/stesla/evetools/esi"
@@ -47,7 +42,7 @@ func init() {
 	viper.SetDefault("httpd.session.auth_key", securecookie.GenerateRandomKey(64))
 	viper.SetDefault("httpd.session.name", "evetools")
 	viper.SetDefault("model.database", "./evetools.sqlite3")
-	viper.SetDefault("sde.database", "./eve-sde.sqlite3")
+	viper.SetDefault("esi.basePath", "https://esi.evetech.net")
 	viper.SetDefault("oauth.basePath", "https://login.eveonline.com")
 	viper.SetDefault("http.cache.dir", "./cache")
 
@@ -160,6 +155,7 @@ func NewServer(static http.Handler, db model.DB) *Server {
 	api.Methods("GET").Path("/v1/user/standings").HandlerFunc(s.GetUserStandings)
 	api.Methods("PUT").Path("/v1/user/station").HandlerFunc(s.PutUserStation)
 	api.Methods("GET").Path("/v1/user/transactions").HandlerFunc(s.GetUserTransactions)
+	api.Methods("GET").Path("/v1/user/walletBalance").HandlerFunc(s.GetUserWalletBalance)
 
 	return s
 }
@@ -203,59 +199,16 @@ func (s *Server) LoginCallback(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	resp, err := s.http.Get(fmt.Sprintf("%s/.well-known/oauth-authorization-server",
-		viper.GetString("oauth.basePath")))
+	ctx := context.WithValue(r.Context(), esi.AccessTokenKey, token.AccessToken)
+	verify, err := s.esi.Verify(ctx)
 	if err != nil {
-		internalServerError(w, "GET metadata", err)
-		return
-	}
-	defer resp.Body.Close()
-	var meta struct {
-		URI string `json:"jwks_uri"`
-	}
-	err = json.NewDecoder(resp.Body).Decode(&meta)
-	if err != nil {
-		internalServerError(w, "Decode metadata", err)
+		internalServerError(w, "Verify", err)
 		return
 	}
 
-	keyset, err := jwk.Fetch(meta.URI, jwk.WithHTTPClient(&s.http))
-	if err != nil {
-		internalServerError(w, "fetch jwks", err)
-		return
-	}
-
-	payload, err := jwt.ParseString(token.AccessToken, jwt.WithKeySet(keyset))
-	if err != nil {
-		internalServerError(w, "verify token", err)
-		return
-	}
-
-	chunks := strings.Split(payload.Subject(), ":")
-	if len(chunks) != 3 {
-		err := fmt.Errorf("incorrect subject format %q", payload.Subject())
-		internalServerError(w, "get characterID", err)
-		return
-	}
-	characterID, err := strconv.Atoi(chunks[2])
-	if err != nil {
-		internalServerError(w, "get characterID", err)
-		return
-	}
-
-	v, _ := payload.Get("name")
-	characterName, ok := v.(string)
-	if !ok {
-		internalServerError(w, "get characterName", err)
-		return
-	}
-
-	v, _ = payload.Get("owner")
-	ownerToken, ok := v.(string)
-	if !ok {
-		internalServerError(w, "get owner token", err)
-		return
-	}
+	characterID := verify.CharacterID
+	characterName := verify.CharacterName
+	ownerToken := verify.CharacterOwnerHash
 
 	if user, ok := session.Values["user"].(model.User); ok {
 		if err := s.db.AssociateWithUser(user.ID, characterID, characterName, ownerToken, token.RefreshToken); err != nil {

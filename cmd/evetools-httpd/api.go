@@ -166,17 +166,10 @@ func (s *Server) GetUserCurrent(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	wallet, err := s.esi.GetWalletBalance(r.Context(), character.ID)
-	if err != nil {
-		apiInternalServerError(w, "WalletBalance", err)
-		return
-	}
-
 	json.NewEncoder(w).Encode(map[string]interface{}{
-		"character":      character,
-		"favorites":      favorites,
-		"station_id":     user.StationID,
-		"wallet_balance": wallet,
+		"character":  character,
+		"favorites":  favorites,
+		"station_id": user.StationID,
 	})
 }
 
@@ -230,6 +223,18 @@ func (s *Server) GetUserTransactions(w http.ResponseWriter, r *http.Request) {
 	}
 
 	json.NewEncoder(w).Encode(txns)
+}
+
+func (s *Server) GetUserWalletBalance(w http.ResponseWriter, r *http.Request) {
+	user := currentUser(r)
+
+	wallet, err := s.esi.GetWalletBalance(r.Context(), user.ActiveCharacterID)
+	if err != nil {
+		apiInternalServerError(w, "WalletBalance", err)
+		return
+	}
+
+	json.NewEncoder(w).Encode(wallet)
 }
 
 func (s *Server) PostOpenInGame(w http.ResponseWriter, r *http.Request) {

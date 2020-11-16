@@ -6,6 +6,7 @@ import (
 	"encoding/gob"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"net/url"
@@ -21,6 +22,7 @@ import (
 	"github.com/lestrrat-go/jwx/jwt"
 	"github.com/spf13/viper"
 
+	"github.com/stesla/evetools/esi"
 	"github.com/stesla/evetools/model"
 	"github.com/stretchr/testify/assert"
 	"golang.org/x/oauth2"
@@ -32,6 +34,7 @@ func init() {
 }
 
 func TestMain(m *testing.M) {
+	viper.Set("esi.basePath", "https://esi")
 	viper.Set("oauth.basePath", "https://esi")
 	viper.Set("oauth.clientId", "CLIENT_ID")
 	viper.Set("oauth.clientSecret", "CLIENT_SECRET")
@@ -70,26 +73,12 @@ func TestLogin(t *testing.T) {
 func TestLoginCallback(t *testing.T) {
 	assert := assert.New(t)
 
-	mrt.AddHandler("https://esi/.well-known/oauth-authorization-server",
-		http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			w.Header().Set("Content-Type", "application/json")
-			json.NewEncoder(w).Encode(map[string]interface{}{
-				"issuer":   "https://esi",
-				"jwks_uri": "https://esi/oauth/jwks",
-			})
-		}))
-
+	// stub out call from oauth2.Exchange
 	privrsa, _ := rsa.GenerateKey(rand.Reader, 2048)
 	privKey, _ := jwk.New(privrsa)
 	pubKey, _ := jwk.New(privrsa.PublicKey)
 	pubKey.Set(jwk.KeyUsageKey, string(jwk.ForSignature))
 	pubKey.Set(jwk.KeyIDKey, "JWT-Signature-Key")
-	mrt.AddHandler("https://esi/oauth/jwks",
-		http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			w.Header().Set("Content-Type", "application/json")
-			json.NewEncoder(w).Encode(jwk.Set{Keys: []jwk.Key{pubKey}})
-		}))
-
 	token := jwt.New()
 	token.Set(jwt.SubjectKey, "CHARACTER:EVE:123456890")
 	token.Set("name", "Bob Awox")
@@ -107,6 +96,13 @@ func TestLoginCallback(t *testing.T) {
 				"token_type":    "Bearer",
 				"refresh_token": "REFRESH_TOKEN",
 			})
+		}))
+
+	// stub out call from esi.Verfiy
+	mrt.AddHandler("https://esi/verify/?datasource=tranquility",
+		http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			w.Header().Set("Content-Type", "applicaton/json")
+			json.NewEncoder(w).Encode(esi.VerifyOK{})
 		}))
 
 	req, _ := http.NewRequest("GET", "/login/callback", nil)
@@ -242,7 +238,7 @@ func (m *mockRoundTripper) RoundTrip(req *http.Request) (*http.Response, error) 
 	if h := m.handlers[req.URL.String()]; h != nil {
 		h.ServeHTTP(recorder, req)
 	} else {
-		http.NotFound(recorder, req)
+		http.Error(recorder, fmt.Sprintf("not found: %q", req.URL.String()), http.StatusNotFound)
 	}
 	return recorder.Result(), nil
 }

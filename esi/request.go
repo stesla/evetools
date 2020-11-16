@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"github.com/spf13/viper"
 	"io"
 	"net/http"
 	"net/url"
@@ -24,7 +25,15 @@ func (d Date) MarshalJSON() ([]byte, error) {
 }
 
 func newESIRequest(ctx context.Context, method, path string, body io.Reader) (*http.Request, error) {
-	addr := "https://esi.evetech.net/latest" + path
+	return newESIRequestWithURL(ctx, method, viper.GetString("esi.basePath")+"/latest"+path, body)
+
+}
+
+func newMetaRequest(ctx context.Context, method, path string, body io.Reader) (*http.Request, error) {
+	return newESIRequestWithURL(ctx, method, viper.GetString("esi.basePath")+path, body)
+}
+
+func newESIRequestWithURL(ctx context.Context, method, addr string, body io.Reader) (*http.Request, error) {
 	req, err := http.NewRequestWithContext(ctx, method, addr, body)
 	if err != nil {
 		return nil, err
