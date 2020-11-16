@@ -250,8 +250,13 @@ type testDB struct{}
 
 var ErrNotImplemented = errors.New("not implemented")
 
-func (*testDB) AssociateWithUser(userID, characterID int, characterName, owner, refreshToken string) error {
-	return ErrNotImplemented
+func (m *testDB) CreateUserForCharacter(verify esi.VerifyOK) (*model.User, error) {
+	return &model.User{
+		ID:                  1,
+		ActiveCharacterHash: verify.CharacterOwnerHash,
+		ActiveCharacterID:   verify.CharacterID,
+		StationID:           65432108,
+	}, nil
 }
 
 func (*testDB) GetFavoriteTypes(int) ([]int, error) {
@@ -267,6 +272,7 @@ func (*testDB) GetCharacterByOwnerHash(hash string) (*model.Character, error) {
 		CharacterID:        1234567890,
 		CharacterName:      "Bob Awox",
 		CharacterOwnerHash: hash,
+		UserID:             42,
 	}, nil
 }
 
@@ -274,11 +280,11 @@ func (*testDB) GetCharactersForUser(userID int) (map[int]*model.Character, error
 	return nil, ErrNotImplemented
 }
 
-func (m *testDB) FindOrCreateUserForCharacter(verify esi.VerifyOK) (*model.User, error) {
+func (m *testDB) GetUser(userID int) (*model.User, error) {
 	return &model.User{
-		ID:                  1,
-		ActiveCharacterHash: verify.CharacterOwnerHash,
-		ActiveCharacterID:   verify.CharacterID,
+		ID:                  userID,
+		ActiveCharacterHash: "OWNER-HASH",
+		ActiveCharacterID:   1234567890,
 		StationID:           65432108,
 	}, nil
 }

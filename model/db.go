@@ -9,10 +9,11 @@ import (
 )
 
 type DB interface {
-	GetFavoriteTypes(userID int) ([]int, error)
+	CreateUserForCharacter(verify esi.VerifyOK) (*User, error)
 	GetCharacterByOwnerHash(string) (*Character, error)
 	GetCharactersForUser(int) (map[int]*Character, error)
-	FindOrCreateUserForCharacter(verify esi.VerifyOK) (*User, error)
+	GetFavoriteTypes(userID int) ([]int, error)
+	GetUser(userID int) (*User, error)
 	IsFavorite(userID, typeID int) (bool, error)
 	SaveUserStation(userID, stationID int) error
 	SetFavorite(userID, typeID int, val bool) error
@@ -93,6 +94,9 @@ func (m *databaseModel) GetCharacterByOwnerHash(hash string) (c *Character, err 
 	const query = `SELECT id, characterID, characterName, userID FROM characters WHERE characterOwnerHash = ?`
 	c = &Character{CharacterOwnerHash: hash}
 	err = m.db.QueryRow(query, hash).Scan(&c.ID, &c.CharacterID, &c.CharacterName, &c.UserID)
+	if err == sql.ErrNoRows {
+		err = ErrNotFound
+	}
 	return
 }
 
@@ -114,7 +118,20 @@ func (m *databaseModel) GetCharactersForUser(userID int) (map[int]*Character, er
 	return result, rows.Err()
 }
 
-func (m *databaseModel) FindOrCreateUserForCharacter(verify esi.VerifyOK) (u *User, err error) {
+func (m *databaseModel) GetUser(userID int) (*User, error) {
+	const selectUser = `SELECT u.activeCharacterHash, c.characterID, u.stationID
+                        FROM users u JOIN characters c ON u.activeCharacterHash = c.characterOwnerHash
+                        WHERE u.id = ?`
+	u := &User{ID: userID}
+	err := m.db.QueryRow(selectUser, userID).
+		Scan(&u.ActiveCharacterHash, &u.ActiveCharacterID, &u.StationID)
+	if err == sql.ErrNoRows {
+		err = ErrNotFound
+	}
+	return u, err
+}
+
+func (m *databaseModel) CreateUserForCharacter(verify esi.VerifyOK) (u *User, err error) {
 	tx, err := m.db.Begin()
 	if err != nil {
 		return nil, err
@@ -127,37 +144,29 @@ func (m *databaseModel) FindOrCreateUserForCharacter(verify esi.VerifyOK) (u *Us
 		}
 	}()
 
-	const selectUser = `SELECT u.id, u.activeCharacterHash, c.characterID, u.stationID
-						FROM users u JOIN characters c ON u.activeCharacterHash = c.characterOwnerHash
-						WHERE c.characterID = ? AND c.characterOwnerHash = ?`
 	const createUser = `INSERT INTO users (activeCharacterHash) VALUES (?)`
 	const createCharacter = `INSERT INTO characters (characterID, characterName, characterOwnerHash, userID)
 							 VALUES (?, ?, ?, ?)`
 
-	u = &User{}
-	err = tx.QueryRow(selectUser, verify.CharacterID, verify.CharacterOwnerHash).
-		Scan(&u.ID, &u.ActiveCharacterHash, &u.ActiveCharacterID, &u.StationID)
-	if err == sql.ErrNoRows {
-		var r sql.Result
-		r, err = tx.Exec(createUser, verify.CharacterOwnerHash)
-		if err != nil {
-			return
-		}
-		var userID int64
-		userID, err = r.LastInsertId()
-		if err != nil {
-			return
-		}
+	r, err := tx.Exec(createUser, verify.CharacterOwnerHash)
+	if err != nil {
+		return
+	}
+	userID, err := r.LastInsertId()
+	if err != nil {
+		return
+	}
 
-		_, err = tx.Exec(createCharacter, verify.CharacterID, verify.CharacterName, verify.CharacterOwnerHash, userID)
-		if err != nil {
-			return
-		}
+	_, err = tx.Exec(createCharacter, verify.CharacterID, verify.CharacterName, verify.CharacterOwnerHash, userID)
+	if err != nil {
+		return
+	}
 
-		u.ID = int(userID)
-		u.ActiveCharacterHash = verify.CharacterOwnerHash
-		u.ActiveCharacterID = verify.CharacterID
-		u.StationID = 60003760 // default value in the database
+	u = &User{
+		ID:                  int(userID),
+		ActiveCharacterHash: verify.CharacterOwnerHash,
+		ActiveCharacterID:   verify.CharacterID,
+		StationID:           60003760, // default value in the database
 	}
 	return
 }

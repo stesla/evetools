@@ -208,11 +208,26 @@ func (s *Server) LoginCallback(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if _, ok := session.Values["user"].(model.User); !ok {
-		user, err := s.db.FindOrCreateUserForCharacter(verify)
-		if err != nil {
-			internalServerError(w, "GetUserForVerifiedToken", err)
+		var user *model.User
+		// initial login is setting up the session
+		character, err := s.db.GetCharacterByOwnerHash(verify.CharacterOwnerHash)
+		if err == model.ErrNotFound {
+			user, err = s.db.CreateUserForCharacter(verify)
+			if err != nil {
+				internalServerError(w, "CreateUserForCharacter", err)
+				return
+			}
+		} else if err != nil {
+			internalServerError(w, "GetCharacterByOwnerHash", err)
 			return
+		} else {
+			user, err = s.db.GetUser(character.UserID)
+			if err != nil {
+				internalServerError(w, "GetUser", err)
+				return
+			}
 		}
+
 		session.Values["user"] = user
 		session.Values["token"] = token
 	}
