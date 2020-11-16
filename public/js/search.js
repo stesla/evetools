@@ -1,4 +1,7 @@
 viewData = (function(window, document, undefined) {
+  var currentUser = window.retrieve('/api/v1/user/current', 'error fetching current user');
+  var types = retrieve('/data/types.json', 'error fetching sde types');
+
   const urlParams = new URLSearchParams(window.location.search);
   return {
     favorites: [],
@@ -6,7 +9,7 @@ viewData = (function(window, document, undefined) {
     marketTypes: [],
 
     fetchData() {
-      evetools.sdeTypes().then(types => {
+      types.then(types => {
         ids = Object.values(types).filter(t => {
           let filter = this.filter.toLowerCase();
           return t.name.toLowerCase().includes(filter);
@@ -21,7 +24,7 @@ viewData = (function(window, document, undefined) {
     },
 
     initialize() {
-      evetools.currentUser.then(user => {
+      currentUser.then(user => {
         this.favorites = user.favorites;
       });
       document.title += ' - Search for "' + this.filter + '"';

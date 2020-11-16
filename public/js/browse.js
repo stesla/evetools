@@ -1,4 +1,6 @@
 viewData = (function(window, document, undefined) {
+  var marketGroups = retrieve('/data/marketGroups.json', 'error fetching sde market groups'); 
+
   return {
     data: { root: [] },
     filter: "",
@@ -15,7 +17,7 @@ viewData = (function(window, document, undefined) {
     },
 
     initialize() {
-      evetools.sdeMarketGroups().then(data => {
+      marketGroups.then(data => {
         this.data = data
       });
       document.title += " - Find Items"

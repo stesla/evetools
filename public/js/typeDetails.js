@@ -2,6 +2,12 @@ viewData = (function(window, document, undefined) {
   let typeRE = new RegExp("/types/(.*)");
   let match = window.location.pathname.match(typeRE);
 
+  var currentUser = window.retrieve('/api/v1/user/current', 'error fetching current user');
+  var types = retrieve('/data/types.json', 'error fetching sde types');
+  var marketGroups = retrieve('/data/marketGroups.json', 'error fetching sde market groups'); 
+  var stations = retrieve('/data/stations.json', 'error fetching sde stations');
+  var systems = retrieve('/data/systems.json', 'error fetching sde systems');
+
   return {
     group: {},
     type: undefined,
@@ -39,13 +45,13 @@ viewData = (function(window, document, undefined) {
 
       observer.observe(document.querySelector('main'), { childList: true, subtree: true });
 
-      evetools.currentUser.then(user => {
+      currentUser.then(user => {
         this.user = user;
-        return evetools.sdeStations();
+        return stations;
       })
       .then(stations => {
         this.station = stations[''+this.user.station_id];
-        return evetools.sdeSystems();
+        return systems;
       })
       .then(systems => {
         this.system = systems[''+this.station.system_id]
@@ -68,10 +74,10 @@ viewData = (function(window, document, undefined) {
         this.favorite = obj.favorite;
       });
 
-      evetools.sdeTypes().then(types => {
+      types.then(types => {
         this.type = types[''+this.typeID];
         document.title += ' - ' + this.type.name;
-        return evetools.sdeMarketGroups()
+        return marketGroups
       })
       .then(marketGroups => {
         this.marketGroups = marketGroups

@@ -3,42 +3,7 @@ evetools = (function(document, window, undefined) {
 
   const plainViews = ['login', 'notFound'];
 
-  var verify = window.retrieve('/api/v1/verify', 'error verifying auth');
-
-  var currentUser = window.retrieve('/api/v1/user/current', 'error fetching current user');
-  result.currentUser = currentUser;
-
-  var _sdeTypes
-  function sdeTypes() {
-    if (!_sdeTypes)
-      _sdeTypes = retrieve('/data/types.json', 'error fetching sde types');
-    return _sdeTypes
-  }
-  result.sdeTypes = sdeTypes;
-
-  var _sdeMarketGroups
-  function sdeMarketGroups() {
-    if (!_sdeMarketGroups)
-      _sdeMarketGroups = retrieve('/data/marketGroups.json', 'error fetching sde market groups');
-    return _sdeMarketGroups;
-  }
-  result.sdeMarketGroups = sdeMarketGroups;
-
-  var _sdeStations
-  function sdeStations() {
-    if (!_sdeStations)
-      _sdeStations = retrieve('/data/stations.json', 'error fetching sde stations');
-    return _sdeStations;
-  }
-  result.sdeStations = sdeStations;
-
-  var _sdeSystems
-  function sdeSystems() {
-    if (!_sdeSystems)
-      _sdeSystems = retrieve('/data/systems.json', 'error fetching sde systems');
-    return _sdeSystems;
-  }
-  result.sdeSystems = sdeSystems;
+  var verify = retrieve('/api/v1/verify', 'error verifying auth');
 
   result.globalState = function() {
     return {

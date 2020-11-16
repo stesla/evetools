@@ -1,10 +1,13 @@
 viewData = (function(window, document, undefined) {
+  var types = retrieve('/data/types.json', 'error fetching sde types');
+  var stations = retrieve('/data/stations.json', 'error fetching sde stations');
+
   return {
     initialize() {
       document.title += ' - Market Order History'
-      evetools.sdeTypes().then(types => {
+      types.then(types => {
         this.types = types;
-        return evetools.sdeStations();
+        return stations;
       })
       .then(stations => {
         this.stations = stations;

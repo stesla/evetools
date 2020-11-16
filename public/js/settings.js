@@ -1,5 +1,7 @@
 viewData = (function(window, document, undefined) {
   var characters = retrieve('/api/v1/user/characters', 'error fetching characters');
+  var currentUser = window.retrieve('/api/v1/user/current', 'error fetching current user');
+  var stations = retrieve('/data/stations.json', 'error fetching sde stations');
 
   return {
     characters: {},
@@ -10,9 +12,9 @@ viewData = (function(window, document, undefined) {
 
     initialize() {
       document.title += " - Settings";
-      evetools.currentUser.then(user => {
+      currentUser.then(user => {
         this.user = user;
-        return evetools.sdeStations();
+        return stations;
       })
       .then(stations => {
         this.station = stations[''+this.user.station_id];
@@ -31,7 +33,7 @@ viewData = (function(window, document, undefined) {
       if (this.stationName.length < 3) {
         return;
       }
-      evetools.sdeStations().then(stations => {
+      stations.then(stations => {
         this.stations = Object.values(stations).filter(s => {
           return s.name.toLowerCase().includes(this.stationName.toLowerCase());
         }).reduce((m, s) => {
@@ -46,7 +48,7 @@ viewData = (function(window, document, undefined) {
         this.editingStation = false;
         return;
       }
-      evetools.sdeStations().then(stations => {
+      stations.then(stations => {
         let station = Object.values(stations).find(s => s.name == this.stationName);
         this.station = station;
         return retrieve('/api/v1/user/station', 'error saving station', {

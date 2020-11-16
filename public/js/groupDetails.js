@@ -2,6 +2,10 @@ viewData = (function(window, document, undefined) {
   let typeRE = new RegExp("/groups/(.*)");
   let match = window.location.pathname.match(typeRE);
 
+  var currentUser = window.retrieve('/api/v1/user/current', 'error fetching current user');
+  var marketGroups = retrieve('/data/marketGroups.json', 'error fetching sde market groups'); 
+
+
   return {
     group: { name: "", groups: [] },
     groupID: match[1],
@@ -31,11 +35,11 @@ viewData = (function(window, document, undefined) {
     },
 
     initialize() {
-      evetools.currentUser.then(user => {
+      currentUser.then(user => {
         this.favorites = user.favorites;
       });
 
-      evetools.sdeMarketGroups().then(data => {
+      marketGroups.then(data => {
         this.marketGroups = data;
         this.group = data.groups[''+this.groupID];
         this.parent = data.groups[''+this.group.parent_id];

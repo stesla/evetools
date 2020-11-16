@@ -1,6 +1,8 @@
 viewData = (function(window, document, undefined) {
   var stations = retrieve('/data/stations.json', 'error fetching stations');
   var corps = retrieve('/data/corporations.json', 'error fetching corporations');
+  var types = retrieve('/data/types.json', 'error fetching sde types');
+  var currentUser = window.retrieve('/api/v1/user/current', 'error fetching current user');
   var orders = retrieve('/api/v1/user/orders', 'error fetching market orders');
   var skills = retrieve('/api/v1/user/skills', 'error fetching skills');
   var standings = retrieve('/api/v1/user/standings', 'error fetching standings');
@@ -49,8 +51,8 @@ viewData = (function(window, document, undefined) {
         this.sellTotal = orders.sell.reduce((a, x) => a + x.volume_remain * x.price, 0);
       });
 
-      evetools.sdeTypes().then(types => {
-        evetools.currentUser.then(user => {
+      types.then(types => {
+        currentUser.then(user => {
           this.favorites = user.favorites.map(id => {
             let type = types[""+id];
             type.favorite = true;
@@ -63,7 +65,7 @@ viewData = (function(window, document, undefined) {
         corps.then(corps => {corps
           standings.then(standings => {
             skills.then(skills => {
-              evetools.currentUser.then(user => {
+              currentUser.then(user => {
                 this.brokerFee = calculateBrokerFee(user, stations, corps, skills, standings);
               });
             });
