@@ -162,20 +162,16 @@ func createSignedToken(claims map[string]interface{}) string {
 func TestCurrentUserAuthenticated(t *testing.T) {
 	assert := assert.New(t)
 
-	compact := createSignedToken(map[string]interface{}{
-		jwt.SubjectKey: "CHARACTER:EVE:1234567890",
-		"name":         "Bob Awox",
-	})
-
 	req, _ := http.NewRequest("GET", "/api/v1/user/current", nil)
 	setSessionCookie(req, map[interface{}]interface{}{
 		"token": &oauth2.Token{
-			AccessToken:  string(compact),
+			AccessToken:  "TOKEN",
 			RefreshToken: "REFRESH",
 		},
 		"user": &model.User{
-			ActiveCharacterID: 1234567890,
-			StationID:         76543210,
+			ActiveCharacterID:   1234567890,
+			ActiveCharacterHash: "OWNER-HASH",
+			StationID:           76543210,
 		},
 	})
 	resp := handleRequest(t, req)
@@ -187,8 +183,10 @@ func TestCurrentUserAuthenticated(t *testing.T) {
 		Character model.Character `json:"character"`
 	}
 	json.NewDecoder(resp.Body).Decode(&obj)
-	assert.Equal(1234567890, obj.Character.ID)
-	assert.Equal("Bob Awox", obj.Character.Name)
+	assert.Equal(1234567890, obj.Character.CharacterID)
+	assert.Equal("Bob Awox", obj.Character.CharacterName)
+	assert.Equal(0, obj.Character.ID)
+	assert.Equal("", obj.Character.CharacterOwnerHash)
 }
 
 type failHandler struct {
@@ -271,18 +269,26 @@ func (*testDB) FindOrCreateUserForCharacter(characterID int, characterName, owne
 	return nil, ErrNotImplemented
 }
 
-func (*testDB) GetCharacter(characterID int) (*model.Character, error) {
+func (*testDB) GetCharacterByOwnerHash(hash string) (*model.Character, error) {
 	return &model.Character{
-		ID:           characterID,
-		Name:         "Bob Awox",
-		RefreshToken: "REFRESH",
+		ID:                 1,
+		CharacterID:        1234567890,
+		CharacterName:      "Bob Awox",
+		CharacterOwnerHash: hash,
 	}, nil
 }
 
 func (*testDB) GetCharactersForUser(userID int) (map[int]*model.Character, error) {
 	return nil, ErrNotImplemented
 }
-func (*testDB) RemoveUserAssociation(characterID int) error          { return ErrNotImplemented }
-func (*testDB) SaveRefreshToken(characterID int, token string) error { return nil }
-func (*testDB) SaveUserStation(userID, stationID int) error          { return ErrNotImplemented }
-func (*testDB) SetActiveCharacter(userID, characterID int) error     { return ErrNotImplemented }
+
+func (m *testDB) GetUserForVerifiedToken(token *oauth2.Token, verify esi.VerifyOK) (*model.User, error) {
+	return &model.User{
+		ID:                  1,
+		ActiveCharacterHash: verify.CharacterOwnerHash,
+		ActiveCharacterID:   verify.CharacterID,
+		StationID:           65432108,
+	}, nil
+}
+
+func (*testDB) SaveUserStation(userID, stationID int) error { return ErrNotImplemented }

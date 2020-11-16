@@ -201,13 +201,19 @@ func (s *Server) LoginCallback(w http.ResponseWriter, r *http.Request) {
 	}
 
 	ctx := context.WithValue(r.Context(), esi.AccessTokenKey, token.AccessToken)
-	_, err = s.esi.Verify(ctx)
+	verify, err := s.esi.Verify(ctx)
 	if err != nil {
 		internalServerError(w, "Verify", err)
 		return
 	}
-
 	session.Values["token"] = token
+
+	user, err := s.db.GetUserForVerifiedToken(token, verify)
+	if err != nil {
+		internalServerError(w, "GetUserForVerifiedToken", err)
+		return
+	}
+	session.Values["user"] = user
 
 	if err := session.Save(r, w); err != nil {
 		internalServerError(w, "save session", err)

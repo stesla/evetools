@@ -3,20 +3,26 @@ package model
 import (
 	"database/sql"
 	"errors"
+	"golang.org/x/oauth2"
 
 	_ "github.com/mattn/go-sqlite3"
+	"github.com/stesla/evetools/esi"
 )
 
 type DB interface {
 	GetFavoriteTypes(userID int) ([]int, error)
-	GetCharacter(int) (*Character, error)
+	GetCharacterByOwnerHash(string) (*Character, error)
 	GetCharactersForUser(int) (map[int]*Character, error)
+	GetUserForVerifiedToken(token *oauth2.Token, verify esi.VerifyOK) (*User, error)
 	IsFavorite(userID, typeID int) (bool, error)
 	SaveUserStation(userID, stationID int) error
 	SetFavorite(userID, typeID int, val bool) error
 }
 
-var ErrNotFound = errors.New("Not Found")
+var (
+	ErrNotFound       = errors.New("Not Found")
+	ErrNotImplemented = errors.New("Not Implemented")
+)
 
 type databaseModel struct {
 	db *sql.DB
@@ -69,32 +75,26 @@ func (m *databaseModel) SetFavorite(userID int, typeID int, val bool) (err error
 }
 
 type Character struct {
-	ID           int    `json:"id"`
-	Name         string `json:"name"`
-	OwnerHash    string `json:"-"`
-	UserID       int    `json:"-"`
-	RefreshToken string `json:"-"`
+	ID                 int    `json:"-"`
+	CharacterID        int    `json:"id"`
+	CharacterName      string `json:"name"`
+	CharacterOwnerHash string `json:"-"`
+	UserID             int    `json:"-"`
 }
 
 type User struct {
-	ID                int `json:"id"`
+	ID                  int    `json:"-"`
+	ActiveCharacterHash string `json:"-"`
+
 	ActiveCharacterID int `json:"activeCharacterID"`
 	StationID         int `json:"stationID"`
 }
 
-func (m *databaseModel) GetCharacter(characterID int) (*Character, error) {
-	const query = `SELECT characterName, owner, userID, refreshToken FROM characters WHERE characterID = ?`
-
-	var refresh sql.NullString
-	c := &Character{ID: characterID}
-	err := m.db.QueryRow(query, characterID).Scan(&c.Name, &c.OwnerHash, &c.UserID, &refresh)
-	if err == sql.ErrNoRows {
-		return nil, ErrNotFound
-	} else if err != nil {
-		return nil, err
-	}
-	c.RefreshToken = refresh.String
-	return c, nil
+func (m *databaseModel) GetCharacterByOwnerHash(hash string) (c *Character, err error) {
+	const query = `SELECT id, characterID, characterName, userID FROM characters WHERE characterOwnerHash = ?`
+	c = &Character{CharacterOwnerHash: hash}
+	err = m.db.QueryRow(query, hash).Scan(&c.ID, &c.CharacterID, &c.CharacterName, &c.UserID)
+	return
 }
 
 func (m *databaseModel) GetCharactersForUser(userID int) (map[int]*Character, error) {
@@ -107,12 +107,60 @@ func (m *databaseModel) GetCharactersForUser(userID int) (map[int]*Character, er
 	result := map[int]*Character{}
 	for rows.Next() {
 		c := &Character{UserID: userID}
-		if err = rows.Scan(&c.ID, &c.Name); err != nil {
+		if err = rows.Scan(&c.CharacterID, &c.CharacterName); err != nil {
 			return nil, err
 		}
 		result[c.ID] = c
 	}
 	return result, rows.Err()
+}
+
+func (m *databaseModel) GetUserForVerifiedToken(token *oauth2.Token, verify esi.VerifyOK) (u *User, err error) {
+	tx, err := m.db.Begin()
+	if err != nil {
+		return nil, err
+	}
+	defer func() {
+		if err == nil {
+			err = tx.Commit()
+		} else {
+			tx.Rollback()
+		}
+	}()
+
+	const selectUser = `SELECT u.id, u.activeCharacterHash, c.characterID, u.stationID
+						FROM users u JOIN characters c ON u.activeCharacterHash = c.characterOwnerHash
+						WHERE c.characterID = ? AND c.characterOwnerHash = ?`
+	const createUser = `INSERT INTO users (activeCharacterHash) VALUES (?)`
+	const createCharacter = `INSERT INTO characters (characterID, characterName, characterOwnerHash, userID)
+							 VALUES (?, ?, ?, ?)`
+
+	u = &User{}
+	err = tx.QueryRow(selectUser, verify.CharacterID, verify.CharacterOwnerHash).
+		Scan(&u.ID, &u.ActiveCharacterHash, &u.ActiveCharacterID, &u.StationID)
+	if err == sql.ErrNoRows {
+		var r sql.Result
+		r, err = tx.Exec(createUser, verify.CharacterOwnerHash)
+		if err != nil {
+			return
+		}
+		var userID int64
+		userID, err = r.LastInsertId()
+		if err != nil {
+			return
+		}
+
+		_, err = tx.Exec(createCharacter, verify.CharacterID, verify.CharacterName, verify.CharacterOwnerHash, userID)
+		if err != nil {
+			return
+		}
+
+		u.ID = int(userID)
+		u.ActiveCharacterHash = verify.CharacterOwnerHash
+		u.ActiveCharacterID = verify.CharacterID
+		u.StationID = 60003760 // default value in the database
+	}
+	return
 }
 
 func (m *databaseModel) SaveUserStation(userID, stationID int) error {

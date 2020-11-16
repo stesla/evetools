@@ -94,9 +94,9 @@ func (s *Server) GetUserCharacters(w http.ResponseWriter, r *http.Request) {
 func (s *Server) GetUserCurrent(w http.ResponseWriter, r *http.Request) {
 	user := currentUser(r)
 
-	character, err := s.db.GetCharacter(user.ActiveCharacterID)
+	character, err := s.db.GetCharacterByOwnerHash(user.ActiveCharacterHash)
 	if err != nil {
-		apiInternalServerError(w, "GetCharacter", err)
+		apiInternalServerError(w, "GetCharacterByOwnerHash", err)
 		return
 	}
 
