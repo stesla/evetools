@@ -9,6 +9,8 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"sort"
+	"strings"
 
 	"golang.org/x/oauth2"
 
@@ -136,6 +138,7 @@ func NewServer(static http.Handler, db model.DB) *Server {
 	s.mux.PathPrefix("/js").Handler(static)
 	s.mux.PathPrefix("/views").Handler(static)
 	s.mux.Methods("GET").Path("/login").HandlerFunc(s.Login)
+	s.mux.Methods("GET").Path("/login/authorize").HandlerFunc(s.Authorize)
 	s.mux.Methods("GET").Path("/login/callback").HandlerFunc(s.LoginCallback)
 	s.mux.Methods("GET").Path("/logout").HandlerFunc(s.Logout)
 
@@ -162,6 +165,20 @@ func NewServer(static http.Handler, db model.DB) *Server {
 func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	ctx := context.WithValue(r.Context(), oauth2.HTTPClient, &s.http)
 	s.mux.ServeHTTP(w, r.WithContext(ctx))
+}
+
+func (s *Server) Authorize(w http.ResponseWriter, r *http.Request) {
+	session, _ := store.Get(r, viper.GetString("httpd.session.name"))
+	b := make([]byte, 16)
+	rand.Read(b)
+	state := base64.RawURLEncoding.EncodeToString(b)
+	session.Values["oauth.state"] = state
+	if err := session.Save(r, w); err != nil {
+		internalServerError(w, "session.Save", err)
+		return
+	}
+	url := oauthConfig.AuthCodeURL(state)
+	http.Redirect(w, r, url, http.StatusFound)
 }
 
 func (s *Server) Login(w http.ResponseWriter, r *http.Request) {
@@ -194,68 +211,60 @@ func (s *Server) LoginCallback(w http.ResponseWriter, r *http.Request) {
 	}
 
 	code := r.FormValue("code")
-	token, err := oauthConfig.Exchange(r.Context(), code)
+	jwt, err := oauthConfig.Exchange(r.Context(), code)
 	if err != nil {
 		internalServerError(w, "oauth.Exchange", err)
 		return
 	}
 
-	ctx := context.WithValue(r.Context(), esi.AccessTokenKey, token.AccessToken)
+	ctx := context.WithValue(r.Context(), esi.AccessTokenKey, jwt.AccessToken)
 	verify, err := s.esi.Verify(ctx)
 	if err != nil {
 		internalServerError(w, "Verify", err)
 		return
 	}
+	log.Printf("$$$ verify.Scopes = %q", verify.Scopes)
 
-	character, err := s.db.GetCharacterByOwnerHash(verify.CharacterOwnerHash)
-	if err != nil && err != model.ErrNotFound {
-		internalServerError(w, "GetCharacterByOwnerHash", err)
+	user, _, err := s.db.FindOrCreateUserAndCharacter(verify)
+	if err != nil {
+		internalServerError(w, "FindOrCreateUserAndCharacter", err)
 		return
 	}
+	log.Printf("$$$ user = %q", user)
 
-	if user, ok := session.Values["user"].(model.User); !ok {
-		// initial login is setting up the session
-		var user *model.User
-		log.Println("%r", character)
-
-		if character == nil {
-			// new-to-us character
-			user, err = s.db.CreateUserForCharacter(verify)
-			if err != nil {
-				internalServerError(w, "CreateUserForCharacter", err)
-				return
-			}
-		} else {
-			user, err = s.db.GetUser(character.UserID)
-			if err != nil {
-				internalServerError(w, "GetUser", err)
-				return
-			}
-		}
-
-		session.Values["user"] = user
-		session.Values["token"] = token
-	} else {
-		// already logged in, add the character if we don't already have it
-		if character == nil {
-			character, err = s.db.CreateCharacterForUser(user.ID, verify)
-			if err != nil {
-				internalServerError(w, "CreateCharacterForUser", err)
-				return
-			}
-		}
-	}
+	session.Values["token"] = jwt
+	session.Values["user"] = user
 
 	if err := session.Save(r, w); err != nil {
 		internalServerError(w, "save session", err)
 		return
 	}
 
-	next := "/"
-	if str, ok := session.Values["next"].(string); ok && str != "" {
-		next = str
+	var next string
+	if verify.Scopes == "" {
+		next = "/authorize"
+	} else {
+		next = "/"
+		if str, ok := session.Values["next"].(string); ok && str != "" {
+			next = str
+		}
 	}
 	http.Redirect(w, r, next, http.StatusFound)
+}
+
+func scopesMatch(a string, bs []string) bool {
+	as := strings.Fields(a)
+	if len(as) != len(bs) {
+		return false
+	}
+	sort.Strings(as)
+	sort.Strings(bs)
+	for i := 0; i < len(bs); i++ {
+		if as[i] != bs[i] {
+			return false
+		}
+	}
+	return true
 }
 
 func (s *Server) Logout(w http.ResponseWriter, r *http.Request) {

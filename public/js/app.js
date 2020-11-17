@@ -1,7 +1,7 @@
 evetools = (function(document, window, undefined) {
   var result = {};
 
-  const plainViews = ['login', 'notFound'];
+  const plainViews = ['authorize', 'login', 'notFound'];
 
   var verify = retrieve('/api/v1/verify', 'error verifying auth');
 
@@ -22,6 +22,9 @@ evetools = (function(document, window, undefined) {
 
         if (path === '/')
           return 'index';
+
+        if (path.startsWith('/authorize'))
+          return 'authorize';
 
         if (path.startsWith('/browse'))
           return 'browse';

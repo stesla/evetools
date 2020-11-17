@@ -46,7 +46,7 @@ func (s contentType) Middleware(h http.Handler) http.Handler {
 }
 
 func internalServerError(w http.ResponseWriter, tag string, err error) {
-	log.Println("Internal Server Error:", tag, ":", err)
+	log.Println("Internal Server Error:", tag+":", err)
 	http.Error(w, err.Error(), http.StatusInternalServerError)
 }
 

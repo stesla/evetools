@@ -9,8 +9,7 @@ import (
 )
 
 type DB interface {
-	CreateCharacterForUser(int, esi.VerifyOK) (*Character, error)
-	CreateUserForCharacter(esi.VerifyOK) (*User, error)
+	FindOrCreateUserAndCharacter(esi.VerifyOK) (*User, *Character, error)
 	GetCharacterByOwnerHash(string) (*Character, error)
 	GetCharactersForUser(int) (map[int]*Character, error)
 	GetFavoriteTypes(userID int) ([]int, error)
@@ -91,6 +90,79 @@ type User struct {
 	StationID         int `json:"stationID"`
 }
 
+const createCharacter = `INSERT INTO characters (characterID, characterName, characterOwnerHash, userID)
+						 VALUES (?, ?, ?, ?)`
+const createUser = `INSERT INTO users (activeCharacterHash) VALUES (?)`
+const selectCharacter = `SELECT id, characterID, characterName, userID FROM characters WHERE characterOwnerHash = ?`
+const selectUser = `SELECT u.activeCharacterHash, c.characterID, u.stationID
+                    FROM users u JOIN characters c ON u.activeCharacterHash = c.characterOwnerHash
+                    WHERE u.id = ?`
+
+func (m *databaseModel) FindOrCreateUserAndCharacter(verify esi.VerifyOK) (user *User, character *Character, err error) {
+	tx, err := m.db.Begin()
+	if err != nil {
+		return
+	}
+	defer func() {
+		if err == nil {
+			err = tx.Commit()
+		} else {
+			tx.Rollback()
+		}
+	}()
+
+	character = &Character{CharacterOwnerHash: verify.CharacterOwnerHash}
+	err = tx.QueryRow(selectCharacter, verify.CharacterOwnerHash).Scan(
+		&character.ID, &character.CharacterID,
+		&character.CharacterName, &character.UserID)
+	if err == sql.ErrNoRows {
+		var r sql.Result
+		r, err = tx.Exec(createUser, verify.CharacterOwnerHash)
+		if err != nil {
+			return
+		}
+		var userID int64
+		userID, err = r.LastInsertId()
+		if err != nil {
+			return
+		}
+
+		r, err = tx.Exec(createCharacter, verify.CharacterID, verify.CharacterName, verify.CharacterOwnerHash, userID)
+		if err != nil {
+			return
+		}
+		var cID int64
+		cID, err = r.LastInsertId()
+		if err != nil {
+			return
+		}
+
+		user = &User{
+			ID:                  int(userID),
+			ActiveCharacterHash: verify.CharacterOwnerHash,
+			ActiveCharacterID:   verify.CharacterID,
+			// Jita IV - Moon 4 - Caldari Navy Assembly Plant
+			StationID: 60003760,
+		}
+
+		character = &Character{
+			ID:                 int(cID),
+			CharacterID:        verify.CharacterID,
+			CharacterName:      verify.CharacterName,
+			CharacterOwnerHash: verify.CharacterOwnerHash,
+			UserID:             int(userID),
+		}
+	} else {
+		user = &User{ID: character.UserID}
+		err = tx.QueryRow(selectUser, character.UserID).Scan(
+			&user.ActiveCharacterHash, &user.ActiveCharacterID, &user.StationID)
+		if err != nil {
+			return
+		}
+	}
+	return
+}
+
 func (m *databaseModel) GetCharacterByOwnerHash(hash string) (*Character, error) {
 	const query = `SELECT id, characterID, characterName, userID FROM characters WHERE characterOwnerHash = ?`
 	c := &Character{CharacterOwnerHash: hash}
@@ -119,6 +191,17 @@ func (m *databaseModel) GetCharactersForUser(userID int) (map[int]*Character, er
 	return result, rows.Err()
 }
 
+type Token struct {
+	ID           int
+	CharacterID  int
+	RefreshToken string
+	Scopes       string
+}
+
+func (m *databaseModel) GetTokenForCharacter(characterID int) (*Token, error) {
+	return nil, ErrNotImplemented
+}
+
 func (m *databaseModel) GetUser(userID int) (*User, error) {
 	const selectUser = `SELECT u.activeCharacterHash, c.characterID, u.stationID
                         FROM users u JOIN characters c ON u.activeCharacterHash = c.characterOwnerHash
@@ -131,9 +214,6 @@ func (m *databaseModel) GetUser(userID int) (*User, error) {
 	}
 	return u, nil
 }
-
-const createCharacter = `INSERT INTO characters (characterID, characterName, characterOwnerHash, userID)
-						 VALUES (?, ?, ?, ?)`
 
 func (m *databaseModel) CreateCharacterForUser(userID int, verify esi.VerifyOK) (*Character, error) {
 	r, err := m.db.Exec(createCharacter, verify.CharacterID, verify.CharacterName, verify.CharacterOwnerHash, userID)
@@ -165,8 +245,6 @@ func (m *databaseModel) CreateUserForCharacter(verify esi.VerifyOK) (u *User, er
 			tx.Rollback()
 		}
 	}()
-
-	const createUser = `INSERT INTO users (activeCharacterHash) VALUES (?)`
 
 	r, err := tx.Exec(createUser, verify.CharacterOwnerHash)
 	if err != nil {

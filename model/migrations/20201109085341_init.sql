@@ -24,18 +24,10 @@ CREATE TABLE tokens (
   id            INTEGER  PRIMARY KEY AUTOINCREMENT,
   characterID   INTEGER  NOT NULL,
   refreshToken  TEXT     NOT NULL,
+  scopes        TEXT     NOT NULL,
 
   UNIQUE(characterID) ON CONFLICT REPLACE,
   FOREIGN KEY(characterID) REFERENCES characters(id)
-);
-
-CREATE TABLE scopes (
-  id     INTEGER  PRIMARY KEY AUTOINCREMENT,
-  tokenID  INTEGER NOT NULL,
-  scope    TEXT NOT NULL,
-
-  FOREIGN KEY (tokenID) REFERENCES tokens(id),
-  UNIQUE(tokenID, scope)
 );
 
 CREATE TABLE favorites (
