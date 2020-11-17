@@ -16,7 +16,7 @@ type DB interface {
 	GetTokenForCharacter(characterID int) (*Token, error)
 	GetUser(userID int) (*User, error)
 	IsFavorite(userID, typeID int) (bool, error)
-	SaveTokenForCharacter(int, esi.VerifyOK, string) error
+	SaveTokenForCharacter(int, string, string) error
 	SaveUserStation(userID, stationID int) error
 	SetFavorite(userID, typeID int, val bool) error
 }
@@ -224,9 +224,9 @@ func (m *databaseModel) GetUser(userID int) (*User, error) {
 	return u, nil
 }
 
-func (m *databaseModel) SaveTokenForCharacter(characterID int, verify esi.VerifyOK, token string) (err error) {
+func (m *databaseModel) SaveTokenForCharacter(characterID int, scopes, token string) (err error) {
 	const createToken = `INSERT INTO tokens (characterID, refreshToken, scopes) VALUES (?, ?, ?)`
-	_, err = m.db.Exec(createToken, characterID, token, verify.Scopes)
+	_, err = m.db.Exec(createToken, characterID, token, scopes)
 	return
 }
 

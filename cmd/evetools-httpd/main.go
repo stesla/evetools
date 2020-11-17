@@ -251,7 +251,7 @@ func (s *Server) LoginCallback(w http.ResponseWriter, r *http.Request) {
 			needAuth = true
 		}
 	} else {
-		err := s.db.SaveTokenForCharacter(character.ID, verify, jwt.RefreshToken)
+		err := s.db.SaveTokenForCharacter(character.ID, verify.Scopes, jwt.RefreshToken)
 		if err != nil {
 			internalServerError(w, "SaveTokenForCharacter", err)
 			return

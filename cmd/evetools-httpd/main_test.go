@@ -11,6 +11,7 @@ import (
 	"net/http/httptest"
 	"net/url"
 	"os"
+	"strings"
 	"testing"
 	"time"
 
@@ -70,8 +71,6 @@ func TestLogin(t *testing.T) {
 }
 
 func TestLoginCallback(t *testing.T) {
-	// for now ignore this test
-	return
 	assert := assert.New(t)
 
 	// stub out call from oauth2.Exchange
@@ -95,7 +94,7 @@ func TestLoginCallback(t *testing.T) {
 				"access_token":  string(compact),
 				"expires_in":    1199,
 				"token_type":    "Bearer",
-				"refresh_token": "REFRESH_TOKEN",
+				"refresh_token": "REFRESH",
 			})
 		}))
 
@@ -117,7 +116,7 @@ func TestLoginCallback(t *testing.T) {
 	resp := handleRequest(t, req)
 
 	if assert.Equal(http.StatusFound, resp.StatusCode) {
-		assert.Equal("/authorize", resp.Header.Get("Location"))
+		assert.Equal("/", resp.Header.Get("Location"))
 		if cookies := resp.Cookies(); assert.Equal(1, len(cookies)) {
 			name := viper.GetString("httpd.session.name")
 			session := sessions.NewSession(store, name)
@@ -259,8 +258,10 @@ func (*testDB) GetFavoriteTypes(int) ([]int, error) {
 func (*testDB) IsFavorite(int, int) (bool, error) { return false, ErrNotImplemented }
 func (*testDB) SetFavorite(int, int, bool) error  { return ErrNotImplemented }
 
-func (*testDB) FindOrCreateUserAndCharacter(esi.VerifyOK) (*model.User, *model.Character, error) {
-	return nil, nil, ErrNotImplemented
+func (db *testDB) FindOrCreateUserAndCharacter(verify esi.VerifyOK) (*model.User, *model.Character, error) {
+	character, _ := db.GetCharacterByOwnerHash(verify.CharacterOwnerHash)
+	user, _ := db.GetUser(character.UserID)
+	return user, character, nil
 }
 
 func (*testDB) GetCharacterByOwnerHash(hash string) (*model.Character, error) {
@@ -278,7 +279,12 @@ func (*testDB) GetCharactersForUser(userID int) (map[int]*model.Character, error
 }
 
 func (*testDB) GetTokenForCharacter(characterID int) (*model.Token, error) {
-	return nil, ErrNotImplemented
+	return &model.Token{
+		ID:           13,
+		CharacterID:  characterID,
+		RefreshToken: "REFRESH",
+		Scopes:       strings.Join(oauthConfig.Scopes, " "),
+	}, nil
 }
 
 func (m *testDB) GetUser(userID int) (*model.User, error) {
@@ -290,7 +296,7 @@ func (m *testDB) GetUser(userID int) (*model.User, error) {
 	}, nil
 }
 
-func (*testDB) SaveTokenForCharacter(int, esi.VerifyOK, string) error {
+func (*testDB) SaveTokenForCharacter(int, string, string) error {
 	return ErrNotImplemented
 }
 func (*testDB) SaveUserStation(userID, stationID int) error { return ErrNotImplemented }
