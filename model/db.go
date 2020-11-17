@@ -13,8 +13,10 @@ type DB interface {
 	GetCharacterByOwnerHash(string) (*Character, error)
 	GetCharactersForUser(int) (map[int]*Character, error)
 	GetFavoriteTypes(userID int) ([]int, error)
+	GetTokenForCharacter(characterID int) (*Token, error)
 	GetUser(userID int) (*User, error)
 	IsFavorite(userID, typeID int) (bool, error)
+	SaveTokenForCharacter(int, esi.VerifyOK, string) error
 	SaveUserStation(userID, stationID int) error
 	SetFavorite(userID, typeID int, val bool) error
 }
@@ -198,8 +200,15 @@ type Token struct {
 	Scopes       string
 }
 
-func (m *databaseModel) GetTokenForCharacter(characterID int) (*Token, error) {
-	return nil, ErrNotImplemented
+func (m *databaseModel) GetTokenForCharacter(characterID int) (token *Token, err error) {
+	const selectToken = `SELECT id, refreshToken, scopes FROM tokens WHERE characterID = ?`
+	token = &Token{CharacterID: characterID}
+	err = m.db.QueryRow(selectToken, characterID).Scan(
+		&token.ID, &token.RefreshToken, &token.Scopes)
+	if err == sql.ErrNoRows {
+		err = ErrNotFound
+	}
+	return
 }
 
 func (m *databaseModel) GetUser(userID int) (*User, error) {
@@ -215,57 +224,9 @@ func (m *databaseModel) GetUser(userID int) (*User, error) {
 	return u, nil
 }
 
-func (m *databaseModel) CreateCharacterForUser(userID int, verify esi.VerifyOK) (*Character, error) {
-	r, err := m.db.Exec(createCharacter, verify.CharacterID, verify.CharacterName, verify.CharacterOwnerHash, userID)
-	if err != nil {
-		return nil, err
-	}
-	cid, err := r.LastInsertId()
-	if err != nil {
-		return nil, err
-	}
-	return &Character{
-		ID:                 int(cid),
-		CharacterID:        verify.CharacterID,
-		CharacterName:      verify.CharacterName,
-		CharacterOwnerHash: verify.CharacterOwnerHash,
-		UserID:             userID,
-	}, nil
-}
-
-func (m *databaseModel) CreateUserForCharacter(verify esi.VerifyOK) (u *User, err error) {
-	tx, err := m.db.Begin()
-	if err != nil {
-		return nil, err
-	}
-	defer func() {
-		if err == nil {
-			err = tx.Commit()
-		} else {
-			tx.Rollback()
-		}
-	}()
-
-	r, err := tx.Exec(createUser, verify.CharacterOwnerHash)
-	if err != nil {
-		return
-	}
-	userID, err := r.LastInsertId()
-	if err != nil {
-		return
-	}
-
-	_, err = tx.Exec(createCharacter, verify.CharacterID, verify.CharacterName, verify.CharacterOwnerHash, userID)
-	if err != nil {
-		return
-	}
-
-	u = &User{
-		ID:                  int(userID),
-		ActiveCharacterHash: verify.CharacterOwnerHash,
-		ActiveCharacterID:   verify.CharacterID,
-		StationID:           60003760, // default value in the database
-	}
+func (m *databaseModel) SaveTokenForCharacter(characterID int, verify esi.VerifyOK, token string) (err error) {
+	const createToken = `INSERT INTO tokens (characterID, refreshToken, scopes) VALUES (?, ?, ?)`
+	_, err = m.db.Exec(createToken, characterID, token, verify.Scopes)
 	return
 }
 

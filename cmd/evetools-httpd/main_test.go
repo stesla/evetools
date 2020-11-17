@@ -277,6 +277,10 @@ func (*testDB) GetCharactersForUser(userID int) (map[int]*model.Character, error
 	return nil, ErrNotImplemented
 }
 
+func (*testDB) GetTokenForCharacter(characterID int) (*model.Token, error) {
+	return nil, ErrNotImplemented
+}
+
 func (m *testDB) GetUser(userID int) (*model.User, error) {
 	return &model.User{
 		ID:                  userID,
@@ -286,4 +290,7 @@ func (m *testDB) GetUser(userID int) (*model.User, error) {
 	}, nil
 }
 
+func (*testDB) SaveTokenForCharacter(int, esi.VerifyOK, string) error {
+	return ErrNotImplemented
+}
 func (*testDB) SaveUserStation(userID, stationID int) error { return ErrNotImplemented }

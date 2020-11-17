@@ -223,25 +223,50 @@ func (s *Server) LoginCallback(w http.ResponseWriter, r *http.Request) {
 		internalServerError(w, "Verify", err)
 		return
 	}
-	log.Printf("$$$ verify.Scopes = %q", verify.Scopes)
 
-	user, _, err := s.db.FindOrCreateUserAndCharacter(verify)
+	user, character, err := s.db.FindOrCreateUserAndCharacter(verify)
 	if err != nil {
 		internalServerError(w, "FindOrCreateUserAndCharacter", err)
 		return
 	}
-	log.Printf("$$$ user = %q", user)
+
+	var needAuth bool = false
+	if verify.Scopes == "" {
+		// see if we have a token in the DB
+		token, err := s.db.GetTokenForCharacter(character.ID)
+		if err == model.ErrNotFound {
+			needAuth = true
+		} else if err != nil {
+			internalServerError(w, "GetTokenForCharacter", err)
+			return
+		}
+
+		if hasScopes(token.Scopes, oauthConfig.Scopes) {
+			jwt, err = refreshToken(r.Context(), token.RefreshToken)
+			if err != nil {
+				internalServerError(w, "refreshToken", err)
+				return
+			}
+		} else {
+			needAuth = true
+		}
+	} else {
+		err := s.db.SaveTokenForCharacter(character.ID, verify, jwt.RefreshToken)
+		if err != nil {
+			internalServerError(w, "SaveTokenForCharacter", err)
+			return
+		}
+	}
 
 	session.Values["token"] = jwt
 	session.Values["user"] = user
-
 	if err := session.Save(r, w); err != nil {
 		internalServerError(w, "save session", err)
 		return
 	}
 
 	var next string
-	if verify.Scopes == "" {
+	if needAuth {
 		next = "/authorize"
 	} else {
 		next = "/"
@@ -252,7 +277,7 @@ func (s *Server) LoginCallback(w http.ResponseWriter, r *http.Request) {
 	http.Redirect(w, r, next, http.StatusFound)
 }
 
-func scopesMatch(a string, bs []string) bool {
+func hasScopes(a string, bs []string) bool {
 	as := strings.Fields(a)
 	if len(as) != len(bs) {
 		return false
