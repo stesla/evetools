@@ -296,7 +296,5 @@ func (m *testDB) GetUser(userID int) (*model.User, error) {
 	}, nil
 }
 
-func (*testDB) SaveTokenForCharacter(int, string, string) error {
-	return ErrNotImplemented
-}
-func (*testDB) SaveUserStation(userID, stationID int) error { return ErrNotImplemented }
+func (*testDB) SaveTokenForCharacter(int, string, string) error { return nil }
+func (*testDB) SaveUserStation(userID, stationID int) error     { return ErrNotImplemented }
