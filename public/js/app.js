@@ -21,7 +21,7 @@ evetools = (function(document, window, undefined) {
         let path = window.location.pathname;
 
         if (path === '/')
-          return 'index';
+          return 'dashboard';
 
         if (path.startsWith('/authorize'))
           return 'authorize';
