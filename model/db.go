@@ -11,12 +11,14 @@ import (
 type DB interface {
 	FindOrCreateCharacterForUser(int, esi.VerifyOK) (*Character, error)
 	FindOrCreateUserAndCharacter(esi.VerifyOK) (*User, *Character, error)
+	GetCharacterByUserAndCharacterID(int, int) (*Character, error)
 	GetCharacterByOwnerHash(string) (*Character, error)
 	GetCharactersForUser(int) (map[int]*Character, error)
 	GetFavoriteTypes(userID int) ([]int, error)
 	GetTokenForCharacter(characterID int) (*Token, error)
 	GetUser(userID int) (*User, error)
 	IsFavorite(userID, typeID int) (bool, error)
+	SaveActiveCharacterHash(int, string) error
 	SaveTokenForCharacter(int, string, string) error
 	SaveUserStation(userID, stationID int) error
 	SetFavorite(userID, typeID int, val bool) error
@@ -216,6 +218,17 @@ func (m *databaseModel) FindOrCreateUserAndCharacter(verify esi.VerifyOK) (user 
 	return
 }
 
+func (m *databaseModel) GetCharacterByUserAndCharacterID(userID int, characterID int) (c *Character, err error) {
+	const query = `SELECT id, characterName, characterOwnerHash FROM characters
+				 WHERE userID = ? and characterID = ?`
+	c = &Character{CharacterID: characterID, UserID: userID}
+	err = m.db.QueryRow(query, userID, characterID).Scan(&c.ID, &c.CharacterName, &c.CharacterOwnerHash)
+	if err == sql.ErrNoRows {
+		err = ErrNotFound
+	}
+	return
+}
+
 func (m *databaseModel) GetCharacterByOwnerHash(hash string) (*Character, error) {
 	const query = `SELECT id, characterID, characterName, userID FROM characters WHERE characterOwnerHash = ?`
 	c := &Character{CharacterOwnerHash: hash}
@@ -273,6 +286,12 @@ func (m *databaseModel) GetUser(userID int) (*User, error) {
 		return nil, ErrNotFound
 	}
 	return u, nil
+}
+
+func (m *databaseModel) SaveActiveCharacterHash(userID int, hash string) (err error) {
+	const query = `UPDATE users SET activeCharacterHash = ? WHERE id = ?`
+	_, err = m.db.Exec(query, hash, userID)
+	return
 }
 
 func (m *databaseModel) SaveTokenForCharacter(characterID int, scopes, token string) (err error) {

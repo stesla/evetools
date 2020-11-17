@@ -17,7 +17,8 @@ CREATE TABLE characters (
   userID              INTEGER  NOT NULL,
 
   FOREIGN KEY(userID) REFERENCES users(id),
-  UNIQUE(characterID, characterOwnerHash) ON CONFLICT REPLACE
+  UNIQUE(characterID, characterOwnerHash) ON CONFLICT REPLACE,
+  UNIQUE(characterID, userID)
 );
 
 CREATE TABLE tokens (

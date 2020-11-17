@@ -202,6 +202,51 @@ func (s *Server) PostOpenInGame(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+func (s *Server) PostUserCharacterActivate(w http.ResponseWriter, r *http.Request) {
+	session := currentSession(r)
+	user := currentUser(r)
+
+	vars := mux.Vars(r)
+	characterID, _ := strconv.Atoi(vars["characterID"])
+
+	character, err := s.db.GetCharacterByUserAndCharacterID(user.ID, characterID)
+	if err == model.ErrNotFound {
+		apiError(w, fmt.Errorf("not found"), http.StatusNotFound)
+		return
+	} else if err != nil {
+		apiInternalServerError(w, "GetCharacter", err)
+		return
+	}
+	user.ActiveCharacterID = character.CharacterID
+	user.ActiveCharacterHash = character.CharacterOwnerHash
+
+	token, err := s.db.GetTokenForCharacter(character.ID)
+	if err != nil {
+		apiInternalServerError(w, "GetTokenForCharacter", err)
+		return
+	}
+	jwt, err := refreshToken(r.Context(), token.RefreshToken)
+	if err != nil {
+		apiInternalServerError(w, "refreshToken", err)
+		return
+	}
+
+	err = s.db.SaveActiveCharacterHash(user.ID, character.CharacterOwnerHash)
+	if err != nil {
+		apiInternalServerError(w, "SaveActiveCharacterHash", err)
+		return
+	}
+
+	session.Values["token"] = jwt
+	session.Values["user"] = user
+	if err := session.Save(r, w); err != nil {
+		internalServerError(w, "session.Save", err)
+		return
+	}
+
+	http.Redirect(w, r, "/", http.StatusFound)
+}
+
 func (s *Server) PutTypeFavorite(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	typeID, _ := strconv.Atoi(vars["typeID"])

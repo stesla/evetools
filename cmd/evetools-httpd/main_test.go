@@ -268,6 +268,10 @@ func (db *testDB) FindOrCreateUserAndCharacter(verify esi.VerifyOK) (*model.User
 	return user, character, nil
 }
 
+func (*testDB) GetCharacterByUserAndCharacterID(int, int) (*model.Character, error) {
+	return nil, ErrNotImplemented
+}
+
 func (*testDB) GetCharacterByOwnerHash(hash string) (*model.Character, error) {
 	return &model.Character{
 		ID:                 1,
@@ -300,5 +304,6 @@ func (m *testDB) GetUser(userID int) (*model.User, error) {
 	}, nil
 }
 
+func (*testDB) SaveActiveCharacterHash(int, string) error       { return ErrNotImplemented }
 func (*testDB) SaveTokenForCharacter(int, string, string) error { return nil }
 func (*testDB) SaveUserStation(userID, stationID int) error     { return ErrNotImplemented }
