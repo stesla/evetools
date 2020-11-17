@@ -43,6 +43,16 @@ viewData = (function(window, document, undefined) {
       });
     },
 
+    makeActiveCharacter(cid) {
+      retrieve('/api/v1/user/characters/' + cid + '/activate', 'error activating user', {
+        raw: true,
+        method: 'POST',
+      })
+      .then(() => {
+        window.location.href = "/";
+      });
+    },
+
     saveStation() {
       if (this.stationName === "") {
         this.editingStation = false;
