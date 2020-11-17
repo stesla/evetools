@@ -41,13 +41,13 @@
         </div>
         <div class="mt-4 border-t-2 pt-2 px-4 border-gray-300 flex flex-center justify-between">
           <a href="#" @click="removeCharacter(c.id)" class="font-bold text-sm text-red-500">Remove</a>
-          <a href="/login" class="font-bold text-sm">Refresh Token</a>
+          <a href="/login/authorize" class="font-bold text-sm">Refresh Token</a>
           <a href="#" @click="makeActiveCharacter(c.id)" class="font-bold text-sm">Make Active</a>
         </div>
       </div>
     </template>
     <div class="border-2 border-gray-500 border-dashed py-2 rounded-xl">
-      <a class="flex flex-col items-center" href="/login">
+      <a class="flex flex-col items-center" href="/login/authorize">
         <svg class="h-24 w-24 stroke-current text-gray-500"
              xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v3m0 0v3m0-3h3m-3 0H9m12 0a9 9 0 11-18 0 9 9 0 0118 0z" />

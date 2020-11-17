@@ -9,6 +9,7 @@ import (
 )
 
 type DB interface {
+	FindOrCreateCharacterForUser(int, esi.VerifyOK) (*Character, error)
 	FindOrCreateUserAndCharacter(esi.VerifyOK) (*User, *Character, error)
 	GetCharacterByOwnerHash(string) (*Character, error)
 	GetCharactersForUser(int) (map[int]*Character, error)
@@ -92,13 +93,56 @@ type User struct {
 	StationID         int `json:"stationID"`
 }
 
-const createCharacter = `INSERT INTO characters (characterID, characterName, characterOwnerHash, userID)
+const createCharacter = `INSERT INTO characters 
+	                     (characterID, characterName, characterOwnerHash, userID)
 						 VALUES (?, ?, ?, ?)`
-const createUser = `INSERT INTO users (activeCharacterHash) VALUES (?)`
-const selectCharacter = `SELECT id, characterID, characterName, userID FROM characters WHERE characterOwnerHash = ?`
-const selectUser = `SELECT u.activeCharacterHash, c.characterID, u.stationID
-                    FROM users u JOIN characters c ON u.activeCharacterHash = c.characterOwnerHash
-                    WHERE u.id = ?`
+
+func (m *databaseModel) FindOrCreateCharacterForUser(userID int, verify esi.VerifyOK) (c *Character, err error) {
+	tx, err := m.db.Begin()
+	if err != nil {
+		return
+	}
+	defer func() {
+		if err == nil {
+			err = tx.Commit()
+		} else {
+			tx.Rollback()
+		}
+	}()
+
+	const selectCharacter = `SELECT id, characterID, characterName, userID FROM characters
+							 WHERE characterOwnerHash = ?`
+
+	c = &Character{CharacterOwnerHash: verify.CharacterOwnerHash}
+	err = tx.QueryRow(selectCharacter, verify.CharacterOwnerHash).Scan(
+		&c.ID, &c.CharacterID, &c.CharacterName, &c.UserID)
+	if err == sql.ErrNoRows {
+		var r sql.Result
+		r, err = tx.Exec(createCharacter,
+			verify.CharacterID, verify.CharacterName,
+			verify.CharacterOwnerHash, userID)
+		if err != nil {
+			return
+		}
+		var cID int64
+		cID, err = r.LastInsertId()
+		if err != nil {
+			return
+		}
+		c = &Character{
+			ID:                 int(cID),
+			CharacterID:        verify.CharacterID,
+			CharacterName:      verify.CharacterName,
+			CharacterOwnerHash: verify.CharacterOwnerHash,
+			UserID:             userID,
+		}
+	} else if err != nil {
+		return
+	} else if c.UserID != userID {
+		err = errors.New("user already associated with another user")
+	}
+	return
+}
 
 func (m *databaseModel) FindOrCreateUserAndCharacter(verify esi.VerifyOK) (user *User, character *Character, err error) {
 	tx, err := m.db.Begin()
@@ -112,6 +156,13 @@ func (m *databaseModel) FindOrCreateUserAndCharacter(verify esi.VerifyOK) (user 
 			tx.Rollback()
 		}
 	}()
+
+	const createUser = `INSERT INTO users (activeCharacterHash) VALUES (?)`
+	const selectCharacter = `SELECT id, characterID, characterName, userID
+							 FROM characters WHERE characterOwnerHash = ?`
+	const selectUser = `SELECT u.activeCharacterHash, c.characterID, u.stationID
+                        FROM users u JOIN characters c ON u.activeCharacterHash = c.characterOwnerHash
+                        WHERE u.id = ?`
 
 	character = &Character{CharacterOwnerHash: verify.CharacterOwnerHash}
 	err = tx.QueryRow(selectCharacter, verify.CharacterOwnerHash).Scan(

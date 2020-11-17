@@ -258,6 +258,10 @@ func (*testDB) GetFavoriteTypes(int) ([]int, error) {
 func (*testDB) IsFavorite(int, int) (bool, error) { return false, ErrNotImplemented }
 func (*testDB) SetFavorite(int, int, bool) error  { return ErrNotImplemented }
 
+func (*testDB) FindOrCreateCharacterForUser(int, esi.VerifyOK) (*model.Character, error) {
+	return nil, ErrNotImplemented
+}
+
 func (db *testDB) FindOrCreateUserAndCharacter(verify esi.VerifyOK) (*model.User, *model.Character, error) {
 	character, _ := db.GetCharacterByOwnerHash(verify.CharacterOwnerHash)
 	user, _ := db.GetUser(character.UserID)

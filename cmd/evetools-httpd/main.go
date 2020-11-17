@@ -224,43 +224,59 @@ func (s *Server) LoginCallback(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	user, character, err := s.db.FindOrCreateUserAndCharacter(verify)
-	if err != nil {
-		internalServerError(w, "FindOrCreateUserAndCharacter", err)
-		return
-	}
+	var user *model.User
+	var character *model.Character
 
-	var needAuth bool = false
-	if verify.Scopes == "" {
-		// see if we have a token in the DB
-		token, err := s.db.GetTokenForCharacter(character.ID)
-		if err == model.ErrNotFound {
-			needAuth = true
-		} else if err != nil {
-			internalServerError(w, "GetTokenForCharacter", err)
+	if sessionUser, ok := session.Values["user"].(model.User); ok {
+		user = &sessionUser
+		character, err = s.db.FindOrCreateCharacterForUser(user.ID, verify)
+		if err != nil {
+			internalServerError(w, "FindOrCreateCharacterForUser", err)
 			return
 		}
-
-		if hasScopes(token.Scopes, oauthConfig.Scopes) {
-			jwt, err = refreshToken(r.Context(), token.RefreshToken)
-			if err != nil {
-				internalServerError(w, "refreshToken", err)
-				return
-			}
-			err := s.db.SaveTokenForCharacter(character.ID, token.Scopes, jwt.RefreshToken)
-			if err != nil {
-				internalServerError(w, "SaveTokenForCharacter", err)
-				return
-			}
-		} else {
-			needAuth = true
-		}
 	} else {
+		user, character, err = s.db.FindOrCreateUserAndCharacter(verify)
+		if err != nil {
+			internalServerError(w, "FindOrCreateUserAndCharacter", err)
+			return
+		}
+	}
+
+	if verify.Scopes != "" {
 		err := s.db.SaveTokenForCharacter(character.ID, verify.Scopes, jwt.RefreshToken)
 		if err != nil {
 			internalServerError(w, "SaveTokenForCharacter", err)
 			return
 		}
+	}
+
+	var needAuth bool = false
+
+	character, err = s.db.GetCharacterByOwnerHash(user.ActiveCharacterHash)
+	if err != nil {
+		internalServerError(w, "GetCharacterByOwnerHash", err)
+		return
+	}
+
+	token, err := s.db.GetTokenForCharacter(character.ID)
+	if err == model.ErrNotFound {
+		needAuth = true
+	} else if err != nil {
+		internalServerError(w, "GetTokenForCharacter", err)
+		return
+	} else if hasScopes(token.Scopes, oauthConfig.Scopes) {
+		jwt, err = refreshToken(r.Context(), token.RefreshToken)
+		if err != nil {
+			internalServerError(w, "refreshToken", err)
+			return
+		}
+		err := s.db.SaveTokenForCharacter(character.ID, token.Scopes, jwt.RefreshToken)
+		if err != nil {
+			internalServerError(w, "SaveTokenForCharacter", err)
+			return
+		}
+	} else {
+		needAuth = true
 	}
 
 	session.Values["token"] = jwt
