@@ -15,11 +15,14 @@ type DB interface {
 	GetCharacterByOwnerHash(string) (*Character, error)
 	GetCharactersForUser(int) (map[int]*Character, error)
 	GetFavoriteTypes(userID int) ([]int, error)
+	GetLatestTxnID() (int, error)
 	GetTokenForCharacter(characterID int) (*Token, error)
+	GetTransactions() ([]*esi.WalletTransaction, error)
 	GetUser(userID int) (*User, error)
 	IsFavorite(userID, typeID int) (bool, error)
 	SaveActiveCharacterHash(int, string) error
 	SaveTokenForCharacter(int, string, string) error
+	SaveTransaction(*esi.WalletTransaction) error
 	SaveUserStation(userID, stationID int) error
 	SetFavorite(userID, typeID int, val bool) error
 }
@@ -264,6 +267,13 @@ type Token struct {
 	Scopes       string
 }
 
+func (m *databaseModel) GetLatestTxnID() (int, error) {
+	const query = `SELECT MAX(txnID) FROM wallet_transactions`
+	var id sql.NullInt64
+	err := m.db.QueryRow(query).Scan(&id)
+	return int(id.Int64), err
+}
+
 func (m *databaseModel) GetTokenForCharacter(characterID int) (token *Token, err error) {
 	const selectToken = `SELECT id, refreshToken, scopes FROM tokens WHERE characterID = ?`
 	token = &Token{CharacterID: characterID}
@@ -273,6 +283,28 @@ func (m *databaseModel) GetTokenForCharacter(characterID int) (token *Token, err
 		err = ErrNotFound
 	}
 	return
+}
+
+func (m *databaseModel) GetTransactions() ([]*esi.WalletTransaction, error) {
+	const query = `SELECT txnID, clientID, clientName, date, isBuy, isPersonal,
+				          journalRefID, locationID, quantity, typeID, unitPrice
+				   FROM wallet_transactions ORDER BY txnID DESC`
+	rows, err := m.db.Query(query)
+	if err != nil {
+		return nil, err
+	}
+	result := []*esi.WalletTransaction{}
+	for rows.Next() {
+		var t esi.WalletTransaction
+		err = rows.Scan(
+			&t.TransactionID, &t.ClientID, &t.ClientName, &t.Date, &t.IsBuy, &t.IsPersonal,
+			&t.JournalRefID, &t.LocationID, &t.Quantity, &t.TypeID, &t.UnitPrice)
+		if err != nil {
+			return nil, err
+		}
+		result = append(result, &t)
+	}
+	return result, rows.Err()
 }
 
 func (m *databaseModel) GetUser(userID int) (*User, error) {
@@ -297,6 +329,17 @@ func (m *databaseModel) SaveActiveCharacterHash(userID int, hash string) (err er
 func (m *databaseModel) SaveTokenForCharacter(characterID int, scopes, token string) (err error) {
 	const createToken = `INSERT INTO tokens (characterID, refreshToken, scopes) VALUES (?, ?, ?)`
 	_, err = m.db.Exec(createToken, characterID, token, scopes)
+	return
+}
+
+func (m *databaseModel) SaveTransaction(t *esi.WalletTransaction) (err error) {
+	const query = `INSERT INTO wallet_transactions
+				 (txnID, clientID, clientName, date, isBuy, isPersonal,
+				 journalRefID, locationID, quantity, typeID, unitPrice)
+				 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+	_, err = m.db.Exec(query,
+		t.TransactionID, t.ClientID, t.ClientName, t.Date, t.IsBuy, t.IsPersonal,
+		t.JournalRefID, t.LocationID, t.Quantity, t.TypeID, t.UnitPrice)
 	return
 }
 

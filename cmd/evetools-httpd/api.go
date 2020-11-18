@@ -154,12 +154,27 @@ func (s *Server) GetUserTransactions(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	maxTxnID, err := s.db.GetLatestTxnID()
+	if err != nil {
+		apiInternalServerError(w, "GetLatestTxnID", err)
+		return
+	}
+
 	for _, txn := range txns {
-		txn.ClientName, err = s.esi.GetCharacterName(txn.ClientID)
-		if err != nil {
-			apiInternalServerError(w, "GetCharacterName", err)
-			return
+		if txn.TransactionID > maxTxnID {
+			txn.ClientName, err = s.esi.GetCharacterName(txn.ClientID)
+			if err != nil {
+				apiInternalServerError(w, "GetCharacterName", err)
+				return
+			}
+			s.db.SaveTransaction(txn)
 		}
+	}
+
+	txns, err = s.db.GetTransactions()
+	if err != nil {
+		apiInternalServerError(w, "GetTransactions", err)
+		return
 	}
 
 	json.NewEncoder(w).Encode(txns)

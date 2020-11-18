@@ -286,6 +286,8 @@ func (*testDB) GetCharactersForUser(userID int) (map[int]*model.Character, error
 	return nil, ErrNotImplemented
 }
 
+func (*testDB) GetLatestTxnID() (int, error) { return 0, ErrNotImplemented }
+
 func (*testDB) GetTokenForCharacter(characterID int) (*model.Token, error) {
 	return &model.Token{
 		ID:           13,
@@ -294,6 +296,8 @@ func (*testDB) GetTokenForCharacter(characterID int) (*model.Token, error) {
 		Scopes:       strings.Join(oauthConfig.Scopes, " "),
 	}, nil
 }
+
+func (*testDB) GetTransactions() ([]*esi.WalletTransaction, error) { return nil, ErrNotImplemented }
 
 func (m *testDB) GetUser(userID int) (*model.User, error) {
 	return &model.User{
@@ -306,4 +310,5 @@ func (m *testDB) GetUser(userID int) (*model.User, error) {
 
 func (*testDB) SaveActiveCharacterHash(int, string) error       { return ErrNotImplemented }
 func (*testDB) SaveTokenForCharacter(int, string, string) error { return nil }
+func (*testDB) SaveTransaction(*esi.WalletTransaction) error    { return ErrNotImplemented }
 func (*testDB) SaveUserStation(userID, stationID int) error     { return ErrNotImplemented }
