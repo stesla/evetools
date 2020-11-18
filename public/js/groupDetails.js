@@ -4,6 +4,7 @@ viewData = (function(window, document, undefined) {
 
   var currentUser = window.retrieve('/api/v1/user/current', 'error fetching current user');
   var marketGroups = retrieve('/data/marketGroups.json', 'error fetching sde market groups'); 
+  var types = retrieve('/data/types.json', 'error fetching sde types');
 
 
   return {
@@ -46,7 +47,7 @@ viewData = (function(window, document, undefined) {
         document.title += " - " + this.group.name;
       });
 
-      evetools.sdeTypes().then(types => {
+      types.then(types => {
         this.types = types;
       });
     },
