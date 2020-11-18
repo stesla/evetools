@@ -32,10 +32,7 @@ evetools = (function(document, window, undefined) {
         if (path.startsWith('/groups/'))
           return 'groupDetails';
 
-        if (path.startsWith('/history'))
-          return 'history';
-
-        if (path.startsWith('/orders'))
+        if (path.startsWith('/history') || path.startsWith('/orders'))
           return 'orders';
 
         if (path.startsWith('/search'))

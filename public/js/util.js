@@ -80,10 +80,6 @@
     });
   }
 
-  window.byOrderID = function(a, b) {
-    return a.order_id < b.order_id ? -1 : 1;
-  }
-
   window.byTypeName = function(a, b) {
     return a.type.name < b.type.name ? -1 : 1;
   }
