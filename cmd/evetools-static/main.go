@@ -39,7 +39,7 @@ func main() {
 	}
 
 	var err error
-	var types map[int]*JsonType
+	var types map[int]*MarketType
 
 	if *convertTypes || *convertGroups {
 		types, err = loadTypes(*sdeDir)
@@ -104,7 +104,7 @@ func main() {
 	}
 }
 
-type YamlType struct {
+type sdeMarketType struct {
 	MarketGroupID int  `yaml:"marketGroupID"`
 	Published     bool `yaml:"published"`
 
@@ -117,28 +117,28 @@ type YamlType struct {
 	} `yaml:"description"`
 }
 
-type JsonType struct {
+type MarketType struct {
 	ID            int    `json:"id"`
 	MarketGroupID int    `json:"market_group_id"`
 	Name          string `json:"name"`
 	Description   string `json:"description"`
 }
 
-func loadTypes(dir string) (map[int]*JsonType, error) {
+func loadTypes(dir string) (map[int]*MarketType, error) {
 	input, err := os.Open(path.Join(dir, "fsd", "typeIDs.yaml"))
 	if err != nil {
 		return nil, fmt.Errorf("error opening typeIDS.yaml: %v", err)
 	}
 	defer input.Close()
-	var yamlTypes map[int]YamlType
+	var yamlTypes map[int]sdeMarketType
 	if err := yaml.NewDecoder(input).Decode(&yamlTypes); err != nil {
 		return nil, fmt.Errorf("error decoding typeIDs.yaml: %v", err)
 	}
 
-	var jsonTypes = map[int]*JsonType{}
+	var jsonTypes = map[int]*MarketType{}
 	for id, yt := range yamlTypes {
 		if yt.Published {
-			jsonTypes[id] = &JsonType{
+			jsonTypes[id] = &MarketType{
 				ID:            id,
 				MarketGroupID: yt.MarketGroupID,
 				Name:          yt.Name.English,
@@ -149,7 +149,7 @@ func loadTypes(dir string) (map[int]*JsonType, error) {
 	return jsonTypes, err
 }
 
-func saveTypes(dir string, jsonTypes map[int]*JsonType) error {
+func saveTypes(dir string, jsonTypes map[int]*MarketType) error {
 	output, err := os.Create(path.Join(dir, "types.json"))
 	if err != nil {
 		return fmt.Errorf("error opening types.json: %v", err)
@@ -158,7 +158,7 @@ func saveTypes(dir string, jsonTypes map[int]*JsonType) error {
 	return json.NewEncoder(output).Encode(&jsonTypes)
 }
 
-type YamlGroup struct {
+type sdeMarketGroup struct {
 	ParentID int `yaml:"parentGroupID"`
 
 	Name struct {
@@ -170,7 +170,7 @@ type YamlGroup struct {
 	} `yaml:"descriptionID"`
 }
 
-type JsonGroup struct {
+type MarketGroup struct {
 	ID          int    `json:"id"`
 	ParentID    int    `json:"parent_id,omitempty"`
 	Name        string `json:"name"`
@@ -180,20 +180,20 @@ type JsonGroup struct {
 	Types  []int `json:"types"`
 }
 
-func loadGroups(types map[int]*JsonType) (map[int]*JsonGroup, []int, error) {
+func loadGroups(types map[int]*MarketType) (map[int]*MarketGroup, []int, error) {
 	input, err := os.Open(path.Join(*sdeDir, "fsd", "marketGroups.yaml"))
 	if err != nil {
 		return nil, nil, fmt.Errorf("error opening marketGroups.yaml: %v", err)
 	}
 	defer input.Close()
-	var yamlGroups map[int]YamlGroup
+	var yamlGroups map[int]sdeMarketGroup
 	if err := yaml.NewDecoder(input).Decode(&yamlGroups); err != nil {
 		return nil, nil, fmt.Errorf("error decoding marketGroups.yaml: %v", err)
 	}
 
-	var jsonGroups = map[int]*JsonGroup{}
+	var jsonGroups = map[int]*MarketGroup{}
 	for id, yg := range yamlGroups {
-		jsonGroups[id] = &JsonGroup{
+		jsonGroups[id] = &MarketGroup{
 			ID:          id,
 			ParentID:    yg.ParentID,
 			Name:        yg.Name.English,
@@ -220,7 +220,7 @@ func loadGroups(types map[int]*JsonType) (map[int]*JsonGroup, []int, error) {
 	return jsonGroups, root, nil
 }
 
-func saveGroups(dir string, jsonGroups map[int]*JsonGroup, root []int) error {
+func saveGroups(dir string, jsonGroups map[int]*MarketGroup, root []int) error {
 	output, err := os.Create(path.Join(dir, "marketGroups.json"))
 	if err != nil {
 		return fmt.Errorf("error opening marketGroups.json: %v", err)
@@ -348,50 +348,50 @@ func saveSystems(dir string, systems map[int]SolarSystem) error {
 	return json.NewEncoder(output).Encode(&systems)
 }
 
-type YamlCorp struct {
+type sdeCorporation struct {
 	FactionID int `yaml:"factionID"`
 	Name      struct {
 		English string `yaml:"en"`
 	} `yaml:"nameID"`
 }
 
-type JsonCorp struct {
+type Corporation struct {
 	ID        int    `json:"id"`
 	Name      string `json:"string"`
 	FactionID int    `json:"faction_id"`
 }
 
-func loadCorps(dir string) (map[int]YamlCorp, error) {
+func loadCorps(dir string) (map[int]Corporation, error) {
 	input, err := os.Open(path.Join(dir, "fsd", "npcCorporations.yaml"))
 	if err != nil {
 		return nil, fmt.Errorf("error opening npcCorporations.yaml: %v", err)
 	}
 	defer input.Close()
 
-	var result map[int]YamlCorp
-	err = yaml.NewDecoder(input).Decode(&result)
+	var sdeCorps map[int]sdeCorporation
+	err = yaml.NewDecoder(input).Decode(&sdeCorps)
+
+	result := map[int]Corporation{}
+	for id, yc := range sdeCorps {
+		if yc.FactionID == 0 {
+			continue
+		}
+		jc := Corporation{
+			ID:        id,
+			Name:      yc.Name.English,
+			FactionID: yc.FactionID,
+		}
+		result[id] = jc
+	}
+
 	return result, err
 }
 
-func saveCorps(dir string, corps map[int]YamlCorp) error {
+func saveCorps(dir string, corps map[int]Corporation) error {
 	output, err := os.Create(path.Join(dir, "corporations.json"))
 	if err != nil {
 		return fmt.Errorf("error opening corporations.json: %v", err)
 	}
 	defer output.Close()
-
-	out := map[int]JsonCorp{}
-	for id, yc := range corps {
-		if yc.FactionID == 0 {
-			continue
-		}
-		jc := JsonCorp{
-			ID:        id,
-			Name:      yc.Name.English,
-			FactionID: yc.FactionID,
-		}
-		out[id] = jc
-	}
-
-	return json.NewEncoder(output).Encode(&out)
+	return json.NewEncoder(output).Encode(&corps)
 }
