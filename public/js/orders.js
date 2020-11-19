@@ -2,12 +2,8 @@ viewData = (function(window, document, undefined) {
   var types = retrieve('/data/types.json', 'error fetching sde types');
   var stations = retrieve('/data/stations.json', 'error fetching sde stations');
 
-  function byOrderID(a, b) {
-    return a.order_id < b.order_id ? -1 : 1;
-  }
-
   function descendingByOrderID(a, b) {
-    return -byOrderID(a, b)
+    return b.order_id < a.order_id ? -1 : 1;
   }
 
   let path = window.location.pathname;
@@ -41,11 +37,11 @@ viewData = (function(window, document, undefined) {
       return [
         {
           name: "Sell Orders",
-          orders: this.orders && this.orders.sell.sort(isCurrent ? byOrderID : descendingByOrderID),
+          orders: this.orders && this.orders.sell.sort(isCurrent ? byTypeName : descendingByOrderID),
         },
         {
          name: "Buy Orders",
-          orders: this.orders && this.orders.buy.sort(isCurrent ? byOrderID : descendingByOrderID),
+          orders: this.orders && this.orders.buy.sort(isCurrent ? byTypeName : descendingByOrderID),
         },
       ]
     }
