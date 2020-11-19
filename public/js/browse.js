@@ -1,26 +1,20 @@
 viewData = (function(window, document, undefined) {
-  var marketGroups = retrieve('/data/marketGroups.json', 'error fetching sde market groups'); 
+  var data = retrieve('/api/v1/view/browse', 'error fetching sde market groups');
 
   return {
-    data: { root: [] },
     filter: "",
+    groups: [],
 
     handleSearch(e) {
       e.preventDefault();
       window.handleSearch(this.filter);
     },
 
-    get groups() {
-      return this.data.root.map(id =>
-        this.data.groups[''+id]
-      ).sort(byName);
-    },
-
     initialize() {
-      marketGroups.then(data => {
-        this.data = data
-      });
       document.title += " - Find Items"
+      data.then(data => {
+        this.groups = data.groups.sort(byName);
+      });
     }
   }
 })(window, document, undefined);

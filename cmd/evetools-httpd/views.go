@@ -12,6 +12,18 @@ import (
 	"github.com/stesla/evetools/sde"
 )
 
+func (s *Server) ViewBrowse(w http.ResponseWriter, r *http.Request) {
+	allGroups, roots := sde.GetMarketGroups()
+	groups := make([]sde.MarketGroup, len(roots))
+	for i, id := range roots {
+		groups[i] = allGroups[id]
+	}
+
+	json.NewEncoder(w).Encode(map[string]interface{}{
+		"groups": groups,
+	})
+}
+
 func (s *Server) ViewDashboard(w http.ResponseWriter, r *http.Request) {
 	user := currentUser(r)
 
