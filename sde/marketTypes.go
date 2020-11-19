@@ -8,7 +8,7 @@ import (
 	yaml "gopkg.in/yaml.v2"
 )
 
-var marketTypes map[int]*MarketType
+var marketTypes map[int]MarketType
 
 type MarketType struct {
 	ID            int    `json:"id"`
@@ -41,10 +41,10 @@ func loadTypes(dir string) error {
 		return fmt.Errorf("error loading market types: %v", err)
 	}
 
-	marketTypes = map[int]*MarketType{}
+	marketTypes = map[int]MarketType{}
 	for id, yt := range yamlTypes {
 		if yt.Published {
-			marketTypes[id] = &MarketType{
+			marketTypes[id] = MarketType{
 				ID:            id,
 				MarketGroupID: yt.MarketGroupID,
 				Name:          yt.Name.English,
@@ -55,11 +55,11 @@ func loadTypes(dir string) error {
 	return nil
 }
 
-func GetMarketTypes() map[int]*MarketType {
+func GetMarketTypes() map[int]MarketType {
 	return marketTypes
 }
 
-func GetMarketType(id int) (t *MarketType, found bool) {
+func GetMarketType(id int) (t MarketType, found bool) {
 	t, found = marketTypes[id]
 	return
 }

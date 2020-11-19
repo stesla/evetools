@@ -84,7 +84,7 @@ func main() {
 	}
 }
 
-func saveTypes(dir string, marketTypes map[int]*sde.MarketType) error {
+func saveTypes(dir string, marketTypes map[int]sde.MarketType) error {
 	output, err := os.Create(path.Join(dir, "types.json"))
 	if err != nil {
 		return fmt.Errorf("error opening types.json: %v", err)
@@ -102,7 +102,7 @@ func saveTypes(dir string, marketTypes map[int]*sde.MarketType) error {
 	return json.NewEncoder(output).Encode(&outTypes)
 }
 
-func saveGroups(dir string, jsonGroups map[int]*sde.MarketGroup, root []int) error {
+func saveGroups(dir string, jsonGroups map[int]sde.MarketGroup, root []int) error {
 	output, err := os.Create(path.Join(dir, "marketGroups.json"))
 	if err != nil {
 		return fmt.Errorf("error opening marketGroups.json: %v", err)
@@ -114,7 +114,7 @@ func saveGroups(dir string, jsonGroups map[int]*sde.MarketGroup, root []int) err
 	})
 }
 
-func saveStations(dir string, stations map[int]*sde.Station) error {
+func saveStations(dir string, stations map[int]sde.Station) error {
 	output, err := os.Create(path.Join(dir, "stations.json"))
 	if err != nil {
 		return fmt.Errorf("error opening stations.json: %v", err)
@@ -123,7 +123,7 @@ func saveStations(dir string, stations map[int]*sde.Station) error {
 	return json.NewEncoder(output).Encode(&stations)
 }
 
-func saveSystems(dir string, systems map[int]*sde.SolarSystem) error {
+func saveSystems(dir string, systems map[int]sde.SolarSystem) error {
 	output, err := os.Create(path.Join(dir, "systems.json"))
 	if err != nil {
 		return fmt.Errorf("error opening systems.json: %v", err)
@@ -132,7 +132,7 @@ func saveSystems(dir string, systems map[int]*sde.SolarSystem) error {
 	return json.NewEncoder(output).Encode(&systems)
 }
 
-func saveCorps(dir string, corps map[int]*sde.Corporation) error {
+func saveCorps(dir string, corps map[int]sde.Corporation) error {
 	output, err := os.Create(path.Join(dir, "corporations.json"))
 	if err != nil {
 		return fmt.Errorf("error opening corporations.json: %v", err)

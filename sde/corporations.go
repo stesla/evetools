@@ -8,7 +8,7 @@ import (
 	yaml "gopkg.in/yaml.v2"
 )
 
-var corporations map[int]*Corporation
+var corporations map[int]Corporation
 
 type Corporation struct {
 	ID        int    `json:"id"`
@@ -33,12 +33,12 @@ func loadCorporations(dir string) error {
 	var sdeCorps map[int]sdeCorporation
 	err = yaml.NewDecoder(input).Decode(&sdeCorps)
 
-	corporations = map[int]*Corporation{}
+	corporations = map[int]Corporation{}
 	for id, yc := range sdeCorps {
 		if yc.FactionID == 0 {
 			continue
 		}
-		jc := &Corporation{
+		jc := Corporation{
 			ID:        id,
 			Name:      yc.Name.English,
 			FactionID: yc.FactionID,
@@ -49,11 +49,11 @@ func loadCorporations(dir string) error {
 	return err
 }
 
-func GetCorporations() map[int]*Corporation {
+func GetCorporations() map[int]Corporation {
 	return corporations
 }
 
-func GetCorporation(id int) (c *Corporation, found bool) {
+func GetCorporation(id int) (c Corporation, found bool) {
 	c, found = corporations[id]
 	return
 }

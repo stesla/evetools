@@ -8,7 +8,7 @@ import (
 	yaml "gopkg.in/yaml.v2"
 )
 
-var marketGroups map[int]*MarketGroup
+var marketGroups map[int]MarketGroup
 var roots []int
 
 type MarketGroup struct {
@@ -33,7 +33,7 @@ type sdeMarketGroup struct {
 	} `yaml:"descriptionID"`
 }
 
-func loadGroups(dir string, types map[int]*MarketType) error {
+func loadGroups(dir string, types map[int]MarketType) error {
 	input, err := os.Open(path.Join(dir, "fsd", "marketGroups.yaml"))
 	if err != nil {
 		return fmt.Errorf("error opening marketGroups.yaml: %v", err)
@@ -44,9 +44,9 @@ func loadGroups(dir string, types map[int]*MarketType) error {
 		return fmt.Errorf("error decoding marketGroups.yaml: %v", err)
 	}
 
-	marketGroups = map[int]*MarketGroup{}
+	marketGroups = map[int]MarketGroup{}
 	for id, yg := range yamlGroups {
-		marketGroups[id] = &MarketGroup{
+		marketGroups[id] = MarketGroup{
 			ID:          id,
 			ParentID:    yg.ParentID,
 			Name:        yg.Name.English,
@@ -72,11 +72,11 @@ func loadGroups(dir string, types map[int]*MarketType) error {
 	return nil
 }
 
-func GetMarketGroups() (map[int]*MarketGroup, []int) {
+func GetMarketGroups() (map[int]MarketGroup, []int) {
 	return marketGroups, roots
 }
 
-func GetMarketGroup(id int) (g *MarketGroup, found bool) {
+func GetMarketGroup(id int) (g MarketGroup, found bool) {
 	g, found = marketGroups[id]
 	return
 }

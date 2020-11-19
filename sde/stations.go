@@ -8,7 +8,7 @@ import (
 	yaml "gopkg.in/yaml.v2"
 )
 
-var stations map[int]*Station
+var stations map[int]Station
 
 type Station struct {
 	ID       int    `yaml:"stationID" json:"id"`
@@ -24,21 +24,21 @@ func loadStations(dir string) error {
 		return fmt.Errorf("error opening staStations.yaml: %v", err)
 	}
 	defer input.Close()
-	var yamlStations []*Station
+	var yamlStations []Station
 	err = yaml.NewDecoder(input).Decode(&yamlStations)
 
-	stations = map[int]*Station{}
+	stations = map[int]Station{}
 	for _, s := range yamlStations {
 		stations[s.ID] = s
 	}
 	return err
 }
 
-func GetStations() map[int]*Station {
+func GetStations() map[int]Station {
 	return stations
 }
 
-func GetStation(id int) (s *Station, found bool) {
+func GetStation(id int) (s Station, found bool) {
 	s, found = stations[id]
 	return
 }

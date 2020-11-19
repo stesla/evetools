@@ -20,16 +20,15 @@ func (s *Server) ViewDashboard(w http.ResponseWriter, r *http.Request) {
 		apiInternalServerError(w, "FavoriteTypes", err)
 		return
 	}
-	favoriteTypes := make([]*sde.MarketType, len(favorites))
+	favoriteTypes := make([]sde.MarketType, len(favorites))
 	for i, id := range favorites {
 		t, found := sde.GetMarketType(id)
 		if !found {
 			apiInternalServerError(w, "GetMarketType", fmt.Errorf("type %d not found", id))
 			return
 		}
-		var f sde.MarketType = *t
-		f.Description = ""
-		favoriteTypes[i] = &f
+		t.Description = ""
+		favoriteTypes[i] = t
 	}
 
 	wallet, err := s.esi.GetWalletBalance(r.Context(), user.ActiveCharacterID)
@@ -130,8 +129,8 @@ func (s *Server) ViewMarketOrders(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	types := map[int]*sde.MarketType{}
-	stations := map[int]*sde.Station{}
+	types := map[int]sde.MarketType{}
+	stations := map[int]sde.Station{}
 	for _, o := range orders {
 		t, found := sde.GetMarketType(o.TypeID)
 		if !found {
