@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"flag"
 	"fmt"
+	"github.com/stesla/evetools/sde"
 	"os"
 	"path"
 	"path/filepath"
@@ -39,7 +40,7 @@ func main() {
 	}
 
 	var err error
-	var types map[int]*MarketType
+	var types map[int]*sde.MarketType
 
 	if *convertTypes || *convertGroups {
 		types, err = loadTypes(*sdeDir)
@@ -117,14 +118,7 @@ type sdeMarketType struct {
 	} `yaml:"description"`
 }
 
-type MarketType struct {
-	ID            int    `json:"id"`
-	MarketGroupID int    `json:"market_group_id"`
-	Name          string `json:"name"`
-	Description   string `json:"description"`
-}
-
-func loadTypes(dir string) (map[int]*MarketType, error) {
+func loadTypes(dir string) (map[int]*sde.MarketType, error) {
 	input, err := os.Open(path.Join(dir, "fsd", "typeIDs.yaml"))
 	if err != nil {
 		return nil, fmt.Errorf("error opening typeIDS.yaml: %v", err)
@@ -135,10 +129,10 @@ func loadTypes(dir string) (map[int]*MarketType, error) {
 		return nil, fmt.Errorf("error decoding typeIDs.yaml: %v", err)
 	}
 
-	var jsonTypes = map[int]*MarketType{}
+	var jsonTypes = map[int]*sde.MarketType{}
 	for id, yt := range yamlTypes {
 		if yt.Published {
-			jsonTypes[id] = &MarketType{
+			jsonTypes[id] = &sde.MarketType{
 				ID:            id,
 				MarketGroupID: yt.MarketGroupID,
 				Name:          yt.Name.English,
@@ -149,7 +143,7 @@ func loadTypes(dir string) (map[int]*MarketType, error) {
 	return jsonTypes, err
 }
 
-func saveTypes(dir string, jsonTypes map[int]*MarketType) error {
+func saveTypes(dir string, jsonTypes map[int]*sde.MarketType) error {
 	output, err := os.Create(path.Join(dir, "types.json"))
 	if err != nil {
 		return fmt.Errorf("error opening types.json: %v", err)
@@ -170,17 +164,7 @@ type sdeMarketGroup struct {
 	} `yaml:"descriptionID"`
 }
 
-type MarketGroup struct {
-	ID          int    `json:"id"`
-	ParentID    int    `json:"parent_id,omitempty"`
-	Name        string `json:"name"`
-	Description string `json:"description"`
-
-	Groups []int `json:"groups"`
-	Types  []int `json:"types"`
-}
-
-func loadGroups(types map[int]*MarketType) (map[int]*MarketGroup, []int, error) {
+func loadGroups(types map[int]*sde.MarketType) (map[int]*sde.MarketGroup, []int, error) {
 	input, err := os.Open(path.Join(*sdeDir, "fsd", "marketGroups.yaml"))
 	if err != nil {
 		return nil, nil, fmt.Errorf("error opening marketGroups.yaml: %v", err)
@@ -191,9 +175,9 @@ func loadGroups(types map[int]*MarketType) (map[int]*MarketGroup, []int, error) 
 		return nil, nil, fmt.Errorf("error decoding marketGroups.yaml: %v", err)
 	}
 
-	var jsonGroups = map[int]*MarketGroup{}
+	var jsonGroups = map[int]*sde.MarketGroup{}
 	for id, yg := range yamlGroups {
-		jsonGroups[id] = &MarketGroup{
+		jsonGroups[id] = &sde.MarketGroup{
 			ID:          id,
 			ParentID:    yg.ParentID,
 			Name:        yg.Name.English,
@@ -220,7 +204,7 @@ func loadGroups(types map[int]*MarketType) (map[int]*MarketGroup, []int, error) 
 	return jsonGroups, root, nil
 }
 
-func saveGroups(dir string, jsonGroups map[int]*MarketGroup, root []int) error {
+func saveGroups(dir string, jsonGroups map[int]*sde.MarketGroup, root []int) error {
 	output, err := os.Create(path.Join(dir, "marketGroups.json"))
 	if err != nil {
 		return fmt.Errorf("error opening marketGroups.json: %v", err)
@@ -232,31 +216,23 @@ func saveGroups(dir string, jsonGroups map[int]*MarketGroup, root []int) error {
 	})
 }
 
-type Station struct {
-	ID       int    `yaml:"stationID" json:"id"`
-	Name     string `yaml:"stationName" json:"name"`
-	CorpID   int    `yaml:"corporationID" json:"corp_id"`
-	RegionID int    `yaml:"regionID" json:"region_id"`
-	SystemID int    `yaml:"solarSystemID" json:"system_id"`
-}
-
-func loadStations(dir string) (map[int]Station, error) {
+func loadStations(dir string) (map[int]sde.Station, error) {
 	input, err := os.Open(path.Join(dir, "bsd", "staStations.yaml"))
 	if err != nil {
 		return nil, fmt.Errorf("error opening staStations.yaml: %v", err)
 	}
 	defer input.Close()
-	var yamlStations []Station
+	var yamlStations []sde.Station
 	err = yaml.NewDecoder(input).Decode(&yamlStations)
 
-	var stations = map[int]Station{}
+	var stations = map[int]sde.Station{}
 	for _, s := range yamlStations {
 		stations[s.ID] = s
 	}
 	return stations, err
 }
 
-func saveStations(dir string, stations map[int]Station) error {
+func saveStations(dir string, stations map[int]sde.Station) error {
 	output, err := os.Create(path.Join(dir, "stations.json"))
 	if err != nil {
 		return fmt.Errorf("error opening stations.json: %v", err)
@@ -265,13 +241,7 @@ func saveStations(dir string, stations map[int]Station) error {
 	return json.NewEncoder(output).Encode(&stations)
 }
 
-type SolarSystem struct {
-	ID       int    `json:"id" yaml:"solarSystemID"`
-	Name     string `json:"name"`
-	RegionID int    `json:"region_id" yaml:"regionID"`
-}
-
-func loadSystems(dir string) (map[int]SolarSystem, error) {
+func loadSystems(dir string) (map[int]sde.SolarSystem, error) {
 	glob := path.Join(dir, "fsd", "universe", "*", "*", "region.staticdata")
 
 	//"*", "*", "solarsystem.staticdata")
@@ -280,7 +250,7 @@ func loadSystems(dir string) (map[int]SolarSystem, error) {
 		return nil, fmt.Errorf("error listing regions: %v", err)
 	}
 
-	var systems = map[int]SolarSystem{}
+	var systems = map[int]sde.SolarSystem{}
 	for _, p := range paths {
 		r, err := loadRegion(p)
 		if err != nil {
@@ -293,14 +263,14 @@ func loadSystems(dir string) (map[int]SolarSystem, error) {
 	return systems, nil
 }
 
-func loadRegion(filename string) ([]SolarSystem, error) {
+func loadRegion(filename string) ([]sde.SolarSystem, error) {
 	input, err := os.Open(filename)
 	if err != nil {
 		return nil, fmt.Errorf("error opening region data: %v", err)
 	}
 	defer input.Close()
 
-	var region SolarSystem // just using this to capture the region ID
+	var region sde.SolarSystem // just using this to capture the region ID
 	err = yaml.NewDecoder(input).Decode(&region)
 	if err != nil {
 		return nil, fmt.Errorf("error decoding region data: %v", err)
@@ -312,7 +282,7 @@ func loadRegion(filename string) ([]SolarSystem, error) {
 	if err != nil {
 		return nil, fmt.Errorf("error listing systems; %v", err)
 	}
-	var result []SolarSystem
+	var result []sde.SolarSystem
 	for _, p := range paths {
 		s, err := loadSolarSystem(p)
 		if err != nil {
@@ -324,22 +294,22 @@ func loadRegion(filename string) ([]SolarSystem, error) {
 	return result, nil
 }
 
-func loadSolarSystem(filename string) (SolarSystem, error) {
+func loadSolarSystem(filename string) (sde.SolarSystem, error) {
 	input, err := os.Open(filename)
 	if err != nil {
-		return SolarSystem{}, fmt.Errorf("error opening solar system data: %v", err)
+		return sde.SolarSystem{}, fmt.Errorf("error opening solar system data: %v", err)
 	}
 	defer input.Close()
 
 	dir, _ := filepath.Split(filename)
-	ss := SolarSystem{
+	ss := sde.SolarSystem{
 		Name: filepath.Base(dir),
 	}
 	err = yaml.NewDecoder(input).Decode(&ss)
 	return ss, err
 }
 
-func saveSystems(dir string, systems map[int]SolarSystem) error {
+func saveSystems(dir string, systems map[int]sde.SolarSystem) error {
 	output, err := os.Create(path.Join(dir, "systems.json"))
 	if err != nil {
 		return fmt.Errorf("error opening systems.json: %v", err)
@@ -355,13 +325,7 @@ type sdeCorporation struct {
 	} `yaml:"nameID"`
 }
 
-type Corporation struct {
-	ID        int    `json:"id"`
-	Name      string `json:"string"`
-	FactionID int    `json:"faction_id"`
-}
-
-func loadCorps(dir string) (map[int]Corporation, error) {
+func loadCorps(dir string) (map[int]sde.Corporation, error) {
 	input, err := os.Open(path.Join(dir, "fsd", "npcCorporations.yaml"))
 	if err != nil {
 		return nil, fmt.Errorf("error opening npcCorporations.yaml: %v", err)
@@ -371,12 +335,12 @@ func loadCorps(dir string) (map[int]Corporation, error) {
 	var sdeCorps map[int]sdeCorporation
 	err = yaml.NewDecoder(input).Decode(&sdeCorps)
 
-	result := map[int]Corporation{}
+	result := map[int]sde.Corporation{}
 	for id, yc := range sdeCorps {
 		if yc.FactionID == 0 {
 			continue
 		}
-		jc := Corporation{
+		jc := sde.Corporation{
 			ID:        id,
 			Name:      yc.Name.English,
 			FactionID: yc.FactionID,
@@ -387,7 +351,7 @@ func loadCorps(dir string) (map[int]Corporation, error) {
 	return result, err
 }
 
-func saveCorps(dir string, corps map[int]Corporation) error {
+func saveCorps(dir string, corps map[int]sde.Corporation) error {
 	output, err := os.Create(path.Join(dir, "corporations.json"))
 	if err != nil {
 		return fmt.Errorf("error opening corporations.json: %v", err)
