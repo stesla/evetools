@@ -1,22 +1,13 @@
 viewData = (function(window, document, undefined) {
-  var types = retrieve('/data/types.json', 'error fetching sde types');
-  var stations = retrieve('/data/stations.json', 'error fetching sde stations');
+  var data = retrieve('/api/v1/view/transactions', 'error fetching view data');
 
   return {
     txns: undefined,
 
     initialize() {
       document.title += ' - Market Transactions'
-      types.then(types => {
-        this.types = types;
-        return stations;
-      })
-      .then(stations => {
-        this.stations = stations;
-        return  retrieve('/api/v1/user/transactions', 'error fetching wallet transactions')
-      })
-      .then(txns => {
-        this.txns = txns.map(t => setOrderFields(t, this.types, this.stations));
+      data.then(data => {
+        this.txns = data.transactions.map(t => setOrderFields(t, data.types, data.stations));
       });
     },
   }

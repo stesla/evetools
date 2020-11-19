@@ -171,11 +171,11 @@ func NewServer(static http.Handler, db model.DB) *Server {
 	api.Methods("GET").Path("/v1/user/skills").HandlerFunc(s.GetUserSkills)
 	api.Methods("GET").Path("/v1/user/standings").HandlerFunc(s.GetUserStandings)
 	api.Methods("PUT").Path("/v1/user/station").HandlerFunc(s.PutUserStation)
-	api.Methods("GET").Path("/v1/user/transactions").HandlerFunc(s.GetUserTransactions)
 	api.Methods("GET").Path("/v1/user/walletBalance").HandlerFunc(s.GetUserWalletBalance)
 	api.Methods("GET").Path("/v1/verify").HandlerFunc(s.GetVerify)
 	api.Methods("GET").Path("/v1/view/dashboard").HandlerFunc(s.ViewDashboard)
 	api.Methods("GET").Path("/v1/view/marketOrders").HandlerFunc(s.ViewMarketOrders)
+	api.Methods("GET").Path("/v1/view/transactions").HandlerFunc(s.ViewTransactions)
 
 	return s
 }

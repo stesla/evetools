@@ -188,3 +188,59 @@ func (s *Server) processOrders(orders []*esi.MarketOrder, days time.Duration) (b
 	}
 	return
 }
+
+func (s *Server) ViewTransactions(w http.ResponseWriter, r *http.Request) {
+	user := currentUser(r)
+
+	txns, err := s.esi.GetWalletTransactions(r.Context(), user.ActiveCharacterID)
+	if err != nil {
+		apiInternalServerError(w, "GetWalletTransactions", err)
+		return
+	}
+
+	maxTxnID, err := s.db.GetLatestTxnID()
+	if err != nil {
+		apiInternalServerError(w, "GetLatestTxnID", err)
+		return
+	}
+
+	types := map[int]sde.MarketType{}
+	stations := map[int]sde.Station{}
+	for _, txn := range txns {
+		if txn.TransactionID > maxTxnID {
+			txn.ClientName, err = s.esi.GetCharacterName(txn.ClientID)
+			if err != nil {
+				apiInternalServerError(w, "GetCharacterName", err)
+				return
+			}
+			s.db.SaveTransaction(txn)
+		}
+
+		t, found := sde.GetMarketType(txn.TypeID)
+		if !found {
+			apiInternalServerError(w, "GetMarketType", fmt.Errorf("no type for id %d", txn.TypeID))
+			return
+		}
+		types[t.ID] = t
+
+		s, found := sde.GetStation(txn.LocationID)
+		if !found {
+			apiInternalServerError(w, "GetStation", fmt.Errorf("no station for id %d", txn.LocationID))
+			return
+		}
+		stations[s.ID] = s
+
+	}
+
+	txns, err = s.db.GetTransactions()
+	if err != nil {
+		apiInternalServerError(w, "GetTransactions", err)
+		return
+	}
+
+	json.NewEncoder(w).Encode(map[string]interface{}{
+		"stations":     stations,
+		"transactions": txns,
+		"types":        types,
+	})
+}

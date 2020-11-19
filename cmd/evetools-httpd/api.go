@@ -135,41 +135,6 @@ func (s *Server) GetUserStandings(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(standings)
 }
 
-func (s *Server) GetUserTransactions(w http.ResponseWriter, r *http.Request) {
-	user := currentUser(r)
-
-	txns, err := s.esi.GetWalletTransactions(r.Context(), user.ActiveCharacterID)
-	if err != nil {
-		apiInternalServerError(w, "GetWalletTransactions", err)
-		return
-	}
-
-	maxTxnID, err := s.db.GetLatestTxnID()
-	if err != nil {
-		apiInternalServerError(w, "GetLatestTxnID", err)
-		return
-	}
-
-	for _, txn := range txns {
-		if txn.TransactionID > maxTxnID {
-			txn.ClientName, err = s.esi.GetCharacterName(txn.ClientID)
-			if err != nil {
-				apiInternalServerError(w, "GetCharacterName", err)
-				return
-			}
-			s.db.SaveTransaction(txn)
-		}
-	}
-
-	txns, err = s.db.GetTransactions()
-	if err != nil {
-		apiInternalServerError(w, "GetTransactions", err)
-		return
-	}
-
-	json.NewEncoder(w).Encode(txns)
-}
-
 func (s *Server) GetUserWalletBalance(w http.ResponseWriter, r *http.Request) {
 	user := currentUser(r)
 
