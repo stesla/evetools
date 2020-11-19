@@ -44,12 +44,6 @@ func TestMain(m *testing.M) {
 	os.Exit(m.Run())
 }
 
-func TestCurrentUserUnauthenticated(t *testing.T) {
-	req, _ := http.NewRequest("GET", "/api/v1/user/current", nil)
-	resp := handleRequest(t, req)
-	assert.Equal(t, http.StatusUnauthorized, resp.StatusCode)
-}
-
 func TestLogin(t *testing.T) {
 	assert := assert.New(t)
 	req, _ := http.NewRequest("GET", "/login", nil)
@@ -148,48 +142,6 @@ func TestLogout(t *testing.T) {
 	}
 }
 
-func createSignedToken(claims map[string]interface{}) string {
-	privRSA, _ := rsa.GenerateKey(rand.Reader, 2048)
-	privKey, _ := jwk.New(privRSA)
-
-	token := jwt.New()
-	for key, value := range claims {
-		token.Set(key, value)
-	}
-	compact, _ := jwt.Sign(token, jwa.RS256, privKey)
-	return string(compact)
-}
-
-func TestCurrentUserAuthenticated(t *testing.T) {
-	assert := assert.New(t)
-
-	req, _ := http.NewRequest("GET", "/api/v1/user/current", nil)
-	setSessionCookie(req, map[interface{}]interface{}{
-		"token": &oauth2.Token{
-			AccessToken:  "TOKEN",
-			RefreshToken: "REFRESH",
-		},
-		"user": &model.User{
-			ActiveCharacterID:   1234567890,
-			ActiveCharacterHash: "OWNER-HASH",
-			StationID:           76543210,
-		},
-	})
-	resp := handleRequest(t, req)
-
-	assert.Equal(http.StatusOK, resp.StatusCode)
-	assert.Equal("application/json", resp.Header.Get("Content-Type"))
-
-	var obj struct {
-		Character model.Character `json:"character"`
-	}
-	json.NewDecoder(resp.Body).Decode(&obj)
-	assert.Equal(0, obj.Character.ID)
-	assert.Equal("", obj.Character.CharacterOwnerHash)
-	assert.Equal(1234567890, obj.Character.CharacterID)
-	assert.Equal("Bob Awox", obj.Character.CharacterName)
-}
-
 type failHandler struct {
 	t *testing.T
 }
@@ -209,17 +161,6 @@ func handleRequest(t *testing.T, r *http.Request) *http.Response {
 }
 
 type values map[interface{}]interface{}
-
-func setSessionCookie(r *http.Request, vals values) {
-	req := &http.Request{}
-	session, _ := store.Get(req, viper.GetString("httpd.session.name"))
-	for k, v := range vals {
-		session.Values[k] = v
-	}
-	rec := httptest.NewRecorder()
-	session.Save(req, rec)
-	r.AddCookie(rec.Result().Cookies()[0])
-}
 
 type mockRoundTripper struct {
 	handlers map[string]http.Handler

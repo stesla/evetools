@@ -16,7 +16,7 @@ viewData = (function(window, document, undefined) {
       retrieve('/api/v1/view/search?' + params.toString())
       .then(data => {
         this.favorites = data.favorites;
-        this.marketTypes = data.types;
+        this.marketTypes = data.types.sort(byName);
       });
     },
 

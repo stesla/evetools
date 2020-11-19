@@ -9,7 +9,7 @@ viewData = (function(window, document, undefined) {
     type: undefined,
 
     toggleFavorite() {
-      setFavorite(this.typeID, !this.favorite)
+      setFavorite(typeID, !this.favorite)
       .then(obj => {
         this.favorite = obj.favorite;
       });

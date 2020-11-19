@@ -10,69 +10,6 @@ import (
 	"github.com/stesla/evetools/model"
 )
 
-func (s *Server) GetUserCharacters(w http.ResponseWriter, r *http.Request) {
-	user := currentUser(r)
-
-	characters, err := s.db.GetCharactersForUser(user.ID)
-	if err != nil {
-		apiInternalServerError(w, "GetCharactersForUser", err)
-		return
-	}
-
-	json.NewEncoder(w).Encode(characters)
-}
-
-func (s *Server) GetUserCurrent(w http.ResponseWriter, r *http.Request) {
-	user := currentUser(r)
-
-	character, err := s.db.GetCharacterByOwnerHash(user.ActiveCharacterHash)
-	if err != nil {
-		apiInternalServerError(w, "GetCharacterByOwnerHash", err)
-		return
-	}
-
-	json.NewEncoder(w).Encode(map[string]interface{}{
-		"character":  character,
-		"station_id": user.StationID,
-	})
-}
-
-func (s *Server) GetUserSkills(w http.ResponseWriter, r *http.Request) {
-	user := currentUser(r)
-
-	skills, err := s.esi.GetCharacterSkills(r.Context(), user.ActiveCharacterID)
-	if err != nil {
-		apiInternalServerError(w, "GetCharacterSkills", err)
-		return
-	}
-
-	json.NewEncoder(w).Encode(skills)
-}
-
-func (s *Server) GetUserStandings(w http.ResponseWriter, r *http.Request) {
-	user := currentUser(r)
-
-	standings, err := s.esi.GetCharacterStandings(r.Context(), user.ActiveCharacterID)
-	if err != nil {
-		apiInternalServerError(w, "GetCharacterStandings", err)
-		return
-	}
-
-	json.NewEncoder(w).Encode(standings)
-}
-
-func (s *Server) GetUserWalletBalance(w http.ResponseWriter, r *http.Request) {
-	user := currentUser(r)
-
-	wallet, err := s.esi.GetWalletBalance(r.Context(), user.ActiveCharacterID)
-	if err != nil {
-		apiInternalServerError(w, "WalletBalance", err)
-		return
-	}
-
-	json.NewEncoder(w).Encode(wallet)
-}
-
 func (s *Server) GetVerify(w http.ResponseWriter, r *http.Request) {
 	verify, err := s.esi.Verify(r.Context())
 	if err != nil {
