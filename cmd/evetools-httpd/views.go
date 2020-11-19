@@ -11,6 +11,7 @@ import (
 
 	"github.com/gorilla/mux"
 	"github.com/stesla/evetools/esi"
+	"github.com/stesla/evetools/model"
 	"github.com/stesla/evetools/sde"
 )
 
@@ -301,5 +302,91 @@ func (s *Server) ViewTransactions(w http.ResponseWriter, r *http.Request) {
 		"stations":     stations,
 		"transactions": txns,
 		"types":        types,
+	})
+}
+
+func (s *Server) ViewTypeDetails(w http.ResponseWriter, r *http.Request) {
+	user := currentUser(r)
+
+	vars := mux.Vars(r)
+	typeID, _ := strconv.Atoi(vars["typeID"])
+
+	marketType, found := sde.GetMarketType(typeID)
+	if !found {
+		apiInternalServerError(w, "GetMarketType", fmt.Errorf("no type for id %d", typeID))
+		return
+	}
+
+	group, _ := sde.GetMarketGroup(marketType.MarketGroupID)
+	group.Description = ""
+
+	parentGroups := []*sde.MarketGroup{}
+	parentID := group.ParentID
+	for parentID != 0 {
+		g, _ := sde.GetMarketGroup(parentID)
+		parentID = g.ParentID
+		parentGroups = append(parentGroups, g)
+	}
+
+	favorite, err := s.db.IsFavorite(user.ID, typeID)
+	if err != nil && err != model.ErrNotFound {
+		apiInternalServerError(w, "GetType", err)
+		return
+	}
+
+	station, found := sde.GetStation(user.StationID)
+	if !found {
+		apiInternalServerError(w, "GetStation", fmt.Errorf("no station for id %d", user.StationID))
+		return
+	}
+
+	solarSystem, _ := sde.GetSolarSystem(station.SystemID)
+
+	price, err := s.esi.GetMarketPrices(r.Context(), station.ID, solarSystem.RegionID, typeID)
+	if err != nil {
+		apiInternalServerError(w, "JitaPrices", err)
+		return
+	}
+
+	history, err := s.esi.GetPriceHistory(r.Context(), solarSystem.RegionID, typeID)
+	if err != nil {
+		apiInternalServerError(w, "JitaHistory", err)
+		return
+	}
+
+	var volume int64
+	var lowest, average, highest float64
+	for _, day := range history {
+		if lowest == 0 || lowest > day.Lowest {
+			lowest = day.Lowest
+		}
+		if day.Highest > highest {
+			highest = day.Highest
+		}
+		average += day.Average
+		volume += day.Volume
+	}
+	if l := len(history); l > 0 {
+		average /= float64(l)
+		volume /= int64(l)
+	}
+
+	json.NewEncoder(w).Encode(map[string]interface{}{
+		"favorite": favorite,
+		"marketInfo": map[string]interface{}{
+			"average": average,
+			"buy":     price.Buy,
+			"highest": highest,
+			"history": history,
+			"lowest":  lowest,
+			"margin":  price.Margin(),
+			"sell":    price.Sell,
+			"volume":  volume,
+		},
+		"group":         group,
+		"parent_groups": parentGroups,
+		"station":       station,
+		"system":        solarSystem,
+		"type":          marketType,
 	})
 }

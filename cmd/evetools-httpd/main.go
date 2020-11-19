@@ -161,7 +161,6 @@ func NewServer(static http.Handler, db model.DB) *Server {
 	api := s.mux.PathPrefix("/api").Subrouter()
 	api.Use(haveLoggedInUser)
 	api.Use(contentType("application/json").Middleware)
-	api.Methods("GET").Path("/v1/types/{typeID:[0-9]+}").HandlerFunc(s.GetType)
 	api.Methods("PUT").Path("/v1/types/{typeID:[0-9]+}/favorite").HandlerFunc(s.PutTypeFavorite)
 	api.Methods("POST").Path("/v1/types/{typeID:[0-9]+}/openInGame").HandlerFunc(s.PostOpenInGame)
 	api.Methods("GET").Path("/v1/user/characters").HandlerFunc(s.GetUserCharacters)
@@ -179,6 +178,7 @@ func NewServer(static http.Handler, db model.DB) *Server {
 	api.Methods("GET").Path("/v1/view/groupDetails/{groupID:[0-9]+}").HandlerFunc(s.ViewGroupDetails)
 	api.Methods("GET").Path("/v1/view/marketOrders").HandlerFunc(s.ViewMarketOrders)
 	api.Methods("GET").Path("/v1/view/transactions").HandlerFunc(s.ViewTransactions)
+	api.Methods("GET").Path("/v1/view/typeDetails/{typeID:[0-9]+}").HandlerFunc(s.ViewTypeDetails)
 
 	return s
 }
