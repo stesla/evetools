@@ -11,13 +11,20 @@ import (
 	"github.com/gorilla/mux"
 	"github.com/stesla/evetools/esi"
 	"github.com/stesla/evetools/model"
+	"github.com/stesla/evetools/sde"
 )
 
-func (s *Server) GetTypeID(w http.ResponseWriter, r *http.Request) {
+func (s *Server) GetType(w http.ResponseWriter, r *http.Request) {
 	user := currentUser(r)
 
 	vars := mux.Vars(r)
 	id, _ := strconv.Atoi(vars["typeID"])
+
+	marketType, found := sde.GetMarketType(id)
+	if !found {
+		apiError(w, fmt.Errorf("not found"), http.StatusNotFound)
+		return
+	}
 
 	locationID, err := strconv.Atoi(r.FormValue("location_id"))
 	if err != nil {
@@ -67,6 +74,7 @@ func (s *Server) GetTypeID(w http.ResponseWriter, r *http.Request) {
 	}
 
 	json.NewEncoder(w).Encode(map[string]interface{}{
+		"type":     marketType,
 		"buy":      price.Buy,
 		"sell":     price.Sell,
 		"margin":   price.Margin(),

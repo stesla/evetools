@@ -8,11 +8,13 @@ import (
 	yaml "gopkg.in/yaml.v2"
 )
 
+var marketTypes map[int]*MarketType
+
 type MarketType struct {
 	ID            int    `json:"id"`
 	MarketGroupID int    `json:"market_group_id"`
 	Name          string `json:"name"`
-	Description   string `json:"description"`
+	Description   string `json:"description,omitempty"`
 }
 
 type sdeMarketType struct {
@@ -28,21 +30,21 @@ type sdeMarketType struct {
 	} `yaml:"description"`
 }
 
-func LoadTypes() (map[int]*MarketType, error) {
-	input, err := os.Open(path.Join(sdeDir, "fsd", "typeIDs.yaml"))
+func loadTypes(dir string) error {
+	input, err := os.Open(path.Join(dir, "fsd", "typeIDs.yaml"))
 	if err != nil {
-		return nil, fmt.Errorf("error opening typeIDS.yaml: %v", err)
+		return fmt.Errorf("error loading market types: %v", err)
 	}
 	defer input.Close()
 	var yamlTypes map[int]sdeMarketType
 	if err := yaml.NewDecoder(input).Decode(&yamlTypes); err != nil {
-		return nil, fmt.Errorf("error decoding typeIDs.yaml: %v", err)
+		return fmt.Errorf("error loading market types: %v", err)
 	}
 
-	var jsonTypes = map[int]*MarketType{}
+	marketTypes = map[int]*MarketType{}
 	for id, yt := range yamlTypes {
 		if yt.Published {
-			jsonTypes[id] = &MarketType{
+			marketTypes[id] = &MarketType{
 				ID:            id,
 				MarketGroupID: yt.MarketGroupID,
 				Name:          yt.Name.English,
@@ -50,5 +52,23 @@ func LoadTypes() (map[int]*MarketType, error) {
 			}
 		}
 	}
-	return jsonTypes, err
+	return nil
+}
+
+func GetMarketTypes() (out map[int]*MarketType) {
+	out = make(map[int]*MarketType, len(marketTypes))
+	for k, v := range marketTypes {
+		var t MarketType = *v
+		out[k] = &t
+	}
+	return
+}
+
+func GetMarketType(id int) (*MarketType, bool) {
+	v, found := marketTypes[id]
+	if !found {
+		return nil, found
+	}
+	var t MarketType = *v
+	return &t, found
 }

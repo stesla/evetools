@@ -24,6 +24,7 @@ import (
 	"github.com/spf13/viper"
 	"github.com/stesla/evetools/esi"
 	"github.com/stesla/evetools/model"
+	"github.com/stesla/evetools/sde"
 )
 
 type contextKey int
@@ -47,6 +48,7 @@ func init() {
 	viper.SetDefault("esi.basePath", "https://esi.evetech.net")
 	viper.SetDefault("oauth.basePath", "https://login.eveonline.com")
 	viper.SetDefault("http.cache.dir", "./cache")
+	viper.SetDefault("sde.dir", "./data")
 
 	gob.Register(oauth2.Token{})
 	gob.Register(model.User{})
@@ -80,6 +82,10 @@ func main() {
 
 	if err := initOAuthConfig(); err != nil {
 		log.Fatalf("error initializing oauth: %s", err)
+	}
+
+	if err := sde.Initialize(viper.GetString("sde.dir")); err != nil {
+		log.Fatalf("error initializing sde: %s", err)
 	}
 
 	store = sessions.NewCookieStore([]byte(viper.GetString("httpd.session.auth_key")))
@@ -145,7 +151,7 @@ func NewServer(static http.Handler, db model.DB) *Server {
 	api := s.mux.PathPrefix("/api").Subrouter()
 	api.Use(haveLoggedInUser)
 	api.Use(contentType("application/json").Middleware)
-	api.Methods("GET").Path("/v1/types/{typeID:[0-9]+}").HandlerFunc(s.GetTypeID)
+	api.Methods("GET").Path("/v1/types/{typeID:[0-9]+}").HandlerFunc(s.GetType)
 	api.Methods("PUT").Path("/v1/types/{typeID:[0-9]+}/favorite").HandlerFunc(s.PutTypeFavorite)
 	api.Methods("POST").Path("/v1/types/{typeID:[0-9]+}/openInGame").HandlerFunc(s.PostOpenInGame)
 	api.Methods("GET").Path("/v1/user/characters").HandlerFunc(s.GetUserCharacters)

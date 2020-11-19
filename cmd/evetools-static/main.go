@@ -38,20 +38,12 @@ func main() {
 		die(usage())
 	}
 
-	var err error
-	var types map[int]*sde.MarketType
-
-	err = sde.Initialize(*sdeDir)
+	err := sde.Initialize(*sdeDir)
 	if err != nil {
 		die(err)
 	}
 
-	if *convertTypes || *convertGroups {
-		types, err = sde.LoadTypes()
-		if err != nil {
-			die(fmt.Errorf("error loading types: %v", err))
-		}
-	}
+	types := sde.GetMarketTypes()
 
 	if *convertTypes {
 		err = saveTypes(*outDir, types)
@@ -109,13 +101,22 @@ func main() {
 	}
 }
 
-func saveTypes(dir string, jsonTypes map[int]*sde.MarketType) error {
+func saveTypes(dir string, marketTypes map[int]*sde.MarketType) error {
 	output, err := os.Create(path.Join(dir, "types.json"))
 	if err != nil {
 		return fmt.Errorf("error opening types.json: %v", err)
 	}
 	defer output.Close()
-	return json.NewEncoder(output).Encode(&jsonTypes)
+
+	outTypes := make(map[int]sde.MarketType, len(marketTypes))
+	for i, t := range marketTypes {
+		var o sde.MarketType
+		o.ID = t.ID
+		o.MarketGroupID = t.MarketGroupID
+		o.Name = t.Name
+		outTypes[i] = o
+	}
+	return json.NewEncoder(output).Encode(&outTypes)
 }
 
 func saveGroups(dir string, jsonGroups map[int]*sde.MarketGroup, root []int) error {
