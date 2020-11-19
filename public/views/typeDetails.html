@@ -14,59 +14,54 @@
       <p class="mt-64 text-2xl text-center italic text-gray-500">Fetching type info...</p>
     </template>
     <template x-if="type">
-      <div class="py-4 w-full sm:w-4/5 mt-4 mx-auto border-t border-b sm:border-l sm:border-r border-gray-500 sm:rounded-xl sm:shadow-xl bg-gray-100"> <div class="px-4 flex justify-between items-start">
-          <div class="mr-2">
-            <h1 class="text-4xl font-bold" x-text="type.name"></h1>
-            <div class="mt-4">
-              <template x-for="g in parentGroups">
-                <a class="text-xl italic font-semibold" :href="hrefGroup(g.id)" x-text="g.name"></a> &gt;
-              </template>
-              <a class="text-xl italic font-semibold" :href="hrefGroup(group.id)" x-text="group.name"></a>
-            </div>
-            <p class="mt-4" x-text="type.description"></p>
-          </div>
+      <div class="py-4 w-full sm:w-4/5 mt-4 mx-auto border-t border-b sm:border-l sm:border-r border-gray-500 sm:rounded-xl sm:shadow-xl bg-gray-100">
+        <div class="px-4 mr-2">
           <img class="float-right" :src="imgURL(type)">
+          <h1 class="text-4xl font-bold" x-text="type.name"></h1>
+          <div class="mt-4">
+            <template x-for="g in parentGroups">
+              <a class="text-xl italic font-semibold" :href="hrefGroup(g.id)" x-text="g.name"></a> &gt;
+            </template>
+            <a class="text-xl italic font-semibold" :href="hrefGroup(group.id)" x-text="group.name"></a>
+          </div>
+          <p class="mt-4" x-text="type.description"></p>
         </div>
         <div class="mt-4 border-t-2 pt-4">
           <template x-if="info">
             <div>
               <div x-show="info">
-                <div class="mx-4">
-                  <div class="flex justify-between">
-                    <div>
-                      <dt class="text-left">Margin</dt>
-                      <dd class="font-bold text-left" x-text="formatNumber(info.margin) + '%'"></dd>
-                    </div>
-                    <div>
-                      <dt class="text-left">Volume</dt>
-                      <dd class="font-bold text-left" x-text="formatNumber(info.volume)"></dd>
-                    </div>
-                    <div>
-                      <dt class="text-right"><span x-text="system.name"></span> Buy</dt>
-                      <dd class="font-bold text-right text-red-500" x-text="formatISK(info.buy)">
-                    </div>
-                    <div>
-                      <dt class="text-right"><span x-text="system.name"></span> Sell</dt>
-                      <dd class="font-bold text-right text-green-500" x-text="formatISK(info.sell)">
-                    </div>
+                <div class="mx-4 sm:w-3/4 sm:mx-auto max-w-sm flex items-center justify-between grid grid-cols-2 gap-2">
+                  <div class="col-span-full">
+                    <dt class="text-center">Average Volume</dt>
+                    <dd class="text-center font-bold " x-text="formatNumber(info.volume)"></dd>
                   </div>
-                  <div class="mt-6 flex justify-between">
-                    <div>
-                      <dd class="text-left">Lowest</dt>
-                      <dd class="font-bold text-left" x-text="formatISK(info.lowest)"></dd>
-                    </div>
-                    <div>
-                      <dd class="text-center">Average</dt>
-                      <dd class="font-bold text-center" x-text="formatISK(info.average)"></dd>
-                    </div>
-                    <div>
-                      <dd class="text-right">Highest</dt>
-                      <dd class="font-bold text-right" x-text="formatISK(info.highest)"></dd>
-                    </div>
+                  <div>
+                    <dt class=""><span x-text="system.name"></span> Buy</dt>
+                    <dd class="font-bold  text-red-500" x-text="formatISK(info.buy)">
                   </div>
-                </div>
+                  <div>
+                    <dt class="text-right"><span x-text="system.name"></span> Sell</dt>
+                    <dd class="text-right font-bold  text-green-500" x-text="formatISK(info.sell)">
+                  </div>
+                   <div>
+                    <dt class="">Margin</dt>
+                    <dd class="font-bold " x-text="formatNumber(info.margin) + '%'"></dd>
+                  </div>
+                  <div>
+                    <dd class="text-right">Average Price</dt>
+                    <dd class="text-right font-bold" x-text="formatISK(info.average)"></dd>
+                  </div>
+                  <div>
+                    <dd class="">Lowest Price</dt>
+                    <dd class="font-bold " x-text="formatISK(info.lowest)"></dd>
+                  </div>
+                  <div>
+                    <dd class="text-right">Highest Price</dt>
+                    <dd class="text-right font-bold " x-text="formatISK(info.highest)"></dd>
+                  </div>
+               </div>
                 <div id="chart" class="mt-4 border-t-2 pt-4">
-                  <h3 class="text-center font-bold text-md">Average price for the last twelve months</h3>
+                  <h3 class="text-center font-bold text-md">Average Price</h3>
                 </div>
               </div>
               <div class="mt-4 border-t-2 px-4 pt-4 flex items-center flex-row-reverse">
