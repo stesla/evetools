@@ -10,7 +10,44 @@
               <p class="text-center italic text-gray-500">Loading orders...</p>
             </template>
             <template x-if="s.orders">
-              <div class="shadow overflow-hidden border border-gray-500 rounded-lg"
+              <div class="sm:hidden shadow overflow-hidden border border-gray-500 rounded-lg">
+                <template x-for="order in s.orders" x-ref="order.order_id">
+                  <div class="px-4 py-2 border-b border-gray-500 bg-gray-100">
+                    <div class="flex items-center">
+                      <div class="flex-shrink-0 h-10 w-10">
+                        <img class="h-10 w-10" :src="imgURL(order.type)" alt="">
+                      </div>
+                      <div class="ml-4 text-sm leading-6">
+                        <div class="flex">
+                          <a :href="hrefType(order.type_id)">
+                            <div class="font-bold text-gray-900" x-text="order.type.name"></div>
+                          </a>
+                          <button @click="openTypeInEVE(order.type_id)" class="ml-2 focus:outline-none">
+                            <svg class="h-4 w-4 stroke-current text-gray-500 hover:text-blue-500"
+                                 xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                            </svg>
+                          </button>
+                        </div>
+                        <div class="text-gray-900 italic" x-text="order.station_name"></div>
+                        <div class="text-xs" x-text="order.time_remaining"></div>
+                        <div class="flex items-center justify-between">
+                          <span class="font-bold" x-text="formatISK(order.price)"></span>
+                          <div class="flex flex-row-reverse items-center text-xs">
+                            <div class="ml-1">
+                              <span x-text="order.volume_remain"></span>/<span x-text="order.volume_total"></span>
+                            </div>
+                            <span>Volume:</span>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                 </div>
+                </template>
+              </div>
+             </template>
+            <template x-if="s.orders">
+              <div class="hidden sm:block shadow overflow-hidden border border-gray-500 rounded-lg"
                    :class="{'border-b': s.orders, 'shadow': s.orders}">
                 <table class="table-auto w-full divide-y divide-gray-500">
                   <tbody class="bg-white divide-y divide-gray-500">
