@@ -1,15 +1,12 @@
 package main
 
 import (
-	"context"
 	"encoding/json"
 	"fmt"
 	"net/http"
 	"strconv"
-	"time"
 
 	"github.com/gorilla/mux"
-	"github.com/stesla/evetools/esi"
 	"github.com/stesla/evetools/model"
 	"github.com/stesla/evetools/sde"
 )
@@ -112,14 +109,6 @@ func (s *Server) GetUserCurrent(w http.ResponseWriter, r *http.Request) {
 		"character":  character,
 		"station_id": user.StationID,
 	})
-}
-
-func (s *Server) GetUserHistory(w http.ResponseWriter, r *http.Request) {
-	s.serveMarketOrders(w, r, s.esi.GetMarketOrderHistory)
-}
-
-func (s *Server) GetUserOrders(w http.ResponseWriter, r *http.Request) {
-	s.serveMarketOrders(w, r, s.esi.GetMarketOrders)
 }
 
 func (s *Server) GetUserSkills(w http.ResponseWriter, r *http.Request) {
@@ -312,69 +301,4 @@ func (s *Server) PutUserStation(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.WriteHeader(http.StatusNoContent)
-}
-
-func (s *Server) processOrders(orders []*esi.MarketOrder, days time.Duration) (buy, sell []*esi.MarketOrder, _ error) {
-	buy = []*esi.MarketOrder{}
-	sell = []*esi.MarketOrder{}
-	for _, order := range orders {
-		issued, err := time.Parse("2006-01-02T15:04:05Z", order.Issued)
-		if err != nil {
-			return nil, nil, err
-		}
-
-		if days > 0 && time.Since(issued) > days {
-			continue
-		}
-
-		expires := issued.Add(time.Duration(order.Duration) * 24 * time.Hour)
-		d := time.Until(expires).Round(time.Second)
-		days := d / (24 * time.Hour)
-		d -= days * 24 * time.Hour
-		hours := d / time.Hour
-		d -= hours * time.Hour
-		minutes := d / time.Minute
-		d -= minutes * time.Minute
-		seconds := d / time.Second
-
-		order.TimeRemaining = fmt.Sprintf("%dd %dh %dm %ds", days, hours, minutes, seconds)
-
-		if order.IsBuyOrder {
-			buy = append(buy, order)
-		} else {
-			sell = append(sell, order)
-		}
-	}
-	return
-}
-
-func (s *Server) serveMarketOrders(w http.ResponseWriter, r *http.Request, f func(context.Context, int) ([]*esi.MarketOrder, error)) {
-	user := currentUser(r)
-
-	orders, err := f(r.Context(), user.ActiveCharacterID)
-	if err != nil {
-		apiInternalServerError(w, "fetching orders", err)
-		return
-	}
-
-	var days time.Duration
-	if str := r.FormValue("days"); str != "" {
-		if i, err := strconv.Atoi(str); err != nil {
-			apiError(w, fmt.Errorf("'days' must be an integer"), http.StatusBadRequest)
-			return
-		} else {
-			days = time.Duration(i)
-		}
-	}
-
-	buy, sell, err := s.processOrders(orders, days*24*time.Hour)
-	if err != nil {
-		apiInternalServerError(w, "processOrders", err)
-		return
-	}
-
-	json.NewEncoder(w).Encode(map[string]interface{}{
-		"buy":  buy,
-		"sell": sell,
-	})
 }

@@ -84,11 +84,4 @@
     return a.type.name < b.type.name ? -1 : 1;
   }
 
-  window.setOrderFields = function(o, types, stations) {
-    let type = types[''+o.type_id]
-    let station = stations[''+o.location_id]
-    o.type = type;
-    o.station_name = station.name;
-    return o;
-  }
 })(window, document);

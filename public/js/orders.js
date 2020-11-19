@@ -1,34 +1,32 @@
 viewData = (function(window, document, undefined) {
-  var types = retrieve('/data/types.json', 'error fetching sde types');
-  var stations = retrieve('/data/stations.json', 'error fetching sde stations');
-
   function descendingByOrderID(a, b) {
     return b.order_id < a.order_id ? -1 : 1;
   }
 
+  function setOrderFields(o, types, stations) {
+    let type = types[''+o.type_id]
+    let station = stations[''+o.location_id]
+    o.type = type;
+    o.station_name = station.name;
+    return o;
+  }
+
   let path = window.location.pathname;
   let isCurrent = path.startsWith('/orders');
+  var data
+  if (isCurrent)
+    data = retrieve('/api/v1/view/marketOrders', 'error fetching orders');
+  else
+    data = retrieve('/api/v1/view/marketOrders?days=30', 'error fetching history');
  
   return {
     initialize() {
-     document.title += isCurrent ? ' - Market Orders' : ' - Market Order History';
+      document.title += isCurrent ? ' - Market Orders' : ' - Market Order History';
 
-      types.then(types => {
-        this.types = types;
-        return stations;
-      })
-      .then(stations => {
-        this.stations = stations;
-        if (isCurrent) {
-          return retrieve('/api/v1/user/orders', 'error fetching orders');
-        } else {
-          return retrieve('/api/v1/user/history?days=30', 'error fetching history');
-        }
-      })
-      .then(data => {
+      data.then(data => {
         this.orders = {
-          buy: data.buy.map(o => setOrderFields(o, this.types, this.stations)),
-          sell: data.sell.map(o => setOrderFields(o, this.types, this.stations)),
+          buy: data.buy.map(o => setOrderFields(o, data.types, data.stations)),
+          sell: data.sell.map(o => setOrderFields(o, data.types, data.stations)),
         };
       });
     },

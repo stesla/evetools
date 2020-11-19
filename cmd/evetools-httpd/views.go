@@ -1,9 +1,12 @@
 package main
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"strconv"
+	"time"
 
 	"github.com/stesla/evetools/esi"
 	"github.com/stesla/evetools/sde"
@@ -93,4 +96,96 @@ func calculateBrokerFee(stationID int, standings []esi.Standing, skills []esi.Sk
 	}
 
 	return 0.05 - (0.003 * brokerRelations) - (0.0003 * factionStanding) - (0.0002 * corpStanding)
+}
+
+func (s *Server) ViewMarketOrders(w http.ResponseWriter, r *http.Request) {
+	user := currentUser(r)
+
+	var days time.Duration
+	if str := r.FormValue("days"); str != "" {
+		if i, err := strconv.Atoi(str); err != nil {
+			apiError(w, fmt.Errorf("'days' must be an integer"), http.StatusBadRequest)
+			return
+		} else {
+			days = time.Duration(i)
+		}
+	}
+
+	var f func(context.Context, int) ([]*esi.MarketOrder, error)
+	if days > 0 {
+		f = s.esi.GetMarketOrderHistory
+	} else {
+		f = s.esi.GetMarketOrders
+	}
+
+	orders, err := f(r.Context(), user.ActiveCharacterID)
+	if err != nil {
+		apiInternalServerError(w, "fetching orders", err)
+		return
+	}
+
+	buy, sell, err := s.processOrders(orders, days*24*time.Hour)
+	if err != nil {
+		apiInternalServerError(w, "processOrders", err)
+		return
+	}
+
+	types := map[int]*sde.MarketType{}
+	stations := map[int]*sde.Station{}
+	for _, o := range orders {
+		t, found := sde.GetMarketType(o.TypeID)
+		if !found {
+			apiInternalServerError(w, "GetMarketType", fmt.Errorf("no type for id %d", o.TypeID))
+			return
+		}
+		types[t.ID] = t
+
+		s, found := sde.GetStation(o.LocationID)
+		if !found {
+			apiInternalServerError(w, "GetStation", fmt.Errorf("no station for id %d", o.LocationID))
+			return
+		}
+		stations[s.ID] = s
+	}
+
+	json.NewEncoder(w).Encode(map[string]interface{}{
+		"buy":      buy,
+		"sell":     sell,
+		"stations": stations,
+		"types":    types,
+	})
+}
+
+func (s *Server) processOrders(orders []*esi.MarketOrder, days time.Duration) (buy, sell []*esi.MarketOrder, _ error) {
+	buy = []*esi.MarketOrder{}
+	sell = []*esi.MarketOrder{}
+	for _, order := range orders {
+		issued, err := time.Parse("2006-01-02T15:04:05Z", order.Issued)
+		if err != nil {
+			return nil, nil, err
+		}
+
+		if days > 0 && time.Since(issued) > days {
+			continue
+		}
+
+		expires := issued.Add(time.Duration(order.Duration) * 24 * time.Hour)
+		d := time.Until(expires).Round(time.Second)
+		days := d / (24 * time.Hour)
+		d -= days * 24 * time.Hour
+		hours := d / time.Hour
+		d -= hours * time.Hour
+		minutes := d / time.Minute
+		d -= minutes * time.Minute
+		seconds := d / time.Second
+
+		order.TimeRemaining = fmt.Sprintf("%dd %dh %dm %ds", days, hours, minutes, seconds)
+
+		if order.IsBuyOrder {
+			buy = append(buy, order)
+		} else {
+			sell = append(sell, order)
+		}
+	}
+	return
 }
