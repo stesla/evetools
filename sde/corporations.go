@@ -8,6 +8,8 @@ import (
 	yaml "gopkg.in/yaml.v2"
 )
 
+var corporations map[int]*Corporation
+
 type Corporation struct {
 	ID        int    `json:"id"`
 	Name      string `json:"string"`
@@ -21,28 +23,37 @@ type sdeCorporation struct {
 	} `yaml:"nameID"`
 }
 
-func LoadCorporations() (map[int]Corporation, error) {
-	input, err := os.Open(path.Join(sdeDir, "fsd", "npcCorporations.yaml"))
+func loadCorporations(dir string) error {
+	input, err := os.Open(path.Join(dir, "fsd", "npcCorporations.yaml"))
 	if err != nil {
-		return nil, fmt.Errorf("error opening npcCorporations.yaml: %v", err)
+		return fmt.Errorf("error opening npcCorporations.yaml: %v", err)
 	}
 	defer input.Close()
 
 	var sdeCorps map[int]sdeCorporation
 	err = yaml.NewDecoder(input).Decode(&sdeCorps)
 
-	result := map[int]Corporation{}
+	corporations = map[int]*Corporation{}
 	for id, yc := range sdeCorps {
 		if yc.FactionID == 0 {
 			continue
 		}
-		jc := Corporation{
+		jc := &Corporation{
 			ID:        id,
 			Name:      yc.Name.English,
 			FactionID: yc.FactionID,
 		}
-		result[id] = jc
+		corporations[id] = jc
 	}
 
-	return result, err
+	return err
+}
+
+func GetCorporations() map[int]*Corporation {
+	return corporations
+}
+
+func GetCorporation(id int) (c *Corporation, found bool) {
+	c, found = corporations[id]
+	return
 }

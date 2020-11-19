@@ -55,20 +55,11 @@ func loadTypes(dir string) error {
 	return nil
 }
 
-func GetMarketTypes() (out map[int]*MarketType) {
-	out = make(map[int]*MarketType, len(marketTypes))
-	for k, v := range marketTypes {
-		var t MarketType = *v
-		out[k] = &t
-	}
-	return
+func GetMarketTypes() map[int]*MarketType {
+	return marketTypes
 }
 
-func GetMarketType(id int) (*MarketType, bool) {
-	v, found := marketTypes[id]
-	if !found {
-		return nil, found
-	}
-	var t MarketType = *v
-	return &t, found
+func GetMarketType(id int) (t *MarketType, found bool) {
+	t, found = marketTypes[id]
+	return
 }
