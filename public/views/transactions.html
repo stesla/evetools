@@ -5,46 +5,46 @@
     <h1 class="mt-10 mb-10 text-3xl text-center text-gray-700 font-bold">Market Transactions</h1>
     <div class="mx-4 flex flex-col">
       <div class="py-2 align-middle inline-block w-full sm:px-6 lg:px-8">
-        <div class="shadow overflow-hidden border-b border-gray-500 rounded-lg"
-             :class="{'border-b': txns, 'shadow': txns}">
-          <template x-if="!txns">
+         <template x-if="!txns">
             <p class="text-center italic text-gray-500">Loading transactions...</p>
           </template>
           <template x-if="txns">
-            <table class="table-auto w-full divide-y divide-gray-500">
-              <tbody class="bg-white divide-y divide-gray-500">
-                <template x-for="txn in txns" x-ref="txn.order_id">
-                  <tr>
-                    <td class="px-4 py-4 flex items-center">
-                      <div class="flex-shrink-0 h-10 w-10">
-                        <img class="h-10 w-10" :src="imgURL(txn.type)" alt="">
-                      </div>
-                      <div>
-                        <a :href="hrefType(txn.type_id)">
-                          <div class="ml-4 text-sm leading-5 font-bold text-gray-900" x-text="txn.type.name"></div>
-                        </a>
-                        <div class="ml-4 text-sm leading-5 text-gray-900 italic" x-text="txn.station_name"></div>
-                        <div class="ml-4 text-xs">
-                          <span x-text="txn.is_buy ? 'Bought from' : 'Sold to'"></span>
-                          <span x-text="txn.client_name"</span>
+            <div class="shadow overflow-hidden border border-gray-500 rounded-lg"
+                 :class="{'border-b': txns, 'shadow': txns}">
+              <table class="table-auto w-full divide-y divide-gray-500">
+                <tbody class="bg-white divide-y divide-gray-500">
+                  <template x-for="txn in txns" x-ref="txn.order_id">
+                    <tr>
+                      <td class="px-4 py-4 flex items-center">
+                        <div class="flex-shrink-0 h-10 w-10">
+                          <img class="h-10 w-10" :src="imgURL(txn.type)" alt="">
                         </div>
-                      </div>
-                    </td>
-                    <td class="w-40 px-4 py-4 text-right">
-                      <div class="ml-2 font-bold"
-                            :class="{'text-green-500': !txn.is_buy, 'text-red-500': txn.is_buy}"
-                            x-text="formatISK(txn.unit_price)"></div>
-                      <div class="flex flex-row-reverse items-center text-xs leading-5 text-right text-gray-900">
-                        <span class="ml-2" x-text="txn.quantity"></span>
-                        <span>Quantity:</span>
-                      </div>
-                    </td>
-                  </tr>
-                </template>
-              </tbody>
-            </table>
+                        <div>
+                          <a :href="hrefType(txn.type_id)">
+                            <div class="ml-4 text-sm leading-5 font-bold text-gray-900" x-text="txn.type.name"></div>
+                          </a>
+                          <div class="ml-4 text-sm leading-5 text-gray-900 italic" x-text="txn.station_name"></div>
+                          <div class="ml-4 text-xs">
+                            <span x-text="txn.is_buy ? 'Bought from' : 'Sold to'"></span>
+                            <span x-text="txn.client_name"</span>
+                          </div>
+                        </div>
+                      </td>
+                      <td class="w-40 px-4 py-4 text-right">
+                        <div class="ml-2 font-bold"
+                              :class="{'text-green-500': !txn.is_buy, 'text-red-500': txn.is_buy}"
+                              x-text="formatISK(txn.unit_price)"></div>
+                        <div class="flex flex-row-reverse items-center text-xs leading-5 text-right text-gray-900">
+                          <span class="ml-2" x-text="txn.quantity"></span>
+                          <span>Quantity:</span>
+                        </div>
+                      </td>
+                    </tr>
+                  </template>
+                </tbody>
+              </table>
+            </div>
           </template>
-        </div>
       </div>
     </div>
   </div>
