@@ -108,15 +108,8 @@ func (s *Server) GetUserCurrent(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	favorites, err := s.db.GetFavoriteTypes(user.ID)
-	if err != nil {
-		apiInternalServerError(w, "FavoriteTypes", err)
-		return
-	}
-
 	json.NewEncoder(w).Encode(map[string]interface{}{
 		"character":  character,
-		"favorites":  favorites,
 		"station_id": user.StationID,
 	})
 }

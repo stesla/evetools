@@ -176,6 +176,7 @@ func NewServer(static http.Handler, db model.DB) *Server {
 	api.Methods("GET").Path("/v1/user/transactions").HandlerFunc(s.GetUserTransactions)
 	api.Methods("GET").Path("/v1/user/walletBalance").HandlerFunc(s.GetUserWalletBalance)
 	api.Methods("GET").Path("/v1/verify").HandlerFunc(s.GetVerify)
+	api.Methods("GET").Path("/v1/view/dashboard").HandlerFunc(s.ViewDashboard)
 
 	return s
 }
