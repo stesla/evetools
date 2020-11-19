@@ -278,6 +278,28 @@ func (s *Server) ViewSearch(w http.ResponseWriter, r *http.Request) {
 	})
 }
 
+func (s *Server) ViewSettings(w http.ResponseWriter, r *http.Request) {
+	user := currentUser(r)
+
+	characters, err := s.db.GetCharactersForUser(user.ID)
+	if err != nil {
+		apiInternalServerError(w, "GetCharactersForUser", err)
+		return
+	}
+
+	station, found := sde.GetStation(user.StationID)
+	if !found {
+		apiInternalServerError(w, "GetStation", fmt.Errorf("no station for id %d", user.StationID))
+		return
+	}
+
+	json.NewEncoder(w).Encode(map[string]interface{}{
+		"characters": characters,
+		"station":    station,
+		"stations":   sde.GetStations(),
+	})
+}
+
 func (s *Server) ViewTransactions(w http.ResponseWriter, r *http.Request) {
 	user := currentUser(r)
 

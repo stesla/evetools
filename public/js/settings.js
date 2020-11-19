@@ -1,7 +1,5 @@
 viewData = (function(window, document, undefined) {
-  var characters = retrieve('/api/v1/user/characters', 'error fetching characters');
-  var currentUser = window.retrieve('/api/v1/user/current', 'error fetching current user');
-  var stations = retrieve('/data/stations.json', 'error fetching sde stations');
+  var data = retrieve('/api/v1/view/settings', 'error fetching data view');
 
   return {
     characters: {},
@@ -9,19 +7,15 @@ viewData = (function(window, document, undefined) {
     station: { name: "" },
     stationName: "",
     stations: {},
+    loaded: false,
 
     initialize() {
       document.title += " - Settings";
-      currentUser.then(user => {
-        this.user = user;
-        return stations;
-      })
-      .then(stations => {
-        this.station = stations[''+this.user.station_id];
-      });
-
-      characters.then(list => {
-        this.characters = list;
+      data.then(data => {
+        this.characters = data.characters;
+        this.station = data.station;
+        this.stations = data.stations;
+        this.loaded = true;
       });
     },
 

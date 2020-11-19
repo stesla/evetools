@@ -178,6 +178,7 @@ func NewServer(static http.Handler, db model.DB) *Server {
 	api.Methods("GET").Path("/v1/view/groupDetails/{groupID:[0-9]+}").HandlerFunc(s.ViewGroupDetails)
 	api.Methods("GET").Path("/v1/view/marketOrders").HandlerFunc(s.ViewMarketOrders)
 	api.Methods("GET").Path("/v1/view/search").HandlerFunc(s.ViewSearch)
+	api.Methods("GET").Path("/v1/view/settings").HandlerFunc(s.ViewSettings)
 	api.Methods("GET").Path("/v1/view/transactions").HandlerFunc(s.ViewTransactions)
 	api.Methods("GET").Path("/v1/view/typeDetails/{typeID:[0-9]+}").HandlerFunc(s.ViewTypeDetails)
 

@@ -2,8 +2,9 @@
       x-data="viewData"
       x-init="initialize()">
 
-  <h1 class="mt-10 mb-10 text-3xl text-center text-gray-700 font-bold">My Trading Station</h1>
-  <div class="w-11/12 pl-4 max-w-3xl mx-auto bg-gray-100 border border-gray-500 rounded-xl shadow-xl overflow-hidden">
+  <h1 class="mt-10 text-3xl text-center text-gray-700 font-bold">My Trading Station</h1>
+  <p x-show="!loaded" class="text-center italic text-gray-500">Loading...</p>
+  <div x-show="loaded" class="mt-10 w-11/12 pl-4 max-w-3xl mx-auto bg-gray-100 border border-gray-500 rounded-xl shadow-xl overflow-hidden">
     <div class="text-center py-4" x-show="!editingStation">
       <span class="leading-none text-lg" x-text="station.name"></span>
       <button class="ml-2" @click="editingStation = true">
@@ -30,7 +31,8 @@
   </div>
 
   <h1 class="mt-10 text-3xl text-center text-gray-700 font-bold">My Characters</h1>
-  <div class="mx-4 mt-10 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+  <p x-show="!loaded" class="text-center italic text-gray-500">Loading...</p>
+  <div x-show="loaded" class="mx-4 mt-10 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
     <template x-for="c in characterList" x-ref="character.id">
       <div class="py-3 bg-gray-100 border-b border-gray-500 rounded-xl shadow-xl">
         <div class="px-4 flex items-center justify-between">
