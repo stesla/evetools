@@ -36,7 +36,11 @@ const (
 
 var store *sessions.CookieStore
 
+var cfgFile string
+
 func init() {
+	pflag.StringVar(&cfgFile, "config", "", "config file, default: $HOME/.evetools.yaml")
+
 	pflag.String("addr", ":8080", "address to listen on")
 	pflag.String("dir", "./public", "directory to serve files from")
 
@@ -68,12 +72,22 @@ var oauthConfig = oauth2.Config{
 func main() {
 	pflag.Parse()
 
-	viper.SetConfigName(".evetools")
-	viper.SetConfigType("yaml")
-	viper.AddConfigPath("$HOME")
+	if cfgFile != "" {
+		viper.SetConfigFile(cfgFile)
+	} else {
+		viper.SetConfigName(".evetools")
+		viper.SetConfigType("yaml")
+		viper.AddConfigPath("$HOME")
+	}
 	if err := viper.ReadInConfig(); err != nil {
 		log.Fatalf("error loading config file: %s", err)
 	}
+
+	log.Printf("evetools started with config at %s", viper.ConfigFileUsed())
+	if err := sde.Initialize(viper.GetString("sde.dir")); err != nil {
+		log.Fatalf("error initializing sde: %s", err)
+	}
+	log.Println("static data loaded")
 
 	db, err := model.Initialize(viper.GetString("model.database"))
 	if err != nil {
@@ -82,10 +96,6 @@ func main() {
 
 	if err := initOAuthConfig(); err != nil {
 		log.Fatalf("error initializing oauth: %s", err)
-	}
-
-	if err := sde.Initialize(viper.GetString("sde.dir")); err != nil {
-		log.Fatalf("error initializing sde: %s", err)
 	}
 
 	store = sessions.NewCookieStore([]byte(viper.GetString("httpd.session.auth_key")))
