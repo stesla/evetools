@@ -3,14 +3,6 @@ viewData = (function(window, document, undefined) {
     return b.order_id < a.order_id ? -1 : 1;
   }
 
-  function setOrderFields(o, types, stations) {
-    let type = types[''+o.type_id]
-    let station = stations[''+o.location_id]
-    o.type = type;
-    o.station_name = station.name;
-    return o;
-  }
-
   let path = window.location.pathname;
   let isCurrent = path.startsWith('/orders');
   var data
