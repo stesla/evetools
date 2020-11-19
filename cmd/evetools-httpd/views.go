@@ -4,17 +4,19 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"log"
 	"net/http"
 	"strconv"
 	"time"
 
+	"github.com/gorilla/mux"
 	"github.com/stesla/evetools/esi"
 	"github.com/stesla/evetools/sde"
 )
 
 func (s *Server) ViewBrowse(w http.ResponseWriter, r *http.Request) {
 	allGroups, roots := sde.GetMarketGroups()
-	groups := make([]sde.MarketGroup, len(roots))
+	groups := make([]*sde.MarketGroup, len(roots))
 	for i, id := range roots {
 		groups[i] = allGroups[id]
 	}
@@ -107,6 +109,51 @@ func calculateBrokerFee(stationID int, standings []esi.Standing, skills []esi.Sk
 	}
 
 	return 0.05 - (0.003 * brokerRelations) - (0.0003 * factionStanding) - (0.0002 * corpStanding)
+}
+
+func (s *Server) ViewGroupDetails(w http.ResponseWriter, r *http.Request) {
+	user := currentUser(r)
+
+	vars := mux.Vars(r)
+	groupID, _ := strconv.Atoi(vars["groupID"])
+
+	favorites, err := s.db.GetFavoriteTypes(user.ID)
+	if err != nil {
+		apiInternalServerError(w, "FavoriteTypes", err)
+		return
+	}
+
+	group, found := sde.GetMarketGroup(groupID)
+	if !found {
+		apiInternalServerError(w, "GetMarketGroup", fmt.Errorf("no group found for ID %d", groupID))
+		return
+	}
+
+	parent, _ := sde.GetMarketGroup(group.ParentID)
+
+	log.Println(len(group.Groups), len(group.Types))
+
+	groups := make([]*sde.MarketGroup, len(group.Groups))
+	for i, id := range group.Groups {
+		g, _ := sde.GetMarketGroup(id)
+		g.Description = ""
+		groups[i] = g
+	}
+
+	types := make([]sde.MarketType, len(group.Types))
+	for i, id := range group.Types {
+		t, _ := sde.GetMarketType(id)
+		t.Description = ""
+		types[i] = t
+	}
+
+	json.NewEncoder(w).Encode(map[string]interface{}{
+		"favorites": favorites,
+		"group":     group,
+		"groups":    groups,
+		"parent":    parent,
+		"types":     types,
+	})
 }
 
 func (s *Server) ViewMarketOrders(w http.ResponseWriter, r *http.Request) {

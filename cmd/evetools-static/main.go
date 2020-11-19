@@ -102,7 +102,7 @@ func saveTypes(dir string, marketTypes map[int]sde.MarketType) error {
 	return json.NewEncoder(output).Encode(&outTypes)
 }
 
-func saveGroups(dir string, jsonGroups map[int]sde.MarketGroup, root []int) error {
+func saveGroups(dir string, jsonGroups map[int]*sde.MarketGroup, root []int) error {
 	output, err := os.Create(path.Join(dir, "marketGroups.json"))
 	if err != nil {
 		return fmt.Errorf("error opening marketGroups.json: %v", err)

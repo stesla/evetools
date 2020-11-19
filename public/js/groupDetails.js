@@ -1,15 +1,13 @@
 viewData = (function(window, document, undefined) {
   let typeRE = new RegExp("/groups/(.*)");
   let match = window.location.pathname.match(typeRE);
+  let groupID = match[1];
 
-  var currentUser = window.retrieve('/api/v1/user/current', 'error fetching current user');
-  var marketGroups = retrieve('/data/marketGroups.json', 'error fetching sde market groups'); 
-  var types = retrieve('/data/types.json', 'error fetching sde types');
-
+  var data = retrieve('/api/v1/view/groupDetails/' + groupID, 'error fetching view data');
 
   return {
-    group: { name: "", groups: [] },
-    groupID: match[1],
+    group: { name: "" },
+    groupID: groupID,
     marketGroups: { root: [] },
     types: {},
     favorites: [],
@@ -17,18 +15,16 @@ viewData = (function(window, document, undefined) {
     parent: { name: "" },
 
     get children() {
-      if (!this.group || Object.keys(this.types).length == 0)
+      if (!this.group.groups && !this.group.types)
         return [];
 
-      if (this.group.groups) {
-        return this.group.groups.map(id => {
-          let g = this.marketGroups.groups[''+id];
+      if (this.group.groups.length > 0) {
+        return this.group.groups.map(g => {
           g.isGroup = true;
           return g
         }).sort(byName);
-      } else if (this.group.types) {
-        return this.group.types.map(id => {
-          let t = this.types[''+id];
+      } else if (this.group.types.length > 0) {
+        return this.group.types.map(t => {
           t.isType = true;
           return t;
         }).sort(byName);
@@ -36,19 +32,14 @@ viewData = (function(window, document, undefined) {
     },
 
     initialize() {
-      currentUser.then(user => {
-        this.favorites = user.favorites;
-      });
-
-      marketGroups.then(data => {
-        this.marketGroups = data;
-        this.group = data.groups[''+this.groupID];
-        this.parent = data.groups[''+this.group.parent_id];
-        document.title += " - " + this.group.name;
-      });
-
-      types.then(types => {
-        this.types = types;
+      data.then(data => {
+        this.favorites = data.favorites;
+        group = data.group;
+        document.title += " - " + group.name;
+        group.groups = data.groups;
+        group.types = data.types;
+        this.group = group;
+        this.parent = data.parent;
       });
     },
 
