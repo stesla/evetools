@@ -7,6 +7,7 @@ import (
 	"log"
 	"net/http"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/gorilla/mux"
@@ -247,6 +248,34 @@ func (s *Server) processOrders(orders []*esi.MarketOrder, days time.Duration) (b
 		}
 	}
 	return
+}
+
+func (s *Server) ViewSearch(w http.ResponseWriter, r *http.Request) {
+	user := currentUser(r)
+
+	q := strings.ToLower(r.FormValue("q"))
+	if q == "" {
+		apiError(w, fmt.Errorf("must provide query string"), http.StatusBadRequest)
+		return
+	}
+
+	favorites, err := s.db.GetFavoriteTypes(user.ID)
+	if err != nil {
+		apiInternalServerError(w, "FavoriteTypes", err)
+		return
+	}
+
+	marketTypes := []sde.MarketType{}
+	for _, t := range sde.GetMarketTypes() {
+		if strings.Contains(strings.ToLower(t.Name), q) {
+			marketTypes = append(marketTypes, t)
+		}
+	}
+
+	json.NewEncoder(w).Encode(map[string]interface{}{
+		"favorites": favorites,
+		"types":     marketTypes,
+	})
 }
 
 func (s *Server) ViewTransactions(w http.ResponseWriter, r *http.Request) {

@@ -1,20 +1,22 @@
 viewData = (function(window, document, undefined) {
-  var currentUser = window.retrieve('/api/v1/user/current', 'error fetching current user');
-  var types = retrieve('/data/types.json', 'error fetching sde types');
-
   const urlParams = new URLSearchParams(window.location.search);
+  const filter = urlParams.get('q');
+
+  if (!filter || "" === filter)
+    window.location = '/browse';
+
   return {
     favorites: [],
-    filter: urlParams.get('q'),
+    filter: filter,
     marketTypes: [],
 
     fetchData() {
-      types.then(types => {
-        ids = Object.values(types).filter(t => {
-          let filter = this.filter.toLowerCase();
-          return t.name.toLowerCase().includes(filter);
-        }).map(t => t.id);
-        this.marketTypes = ids.map(id => types[''+id]);
+      const params = new URLSearchParams();
+      params.set("q", this.filter);
+      retrieve('/api/v1/view/search?' + params.toString())
+      .then(data => {
+        this.favorites = data.favorites;
+        this.marketTypes = data.types;
       });
     },
 
@@ -24,9 +26,6 @@ viewData = (function(window, document, undefined) {
     },
 
     initialize() {
-      currentUser.then(user => {
-        this.favorites = user.favorites;
-      });
       document.title += ' - Search for "' + this.filter + '"';
       if (this.filter) this.fetchData();
     },
