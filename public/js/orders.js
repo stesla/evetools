@@ -12,6 +12,8 @@ viewData = (function(window, document, undefined) {
     data = retrieve('/api/v1/view/marketOrders?days=30', 'error fetching history');
  
   return {
+    isCurrent: isCurrent,
+
     initialize() {
       document.title += isCurrent ? ' - Market Orders' : ' - Market Order History';
 

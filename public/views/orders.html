@@ -30,7 +30,8 @@
                           </button>
                         </div>
                         <div class="text-gray-900 italic" x-text="order.station_name"></div>
-                        <div class="text-xs" x-text="order.time_remaining"></div>
+                        <div class="text-xs" x-text="isCurrent ? order.time_remaining : order.state"
+                             :class="{'capitalize': !isCurrent}"></div>
                         <div class="flex items-center justify-between">
                           <span class="font-bold" x-text="formatISK(order.price)"></span>
                           <div class="flex flex-row-reverse items-center text-xs">
@@ -70,7 +71,8 @@
                               </button>
                             </div>
                             <div class="ml-4 text-sm leading-5 text-gray-900 italic" x-text="order.station_name"></div>
-                            <div class="ml-4 text-xs" x-text="order.time_remaining"></div>
+                            <div class="ml-4 text-xs" x-text="isCurrent ? order.time_remaining : order.state"
+                                 :class="{'capitalize': !isCurrent}"></div>
                           </div>
                         </td>
                         <td class="w-40 px-4 py-4 text-right">
