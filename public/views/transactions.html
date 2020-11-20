@@ -27,7 +27,11 @@
                     <div class="flex items-center justify-between">
                       <div class="font-bold text-sm"
                             :class="{'text-green-500': !txn.is_buy, 'text-red-500': txn.is_buy}"
-                            x-text="formatISK(txn.unit_price)"></div>
+                            x-text="formatISK(txn.unit_price * txn.quantity)"></div>
+                      <div class="flex flex-row-reverse items-center text-xs text-right text-gray-900">
+                        <span class="ml-1" x-text="formatISK(txn.unit_price)"></span>
+                        <span>Price:</span>
+                      </div>
                       <div class="flex flex-row-reverse items-center text-xs text-right text-gray-900">
                         <span class="ml-1" x-text="txn.quantity"></span>
                         <span>Quantity:</span>
@@ -63,7 +67,11 @@
                       <td class="w-40 px-4 py-4 text-right">
                         <div class="ml-2 font-bold"
                               :class="{'text-green-500': !txn.is_buy, 'text-red-500': txn.is_buy}"
-                              x-text="formatISK(txn.unit_price)"></div>
+                              x-text="formatISK(txn.unit_price * txn.quantity)"></div>
+                        <div class="flex flex-row-reverse items-center text-xs leading-5 text-right text-gray-900">
+                          <span class="ml-2" x-text="formatISK(txn.unit_price)"></span>
+                          <span>Price:</span>
+                        </div>
                         <div class="flex flex-row-reverse items-center text-xs leading-5 text-right text-gray-900">
                           <span class="ml-2" x-text="txn.quantity"></span>
                           <span>Quantity:</span>
