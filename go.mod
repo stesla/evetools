@@ -16,6 +16,7 @@ require (
 	github.com/lib/pq v1.8.0 // indirect
 	github.com/mailru/easyjson v0.7.2 // indirect
 	github.com/mattn/go-sqlite3 v1.14.4
+	github.com/ogier/pflag v0.0.1
 	github.com/peterbourgon/diskv v2.0.1+incompatible // indirect
 	github.com/pressly/goose v2.6.0+incompatible
 	github.com/spf13/pflag v1.0.3

@@ -24,7 +24,6 @@ import (
 	"github.com/spf13/viper"
 	"github.com/stesla/evetools/esi"
 	"github.com/stesla/evetools/model"
-	"github.com/stesla/evetools/sde"
 )
 
 type contextKey int
@@ -82,12 +81,6 @@ func main() {
 	if err := viper.ReadInConfig(); err != nil {
 		log.Fatalf("error loading config file: %s", err)
 	}
-
-	log.Printf("evetools started with config at %s", viper.ConfigFileUsed())
-	if err := sde.Initialize(viper.GetString("sde.dir")); err != nil {
-		log.Fatalf("error initializing sde: %s", err)
-	}
-	log.Println("static data loaded")
 
 	db, err := model.Initialize(viper.GetString("model.database"))
 	if err != nil {

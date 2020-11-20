@@ -1,142 +1,88 @@
 package main
 
 import (
-	"encoding/json"
-	"flag"
 	"fmt"
+	"log"
 	"os"
-	"path"
-	"path/filepath"
 
-	"github.com/stesla/evetools/sde"
+	"github.com/spf13/pflag"
+	"github.com/spf13/viper"
 )
 
 var (
-	sdeDir          = flag.String("in", "./data/sde", "directory in which to look for the SDE YAML files")
-	outDir          = flag.String("out", "./public/data", "directory into which JSON files should be placed")
-	convertTypes    = flag.Bool("types", false, "convert market types")
-	convertGroups   = flag.Bool("groups", false, "convert market groups")
-	convertStations = flag.Bool("stations", false, "convert stations")
-	convertSystems  = flag.Bool("systems", false, "convert systems")
-	convertCorps    = flag.Bool("corps", false, "convert corps")
+	cfgFile          string
+	corporationsFile string
+	marketGroupsFile string
+	marketTypesFile  string
+	pkgName          string
+	solarSystemsFile string
+	stationsFile     string
 )
 
-func usage() error {
-	program := filepath.Base(os.Args[0])
-	return fmt.Errorf("USAGE: %s [-in DIR] [-out DIR]", program)
+func init() {
+	pflag.StringVar(&cfgFile, "config", "", "config file, default: $HOME/.evetools.yaml")
+	pflag.String("sde", "", "path to the SDE extract")
+	viper.BindPFlag("sde.dir", pflag.Lookup("sde"))
+
+	pflag.StringVar(&pkgName, "package", "sde", "package for generated files")
+	pflag.StringVar(&corporationsFile, "corporations", "", "output corporations to this file")
+	pflag.StringVar(&marketGroupsFile, "marketGroups", "", "output market groups to this file")
+	pflag.StringVar(&marketTypesFile, "marketTypes", "", "output market types to this file")
+	pflag.StringVar(&solarSystemsFile, "solarSystems", "", "output solar systems to this file")
+	pflag.StringVar(&stationsFile, "stations", "", "output stations to this file")
 }
 
 func die(err error) {
-	fmt.Fprintf(os.Stderr, err.Error())
+	fmt.Fprintln(os.Stderr, err.Error())
 	os.Exit(1)
 }
 
 func main() {
-	flag.Parse()
+	pflag.Parse()
 
-	if (*sdeDir) == "" || (*outDir) == "" {
-		die(usage())
+	if cfgFile != "" {
+		viper.SetConfigFile(cfgFile)
+	} else {
+		viper.SetConfigName(".evetools")
+		viper.SetConfigType("yaml")
+		viper.AddConfigPath("$HOME")
+	}
+	if err := viper.ReadInConfig(); err != nil {
+		log.Fatalf("error loading config file: %s", err)
 	}
 
-	err := sde.Initialize(*sdeDir)
-	if err != nil {
-		die(err)
+	var sdeDir = viper.GetString("sde.dir")
+	if sdeDir == "" {
+		log.Fatalf("must set sde.dir")
 	}
 
-	if *convertTypes {
-		types := sde.GetMarketTypes()
-		err = saveTypes(*outDir, types)
-		if err != nil {
-			die(fmt.Errorf("error saving types: %v", err))
+	if corporationsFile != "" {
+		if err := buildCorporations(sdeDir, pkgName, corporationsFile); err != nil {
+			die(err)
 		}
 	}
 
-	if *convertGroups {
-		groups, root := sde.GetMarketGroups()
-		err = saveGroups(*outDir, groups, root)
-		if err != nil {
-			die(fmt.Errorf("error saving groups: %v", err))
+	if marketGroupsFile != "" {
+		if err := buildMarketGroups(sdeDir, pkgName, marketGroupsFile); err != nil {
+			die(err)
 		}
 	}
 
-	if *convertStations {
-		stations := sde.GetStations()
-		err = saveStations(*outDir, stations)
-		if err != nil {
-			die(fmt.Errorf("error saving stations: %v", err))
+	if marketTypesFile != "" {
+		if err := buildMarketTypes(sdeDir, pkgName, marketTypesFile); err != nil {
+			die(err)
 		}
 	}
 
-	if *convertSystems {
-		systems := sde.GetSolarSystems()
-		err = saveSystems(*outDir, systems)
-		if err != nil {
-			die(fmt.Errorf("error saving systems: %v", err))
+	if solarSystemsFile != "" {
+		if err := buildSolarSystems(sdeDir, pkgName, solarSystemsFile); err != nil {
+			die(err)
 		}
 	}
 
-	if *convertCorps {
-		corps := sde.GetCorporations()
-		err = saveCorps(*outDir, corps)
-		if err != nil {
-			die(fmt.Errorf("error saving corps: %v", err))
+	if stationsFile != "" {
+		if err := buildStations(sdeDir, pkgName, stationsFile); err != nil {
+			die(err)
 		}
 	}
-}
-
-func saveTypes(dir string, marketTypes map[int]sde.MarketType) error {
-	output, err := os.Create(path.Join(dir, "types.json"))
-	if err != nil {
-		return fmt.Errorf("error opening types.json: %v", err)
-	}
-	defer output.Close()
-
-	outTypes := make(map[int]sde.MarketType, len(marketTypes))
-	for i, t := range marketTypes {
-		var o sde.MarketType
-		o.ID = t.ID
-		o.MarketGroupID = t.MarketGroupID
-		o.Name = t.Name
-		outTypes[i] = o
-	}
-	return json.NewEncoder(output).Encode(&outTypes)
-}
-
-func saveGroups(dir string, jsonGroups map[int]*sde.MarketGroup, root []int) error {
-	output, err := os.Create(path.Join(dir, "marketGroups.json"))
-	if err != nil {
-		return fmt.Errorf("error opening marketGroups.json: %v", err)
-	}
-	defer output.Close()
-	return json.NewEncoder(output).Encode(map[string]interface{}{
-		"groups": jsonGroups,
-		"root":   root,
-	})
-}
-
-func saveStations(dir string, stations map[int]sde.Station) error {
-	output, err := os.Create(path.Join(dir, "stations.json"))
-	if err != nil {
-		return fmt.Errorf("error opening stations.json: %v", err)
-	}
-	defer output.Close()
-	return json.NewEncoder(output).Encode(&stations)
-}
-
-func saveSystems(dir string, systems map[int]sde.SolarSystem) error {
-	output, err := os.Create(path.Join(dir, "systems.json"))
-	if err != nil {
-		return fmt.Errorf("error opening systems.json: %v", err)
-	}
-	defer output.Close()
-	return json.NewEncoder(output).Encode(&systems)
-}
-
-func saveCorps(dir string, corps map[int]sde.Corporation) error {
-	output, err := os.Create(path.Join(dir, "corporations.json"))
-	if err != nil {
-		return fmt.Errorf("error opening corporations.json: %v", err)
-	}
-	defer output.Close()
-	return json.NewEncoder(output).Encode(&corps)
 }

@@ -162,6 +162,17 @@ func handleRequest(t *testing.T, r *http.Request) *http.Response {
 
 type values map[interface{}]interface{}
 
+func setSessionCookie(r *http.Request, vals values) {
+	req := &http.Request{}
+	session, _ := store.Get(req, viper.GetString("httpd.session.name"))
+	for k, v := range vals {
+		session.Values[k] = v
+	}
+	rec := httptest.NewRecorder()
+	session.Save(req, rec)
+	r.AddCookie(rec.Result().Cookies()[0])
+}
+
 type mockRoundTripper struct {
 	handlers map[string]http.Handler
 }

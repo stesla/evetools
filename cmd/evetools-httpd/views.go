@@ -17,14 +17,8 @@ import (
 )
 
 func (s *Server) ViewBrowse(w http.ResponseWriter, r *http.Request) {
-	allGroups, roots := sde.GetMarketGroups()
-	groups := make([]*sde.MarketGroup, len(roots))
-	for i, id := range roots {
-		groups[i] = allGroups[id]
-	}
-
 	json.NewEncoder(w).Encode(map[string]interface{}{
-		"groups": groups,
+		"groups": sde.MarketGroupRoots,
 	})
 }
 
@@ -36,14 +30,13 @@ func (s *Server) ViewDashboard(w http.ResponseWriter, r *http.Request) {
 		apiInternalServerError(w, "FavoriteTypes", err)
 		return
 	}
-	favoriteTypes := make([]sde.MarketType, len(favorites))
+	favoriteTypes := make([]*sde.MarketType, len(favorites))
 	for i, id := range favorites {
-		t, found := sde.GetMarketType(id)
+		t, found := sde.MarketTypes[id]
 		if !found {
 			apiInternalServerError(w, "GetMarketType", fmt.Errorf("type %d not found", id))
 			return
 		}
-		t.Description = ""
 		favoriteTypes[i] = t
 	}
 
@@ -98,8 +91,8 @@ func calculateBrokerFee(stationID int, standings []esi.Standing, skills []esi.Sk
 		}
 	}
 
-	station, _ := sde.GetStation(stationID)
-	corp, _ := sde.GetCorporation(station.CorpID)
+	station, _ := sde.Stations[stationID]
+	corp, _ := sde.Corporations[station.CorpID]
 
 	var corpStanding, factionStanding float64
 	for _, s := range standings {
@@ -125,27 +118,25 @@ func (s *Server) ViewGroupDetails(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	group, found := sde.GetMarketGroup(groupID)
+	group, found := sde.MarketGroups[groupID]
 	if !found {
 		apiInternalServerError(w, "GetMarketGroup", fmt.Errorf("no group found for ID %d", groupID))
 		return
 	}
 
-	parent, _ := sde.GetMarketGroup(group.ParentID)
+	parent, _ := sde.MarketGroups[group.ParentID]
 
 	log.Println(len(group.Groups), len(group.Types))
 
 	groups := make([]*sde.MarketGroup, len(group.Groups))
 	for i, id := range group.Groups {
-		g, _ := sde.GetMarketGroup(id)
-		g.Description = ""
+		g, _ := sde.MarketGroups[id]
 		groups[i] = g
 	}
 
-	types := make([]sde.MarketType, len(group.Types))
+	types := make([]*sde.MarketType, len(group.Types))
 	for i, id := range group.Types {
-		t, _ := sde.GetMarketType(id)
-		t.Description = ""
+		t, _ := sde.MarketTypes[id]
 		types[i] = t
 	}
 
@@ -190,17 +181,17 @@ func (s *Server) ViewMarketOrders(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	types := map[int]sde.MarketType{}
-	stations := map[int]sde.Station{}
+	types := map[int]*sde.MarketType{}
+	stations := map[int]*sde.Station{}
 	for _, o := range orders {
-		t, found := sde.GetMarketType(o.TypeID)
+		t, found := sde.MarketTypes[o.TypeID]
 		if !found {
 			apiInternalServerError(w, "GetMarketType", fmt.Errorf("no type for id %d", o.TypeID))
 			return
 		}
 		types[t.ID] = t
 
-		s, found := sde.GetStation(o.LocationID)
+		s, found := sde.Stations[o.LocationID]
 		if !found {
 			apiInternalServerError(w, "GetStation", fmt.Errorf("no station for id %d", o.LocationID))
 			return
@@ -265,8 +256,8 @@ func (s *Server) ViewSearch(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	marketTypes := []sde.MarketType{}
-	for _, t := range sde.GetMarketTypes() {
+	marketTypes := []*sde.MarketType{}
+	for _, t := range sde.MarketTypes {
 		if strings.Contains(strings.ToLower(t.Name), q) {
 			marketTypes = append(marketTypes, t)
 		}
@@ -287,7 +278,7 @@ func (s *Server) ViewSettings(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	station, found := sde.GetStation(user.StationID)
+	station, found := sde.Stations[user.StationID]
 	if !found {
 		apiInternalServerError(w, "GetStation", fmt.Errorf("no station for id %d", user.StationID))
 		return
@@ -296,7 +287,7 @@ func (s *Server) ViewSettings(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(map[string]interface{}{
 		"characters": characters,
 		"station":    station,
-		"stations":   sde.GetStations(),
+		"stations":   sde.Stations,
 	})
 }
 
@@ -315,8 +306,8 @@ func (s *Server) ViewTransactions(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	types := map[int]sde.MarketType{}
-	stations := map[int]sde.Station{}
+	types := map[int]*sde.MarketType{}
+	stations := map[int]*sde.Station{}
 	for _, txn := range txns {
 		if txn.TransactionID > maxTxnID {
 			txn.ClientName, err = s.esi.GetCharacterName(txn.ClientID)
@@ -327,14 +318,14 @@ func (s *Server) ViewTransactions(w http.ResponseWriter, r *http.Request) {
 			s.db.SaveTransaction(txn)
 		}
 
-		t, found := sde.GetMarketType(txn.TypeID)
+		t, found := sde.MarketTypes[txn.TypeID]
 		if !found {
 			apiInternalServerError(w, "GetMarketType", fmt.Errorf("no type for id %d", txn.TypeID))
 			return
 		}
 		types[t.ID] = t
 
-		s, found := sde.GetStation(txn.LocationID)
+		s, found := sde.Stations[txn.LocationID]
 		if !found {
 			apiInternalServerError(w, "GetStation", fmt.Errorf("no station for id %d", txn.LocationID))
 			return
@@ -362,19 +353,18 @@ func (s *Server) ViewTypeDetails(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	typeID, _ := strconv.Atoi(vars["typeID"])
 
-	marketType, found := sde.GetMarketType(typeID)
+	marketType, found := sde.MarketTypes[typeID]
 	if !found {
 		apiInternalServerError(w, "GetMarketType", fmt.Errorf("no type for id %d", typeID))
 		return
 	}
 
-	group, _ := sde.GetMarketGroup(marketType.MarketGroupID)
-	group.Description = ""
+	group, _ := sde.MarketGroups[marketType.MarketGroupID]
 
 	parentGroups := []*sde.MarketGroup{}
 	parentID := group.ParentID
 	for parentID != 0 {
-		g, _ := sde.GetMarketGroup(parentID)
+		g, _ := sde.MarketGroups[parentID]
 		parentID = g.ParentID
 		parentGroups = append(parentGroups, g)
 	}
@@ -385,13 +375,13 @@ func (s *Server) ViewTypeDetails(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	station, found := sde.GetStation(user.StationID)
+	station, found := sde.Stations[user.StationID]
 	if !found {
 		apiInternalServerError(w, "GetStation", fmt.Errorf("no station for id %d", user.StationID))
 		return
 	}
 
-	solarSystem, _ := sde.GetSolarSystem(station.SystemID)
+	solarSystem, _ := sde.SolarSystems[station.SystemID]
 
 	price, err := s.esi.GetMarketPrices(r.Context(), station.ID, solarSystem.RegionID, typeID)
 	if err != nil {
