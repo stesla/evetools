@@ -5,10 +5,23 @@ import (
 	"fmt"
 	"net/http"
 	"strconv"
+	"strings"
 
 	"github.com/gorilla/mux"
 	"github.com/stesla/evetools/model"
+	"github.com/stesla/evetools/sde"
 )
+
+func (s *Server) GetStations(w http.ResponseWriter, r *http.Request) {
+	query := strings.TrimSpace(strings.ToLower(r.FormValue("q")))
+	result := []*sde.Station{}
+	for _, s := range sde.Stations {
+		if name := strings.ToLower(s.Name); strings.HasPrefix(name, query) {
+			result = append(result, s)
+		}
+	}
+	json.NewEncoder(w).Encode(result)
+}
 
 func (s *Server) GetVerify(w http.ResponseWriter, r *http.Request) {
 	verify, err := s.esi.Verify(r.Context())

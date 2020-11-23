@@ -6,7 +6,7 @@ viewData = (function(window, document, undefined) {
     editingStation: false,
     station: { name: "" },
     stationName: "",
-    stations: {},
+    stations: [],
     loaded: false,
 
     initialize() {
@@ -14,7 +14,6 @@ viewData = (function(window, document, undefined) {
       data.then(data => {
         this.characters = data.characters;
         this.station = data.station;
-        this.stations = data.stations;
         this.loaded = true;
       });
     },
@@ -27,13 +26,10 @@ viewData = (function(window, document, undefined) {
       if (this.stationName.length < 3) {
         return;
       }
-      stations.then(stations => {
-        this.stations = Object.values(stations).filter(s => {
-          return s.name.toLowerCase().includes(this.stationName.toLowerCase());
-        }).reduce((m, s) => {
-          m[s.name] = s;
-          return m;
-        }, {});
+      const params = new URLSearchParams();
+      params.set("q", this.stationName);
+      retrieve('/api/v1/stations?' + params.toString()).then(stations => {
+        this.stations = stations.sort(byName);
       });
     },
 
@@ -52,23 +48,17 @@ viewData = (function(window, document, undefined) {
         this.editingStation = false;
         return;
       }
-      stations.then(stations => {
-        let station = Object.values(stations).find(s => s.name == this.stationName);
-        this.station = station;
-        return retrieve('/api/v1/user/station', 'error saving station', {
-          raw: true,
-          method: 'PUT',
-          body: JSON.stringify(station),
-        });
+      station = this.stations.find(s => s.name === this.stationName);
+      return retrieve('/api/v1/user/station', 'error saving station', {
+        raw: true,
+        method: 'PUT',
+        body: JSON.stringify(station),
       })
       .then(() => {
+        this.station = station;
         this.stationName = "";
         this.editingStation = false;
       });
-    },
-
-    get stationList() {
-      return Object.values(this.stations);
     },
   }
 })(window, document, undefined);

@@ -22,8 +22,8 @@
                x-model="stationName" @input="fetchStations()" placeholder="Station name...">
         <button class="inline-block px-8 py-4 bg-blue-500 text-gray-300" @click="saveStation()">Save</button>
         <datalist id="station-list">
-          <template x-for="s in stationList" x-ref="s.id">
-            <option x-text="s.name"></option>
+          <template x-for="s in stations" x-ref="s.id">
+            <option :value="s.name"></option>
           </template>
         </datalist>
       </form>

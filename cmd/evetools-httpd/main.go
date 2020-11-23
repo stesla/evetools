@@ -154,6 +154,7 @@ func NewServer(static http.Handler, db model.DB) *Server {
 	api := s.mux.PathPrefix("/api/v1").Subrouter()
 	api.Use(haveLoggedInUser)
 	api.Use(contentType("application/json").Middleware)
+	api.Methods("GET").Path("/stations").HandlerFunc(s.GetStations)
 	api.Methods("PUT").Path("/types/{typeID:[0-9]+}/favorite").HandlerFunc(s.PutTypeFavorite)
 	api.Methods("POST").Path("/types/{typeID:[0-9]+}/openInGame").HandlerFunc(s.PostOpenInGame)
 	api.Methods("POST").Path("/user/characters/{characterID:[0-9]+}/activate").
