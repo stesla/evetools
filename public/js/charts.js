@@ -1,26 +1,18 @@
 renderChart = function(history, height, width) {
-  const bollinger = function(values, N, K) {
-    let i = 0;
+  const movingAverage = function(values, N) {
+    const result = new Float64Array(values.length).fill(NaN);
+    let i = 0 
     let sum = 0;
-    let sum2 = 0;
-    const bands = K.map(() => new Float64Array(values.length).fill(NaN));
-    for (let n = Math.min(N - 1, values.length); i < n; ++i) {
-      const value = values[i];
-      sum += value, sum2 += value ** 2;
+    for (let n = Math.min(N-1, values.length); i < n; ++i) {
+      sum += values[i];
     }
-    for (let n = values.length, m = bands.length; i < n; ++i) {
-      const value = values[i];
-      sum += value, sum2 += value ** 2;
-      const mean = sum / N;
-      const deviation = Math.sqrt((sum2 - sum ** 2/ N) / (N - 1));
-      for (let j = 0; j < K.length; ++j) {
-        bands[j][i] = mean + deviation * K[j];
-      }
-      const value0 = values[i - N + 1];
-      sum -= value0, sum2 -= value0 ** 2;
+    for (let n = values.length; i < n; ++i) {
+      sum += values[i];
+      result[i] = sum / N;
+      sum -= values[i - N + 1];
     }
-    return bands;
-  };
+    return result;
+  }
 
   const margin = {top: 20, right: 30, bottom: 20, left: 70};
 
@@ -68,13 +60,12 @@ renderChart = function(history, height, width) {
 
   const data = [
     values,
-    ...bollinger(values, 7, [0]),
-    ...bollinger(values, 30, [0]),
-    ...bollinger(values, 60, [0]),
+    movingAverage(values, 7),
+    movingAverage(values, 20),
   ]
 
-  const categories = ['raw', '7-day', '30-day', '60-day'];
-  const colors = d3.scaleOrdinal(categories, ['#ddd', 'green', 'red', 'blue']);
+  const categories = ['raw', '7-day', '20-day'];
+  const colors = d3.scaleOrdinal(categories, ['#ddd', 'green', 'red']);
 
   // make the 60-day line a little thicker
   const widths = (i) => [1, 1, 1, 2][i];
