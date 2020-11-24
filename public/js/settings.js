@@ -5,6 +5,7 @@ viewData = (function(window, document, undefined) {
     characters: {},
     editingStation: false,
     station: { name: "" },
+    stationListOpen: false,
     stationName: "",
     stations: [],
     loaded: false,
@@ -24,6 +25,7 @@ viewData = (function(window, document, undefined) {
 
     fetchStations() {
       if (this.stationName.length < 3) {
+        this.stations = [];
         return;
       }
       const params = new URLSearchParams();
@@ -45,6 +47,7 @@ viewData = (function(window, document, undefined) {
 
     saveStation() {
       if (this.stationName === "") {
+        this.stations = [];
         this.editingStation = false;
         return;
       }
@@ -57,6 +60,7 @@ viewData = (function(window, document, undefined) {
       .then(() => {
         this.station = station;
         this.stationName = "";
+        this.stations = [];
         this.editingStation = false;
       });
     },
