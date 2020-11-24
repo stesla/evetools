@@ -64,5 +64,12 @@ viewData = (function(window, document, undefined) {
         this.editingStation = false;
       });
     },
+
+    selectStation(event, nextTick) {
+      this.stationName=event.target.value;
+      this.stationListOpen=false;
+      let button = event.target.parentElement.parentElement.querySelector('button');
+      nextTick(() => { button.focus(); });
+    }
   }
 })(window, document, undefined);
