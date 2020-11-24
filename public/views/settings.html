@@ -24,7 +24,7 @@
         </div>
         <datalist x-show="stationListOpen" class="block absolute bg-gray-900 text-gray-100 rounded-xl rounded-t-none shadow-xl">
           <template x-for="s in stations" x-ref="s.id">
-            <option class="mb-1 px-4 py-2 hover:bg-gray-700 focus:bg-gray-700 cursor-pointer"
+            <option class="mb-1 px-4 py-2 hover:bg-gray-700 focus:bg-gray-700 focus:outline-none cursor-pointer"
                     @focus="stationName=$event.target.value"
                     @click="selectStation($event, $nextTick)"
                     @keydown.enter="selectStation($event, $nextTick)"
