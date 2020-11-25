@@ -68,8 +68,8 @@ func currentSession(r *http.Request) *sessions.Session {
 	return r.Context().Value(CurrentSessionKey).(*sessions.Session)
 }
 
-func currentUser(r *http.Request) model.User {
-	return r.Context().Value(CurrentUserKey).(model.User)
+func currentUser(r *http.Request) *model.User {
+	return r.Context().Value(CurrentUserKey).(*model.User)
 }
 
 func getSession(r *http.Request) (*sessions.Session, error) {
@@ -78,7 +78,7 @@ func getSession(r *http.Request) (*sessions.Session, error) {
 
 var errNotAuth = errors.New("not authorized")
 
-func haveLoggedInUser(next http.Handler) http.Handler {
+func (s *Server) haveLoggedInUser(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		var ctx = r.Context()
 
@@ -103,9 +103,14 @@ func haveLoggedInUser(next http.Handler) http.Handler {
 		ctx = context.WithValue(ctx, esi.AccessTokenKey, newTok.AccessToken)
 
 		if r.URL.Path != "/api/v1/verify" {
-			user, ok := session.Values["user"].(model.User)
+			sessionUserID, ok := session.Values["userid"].(int)
 			if !ok {
 				apiError(w, errNotAuth, http.StatusUnauthorized)
+				return
+			}
+			user, err := s.db.GetUser(sessionUserID)
+			if err != nil {
+				internalServerError(w, "GetUser", err)
 				return
 			}
 			ctx = context.WithValue(ctx, CurrentUserKey, user)

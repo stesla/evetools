@@ -152,7 +152,7 @@ func NewServer(static http.Handler, db model.DB) *Server {
 	s.mux.Methods("GET").Path("/logout").HandlerFunc(s.Logout)
 
 	api := s.mux.PathPrefix("/api/v1").Subrouter()
-	api.Use(haveLoggedInUser)
+	api.Use(s.haveLoggedInUser)
 	api.Use(contentType("application/json").Middleware)
 	api.Methods("GET").Path("/stations").HandlerFunc(s.GetStations)
 	api.Methods("PUT").Path("/types/{typeID:[0-9]+}/favorite").HandlerFunc(s.PutTypeFavorite)
@@ -160,6 +160,7 @@ func NewServer(static http.Handler, db model.DB) *Server {
 	api.Methods("POST").Path("/user/characters/{characterID:[0-9]+}/activate").
 		HandlerFunc(s.PostUserCharacterActivate)
 	api.Methods("PUT").Path("/user/stationA").HandlerFunc(s.PutUserStationA)
+	api.Methods("PUT").Path("/user/stationB").HandlerFunc(s.PutUserStationB)
 	api.Methods("GET").Path("/verify").HandlerFunc(s.GetVerify)
 
 	view := api.PathPrefix("/view").Subrouter()
@@ -240,8 +241,12 @@ func (s *Server) LoginCallback(w http.ResponseWriter, r *http.Request) {
 	var user *model.User
 	var character *model.Character
 
-	if sessionUser, ok := session.Values["user"].(model.User); ok {
-		user = &sessionUser
+	if sessionUserID, ok := session.Values["userid"].(int); ok {
+		user, err = s.db.GetUser(sessionUserID)
+		if err != nil {
+			internalServerError(w, "Getuser", err)
+			return
+		}
 		character, err = s.db.FindOrCreateCharacterForUser(user.ID, verify)
 		if err != nil {
 			internalServerError(w, "FindOrCreateCharacterForUser", err)
@@ -293,7 +298,7 @@ func (s *Server) LoginCallback(w http.ResponseWriter, r *http.Request) {
 	}
 
 	session.Values["token"] = jwt
-	session.Values["user"] = user
+	session.Values["userid"] = user.ID
 	if err := session.Save(r, w); err != nil {
 		internalServerError(w, "save session", err)
 		return

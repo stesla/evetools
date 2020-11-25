@@ -35,7 +35,7 @@ viewData = (function(window, document, undefined) {
     }
   }
 
-  function stationList(station) {
+  function stationList(stationAorB) {
     return {
       editing: false,
       listOpen: false,
@@ -45,7 +45,7 @@ viewData = (function(window, document, undefined) {
 
       initialize() {
         data.then(data => {
-          this.station = data[station];
+          this.station = data[stationAorB];
         });
       },
 
@@ -80,7 +80,7 @@ viewData = (function(window, document, undefined) {
           return;
         }
         station = this.stationList.find(s => s.name === this.stationName);
-        return retrieve('/api/v1/user/station', 'error saving station', {
+        return retrieve('/api/v1/user/'+stationAorB, 'error saving station', {
           raw: true,
           method: 'PUT',
           body: JSON.stringify(station),
