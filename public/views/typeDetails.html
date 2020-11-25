@@ -30,10 +30,10 @@
         </div>
         <div class="mt-4 border-t-2">
           <ul class="grid grid-cols-2">
-            <li class="mx-4 px-3 py-1 bg-gray-300 rounded-lg rounded-t-none text-center" :class="{'bg-blue-300': tab == 'a'}">
+            <li class="mx-4 mt-4 px-3 py-1 bg-gray-300 rounded-lg text-center" :class="{'bg-blue-300': tab == 'a'}">
               <button class="h-full w-full focus:outline-none" @click="selectTab('a')" x-text="infoA.system.name"></button>
             </li>
-            <li class="mx-4 px-3 py-1 bg-gray-300 rounded-lg rounded-t-none text-center" :class="{'bg-blue-300': tab == 'b'}">
+            <li class="mx-4 mt-4 px-3 py-1 bg-gray-300 rounded-lg text-center" :class="{'bg-blue-300': tab == 'b'}">
               <button class="h-full w-full focus:outline-none" @click="selectTab('b')" x-text="infoB.system.name"></button>
             </li>
           </ul>
