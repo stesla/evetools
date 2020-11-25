@@ -262,4 +262,5 @@ func (m *testDB) GetUser(userID int) (*model.User, error) {
 func (*testDB) SaveActiveCharacterHash(int, string) error       { return ErrNotImplemented }
 func (*testDB) SaveTokenForCharacter(int, string, string) error { return nil }
 func (*testDB) SaveTransaction(*esi.WalletTransaction) error    { return ErrNotImplemented }
-func (*testDB) SaveUserStation(userID, stationID int) error     { return ErrNotImplemented }
+func (*testDB) SaveUserStationA(userID, stationID int) error    { return ErrNotImplemented }
+func (*testDB) SaveUserStationB(userID, stationID int) error    { return ErrNotImplemented }

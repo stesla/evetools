@@ -23,7 +23,8 @@ type DB interface {
 	SaveActiveCharacterHash(int, string) error
 	SaveTokenForCharacter(int, string, string) error
 	SaveTransaction(*esi.WalletTransaction) error
-	SaveUserStation(userID, stationID int) error
+	SaveUserStationA(userID, stationID int) error
+	SaveUserStationB(userID, stationID int) error
 	SetFavorite(userID, typeID int, val bool) error
 }
 
@@ -96,7 +97,7 @@ type User struct {
 
 	ActiveCharacterID int `json:"activeCharacterID"`
 	StationA          int `json:"stationA"`
-	StatoinB          int `json:"statoinB"`
+	StationB          int `json:"statoinB"`
 }
 
 const createCharacter = `INSERT INTO characters 
@@ -166,7 +167,7 @@ func (m *databaseModel) FindOrCreateUserAndCharacter(verify esi.VerifyOK) (user 
 	const createUser = `INSERT INTO users (activeCharacterHash) VALUES (?)`
 	const selectCharacter = `SELECT id, characterID, characterName, userID
 							 FROM characters WHERE characterOwnerHash = ?`
-	const selectUser = `SELECT u.activeCharacterHash, c.characterID, u.stationA
+	const selectUser = `SELECT u.activeCharacterHash, c.characterID, u.stationA, u.stationB
                         FROM users u JOIN characters c ON u.activeCharacterHash = c.characterOwnerHash
                         WHERE u.id = ?`
 
@@ -202,6 +203,8 @@ func (m *databaseModel) FindOrCreateUserAndCharacter(verify esi.VerifyOK) (user 
 			ActiveCharacterID:   verify.CharacterID,
 			// Jita IV - Moon 4 - Caldari Navy Assembly Plant
 			StationA: 60003760,
+			// Amarr VIII (Oris) - Emperor Family Academy
+			StationB: 60008494,
 		}
 
 		character = &Character{
@@ -214,7 +217,7 @@ func (m *databaseModel) FindOrCreateUserAndCharacter(verify esi.VerifyOK) (user 
 	} else {
 		user = &User{ID: character.UserID}
 		err = tx.QueryRow(selectUser, character.UserID).Scan(
-			&user.ActiveCharacterHash, &user.ActiveCharacterID, &user.StationA)
+			&user.ActiveCharacterHash, &user.ActiveCharacterID, &user.StationA, &user.StationB)
 		if err != nil {
 			return
 		}
@@ -309,12 +312,12 @@ func (m *databaseModel) GetTransactions() ([]*esi.WalletTransaction, error) {
 }
 
 func (m *databaseModel) GetUser(userID int) (*User, error) {
-	const selectUser = `SELECT u.activeCharacterHash, c.characterID, u.stationA
+	const selectUser = `SELECT u.activeCharacterHash, c.characterID, u.stationA, u.stationB
                         FROM users u JOIN characters c ON u.activeCharacterHash = c.characterOwnerHash
                         WHERE u.id = ?`
 	u := &User{ID: userID}
 	err := m.db.QueryRow(selectUser, userID).
-		Scan(&u.ActiveCharacterHash, &u.ActiveCharacterID, &u.StationA)
+		Scan(&u.ActiveCharacterHash, &u.ActiveCharacterID, &u.StationA, &u.StationB)
 	if err == sql.ErrNoRows {
 		return nil, ErrNotFound
 	}
@@ -344,8 +347,14 @@ func (m *databaseModel) SaveTransaction(t *esi.WalletTransaction) (err error) {
 	return
 }
 
-func (m *databaseModel) SaveUserStation(userID, stationID int) error {
+func (m *databaseModel) SaveUserStationA(userID, stationID int) error {
 	const query = `UPDATE users SET stationA = ? WHERE id = ?`
+	_, err := m.db.Exec(query, stationID, userID)
+	return err
+}
+
+func (m *databaseModel) SaveUserStationB(userID, stationID int) error {
+	const query = `UPDATE users SET stationB = ? WHERE id = ?`
 	_, err := m.db.Exec(query, stationID, userID)
 	return err
 }

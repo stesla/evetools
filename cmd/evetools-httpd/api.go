@@ -115,7 +115,7 @@ func (s *Server) PutTypeFavorite(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(&req)
 }
 
-func (s *Server) PutUserStation(w http.ResponseWriter, r *http.Request) {
+func (s *Server) PutUserStationA(w http.ResponseWriter, r *http.Request) {
 	var station struct {
 		ID int `json:"id"`
 	}
@@ -127,7 +127,36 @@ func (s *Server) PutUserStation(w http.ResponseWriter, r *http.Request) {
 	}
 
 	user := currentUser(r)
-	err = s.db.SaveUserStation(user.ID, station.ID)
+	err = s.db.SaveUserStationA(user.ID, station.ID)
+	if err != nil {
+		apiInternalServerError(w, "SaveUserStation", err)
+		return
+	}
+
+	session := currentSession(r)
+	user.StationA = station.ID
+	session.Values["user"] = user
+	if err := session.Save(r, w); err != nil {
+		apiInternalServerError(w, "save session", err)
+		return
+	}
+
+	w.WriteHeader(http.StatusNoContent)
+}
+
+func (s *Server) PutUserStationB(w http.ResponseWriter, r *http.Request) {
+	var station struct {
+		ID int `json:"id"`
+	}
+	err := json.NewDecoder(r.Body).Decode(&station)
+	if err != nil {
+		err = fmt.Errorf("error parsing request body: %v", err)
+		apiError(w, err, http.StatusBadRequest)
+		return
+	}
+
+	user := currentUser(r)
+	err = s.db.SaveUserStationB(user.ID, station.ID)
 	if err != nil {
 		apiInternalServerError(w, "SaveUserStation", err)
 		return

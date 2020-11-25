@@ -35,7 +35,7 @@ viewData = (function(window, document, undefined) {
     }
   }
 
-  function stationList() {
+  function stationList(station) {
     return {
       editing: false,
       listOpen: false,
@@ -45,7 +45,7 @@ viewData = (function(window, document, undefined) {
 
       initialize() {
         data.then(data => {
-          this.station = data.stationA;
+          this.station = data[station];
         });
       },
 

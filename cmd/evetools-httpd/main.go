@@ -159,7 +159,7 @@ func NewServer(static http.Handler, db model.DB) *Server {
 	api.Methods("POST").Path("/types/{typeID:[0-9]+}/openInGame").HandlerFunc(s.PostOpenInGame)
 	api.Methods("POST").Path("/user/characters/{characterID:[0-9]+}/activate").
 		HandlerFunc(s.PostUserCharacterActivate)
-	api.Methods("PUT").Path("/user/station").HandlerFunc(s.PutUserStation)
+	api.Methods("PUT").Path("/user/stationA").HandlerFunc(s.PutUserStationA)
 	api.Methods("GET").Path("/verify").HandlerFunc(s.GetVerify)
 
 	view := api.PathPrefix("/view").Subrouter()

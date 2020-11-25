@@ -278,15 +278,22 @@ func (s *Server) ViewSettings(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	station, found := sde.Stations[user.StationA]
+	stationA, found := sde.Stations[user.StationA]
 	if !found {
 		apiInternalServerError(w, "GetStation", fmt.Errorf("no station for id %d", user.StationA))
 		return
 	}
 
+	stationB, found := sde.Stations[user.StationB]
+	if !found {
+		apiInternalServerError(w, "GetStation", fmt.Errorf("no station for id %d", user.StationB))
+		return
+	}
+
 	json.NewEncoder(w).Encode(map[string]interface{}{
 		"characters": characters,
-		"stationA":   station,
+		"stationA":   stationA,
+		"stationB":   stationB,
 		"stations":   sde.Stations,
 	})
 }
@@ -426,7 +433,7 @@ func (s *Server) ViewTypeDetails(w http.ResponseWriter, r *http.Request) {
 		},
 		"group":         group,
 		"parent_groups": parentGroups,
-		"stationA":      station,
+		"station":       station,
 		"system":        solarSystem,
 		"type":          marketType,
 	})

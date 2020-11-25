@@ -4,7 +4,7 @@
 
   <h1 class="mt-10 text-3xl text-center text-gray-700 font-bold">My Trading Station</h1>
   <p x-show="!loaded" class="mt-4 text-center italic text-gray-500">Loading...</p>
-  <div x-show="loaded" x-data="viewData.stationList()" x-init="initialize()"
+  <div x-show="loaded" x-data="viewData.stationList('stationA')" x-init="initialize()"
     class="mt-10 w-11/12 pl-4 max-w-3xl mx-auto bg-gray-100 border border-gray-500 rounded-xl shadow-xl overflow-hidden">
     <div class="text-center py-4" x-show="!editing">
       <span class="leading-none text-lg" x-text="station.name"></span>
