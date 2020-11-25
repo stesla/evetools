@@ -165,7 +165,7 @@ func (m *databaseModel) FindOrCreateUserAndCharacter(verify esi.VerifyOK) (user 
 	const createUser = `INSERT INTO users (activeCharacterHash) VALUES (?)`
 	const selectCharacter = `SELECT id, characterID, characterName, userID
 							 FROM characters WHERE characterOwnerHash = ?`
-	const selectUser = `SELECT u.activeCharacterHash, c.characterID, u.stationID
+	const selectUser = `SELECT u.activeCharacterHash, c.characterID, u.stationA
                         FROM users u JOIN characters c ON u.activeCharacterHash = c.characterOwnerHash
                         WHERE u.id = ?`
 
@@ -308,7 +308,7 @@ func (m *databaseModel) GetTransactions() ([]*esi.WalletTransaction, error) {
 }
 
 func (m *databaseModel) GetUser(userID int) (*User, error) {
-	const selectUser = `SELECT u.activeCharacterHash, c.characterID, u.stationID
+	const selectUser = `SELECT u.activeCharacterHash, c.characterID, u.stationA
                         FROM users u JOIN characters c ON u.activeCharacterHash = c.characterOwnerHash
                         WHERE u.id = ?`
 	u := &User{ID: userID}
@@ -344,7 +344,7 @@ func (m *databaseModel) SaveTransaction(t *esi.WalletTransaction) (err error) {
 }
 
 func (m *databaseModel) SaveUserStation(userID, stationID int) error {
-	const query = `UPDATE users SET stationID = ? WHERE id = ?`
+	const query = `UPDATE users SET stationA = ? WHERE id = ?`
 	_, err := m.db.Exec(query, stationID, userID)
 	return err
 }
