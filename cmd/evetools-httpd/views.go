@@ -382,24 +382,42 @@ func (s *Server) ViewTypeDetails(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	station, found := sde.Stations[user.StationA]
+	infoA, err := s.stationInfo(r.Context(), typeID, user.StationA)
+	if err != nil {
+		apiInternalServerError(w, "stationA info", err)
+	}
+
+	infoB, err := s.stationInfo(r.Context(), typeID, user.StationB)
+	if err != nil {
+		apiInternalServerError(w, "stationB info", err)
+	}
+
+	json.NewEncoder(w).Encode(map[string]interface{}{
+		"favorite":      favorite,
+		"type":          marketType,
+		"group":         group,
+		"parent_groups": parentGroups,
+		"infoA":         infoA,
+		"infoB":         infoB,
+	})
+}
+
+func (s *Server) stationInfo(ctx context.Context, typeID, stationID int) (map[string]interface{}, error) {
+	station, found := sde.Stations[stationID]
 	if !found {
-		apiInternalServerError(w, "GetStation", fmt.Errorf("no station for id %d", user.StationA))
-		return
+		return nil, fmt.Errorf("no station for id %d", stationID)
 	}
 
 	solarSystem, _ := sde.SolarSystems[station.SystemID]
 
-	price, err := s.esi.GetMarketPrices(r.Context(), station.ID, solarSystem.RegionID, typeID)
+	price, err := s.esi.GetMarketPrices(ctx, station.ID, solarSystem.RegionID, typeID)
 	if err != nil {
-		apiInternalServerError(w, "JitaPrices", err)
-		return
+		return nil, fmt.Errorf("GetMarketPrices: %v", err)
 	}
 
-	history, err := s.esi.GetPriceHistory(r.Context(), solarSystem.RegionID, typeID)
+	history, err := s.esi.GetPriceHistory(ctx, solarSystem.RegionID, typeID)
 	if err != nil {
-		apiInternalServerError(w, "JitaHistory", err)
-		return
+		return nil, fmt.Errorf("GetPriceHistory: %v", err)
 	}
 
 	var volume int64
@@ -419,22 +437,16 @@ func (s *Server) ViewTypeDetails(w http.ResponseWriter, r *http.Request) {
 		volume /= int64(l)
 	}
 
-	json.NewEncoder(w).Encode(map[string]interface{}{
-		"favorite": favorite,
-		"marketInfo": map[string]interface{}{
-			"average": average,
-			"buy":     price.Buy,
-			"highest": highest,
-			"history": history,
-			"lowest":  lowest,
-			"margin":  price.Margin(),
-			"sell":    price.Sell,
-			"volume":  volume,
-		},
-		"group":         group,
-		"parent_groups": parentGroups,
-		"station":       station,
-		"system":        solarSystem,
-		"type":          marketType,
-	})
+	return map[string]interface{}{
+		"average": average,
+		"buy":     price.Buy,
+		"highest": highest,
+		"history": history,
+		"lowest":  lowest,
+		"margin":  price.Margin(),
+		"sell":    price.Sell,
+		"station": station,
+		"system":  solarSystem,
+		"volume":  volume,
+	}, nil
 }

@@ -5,6 +5,13 @@ viewData = (function(window, document, undefined) {
 
   var data = retrieve('/api/v1/view/typeDetails/'+typeID, 'error fetching view data');
 
+  function chartPoint(d) {
+    return {
+      date: Date.parse(d.date),
+      average: +d.average,
+    }
+  }
+
   return {
     type: undefined,
     typeID: typeID,
@@ -18,10 +25,10 @@ viewData = (function(window, document, undefined) {
 
     initialize() {
       const observer = new MutationObserver(() => {
-        let div = document.getElementById("chart");
+        let div = document.getElementById("chartA");
         if (div) {
           observer.disconnect();
-          renderChart(this.info.history, 400, div.clientWidth);
+          renderChart("#chartA", this.infoA.history, 400, div.clientWidth);
         }
       });
 
@@ -30,18 +37,15 @@ viewData = (function(window, document, undefined) {
       data.then(data => {
         document.title += ' - ' + data.type.name;
         this.type = data.type;
-        this.station = data.station;
-        this.system = data.system;
         this.favorite = data.favorite;
-        data.marketInfo.history = data.marketInfo.history.map(d => {
-          return {
-            date: Date.parse(d.date),
-            average: +d.average,
-          }
-        });
-        this.info = data.marketInfo;
         this.group = data.group;
         this.parentGroups = data.parent_groups.reverse();
+
+        this.infoA = data.infoA;
+        this.infoA.history = data.infoA.history.map(d => chartPoint(d));
+
+        this.infoB = data.infoB;
+        this.infoB.history = data.infoB.history.map(d => chartPoint(d));
       });
     }
   }

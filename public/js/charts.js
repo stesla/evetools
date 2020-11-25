@@ -1,4 +1,4 @@
-renderChart = function(history, height, width) {
+renderChart = function(selector, history, height, width) {
   const movingAverage = function(values, N) {
     const result = new Float64Array(values.length).fill(NaN);
     let i = 0 
@@ -16,7 +16,7 @@ renderChart = function(history, height, width) {
 
   const margin = {top: 20, right: 30, bottom: 20, left: 70};
 
-  const svg = d3.select("#chart").append("svg")
+  const svg = d3.select(selector).append("svg")
     .attr('viewBox', `0 0 ${width} ${height}`);
 
   const values = Float64Array.from(history, d => d.average);
