@@ -20,6 +20,7 @@ type DB interface {
 	GetTransactions() ([]*esi.WalletTransaction, error)
 	GetUser(userID int) (*User, error)
 	IsFavorite(userID, typeID int) (bool, error)
+	RemoveCharacterForUser(int, int) error
 	SaveActiveCharacterHash(int, string) error
 	SaveTokenForCharacter(int, string, string) error
 	SaveTransaction(*esi.WalletTransaction) error
@@ -322,6 +323,12 @@ func (m *databaseModel) GetUser(userID int) (*User, error) {
 		return nil, ErrNotFound
 	}
 	return u, nil
+}
+
+func (m *databaseModel) RemoveCharacterForUser(userID int, characterID int) (err error) {
+	const query = `DELETE FROM characters WHERE userID = ? AND characterID = ?`
+	_, err = m.db.Exec(query, userID, characterID)
+	return
 }
 
 func (m *databaseModel) SaveActiveCharacterHash(userID int, hash string) (err error) {

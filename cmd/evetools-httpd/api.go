@@ -12,6 +12,21 @@ import (
 	"github.com/stesla/evetools/sde"
 )
 
+func (s *Server) DeleteUserCharacter(w http.ResponseWriter, r *http.Request) {
+	user := currentUser(r)
+
+	vars := mux.Vars(r)
+	characterID, _ := strconv.Atoi(vars["characterID"])
+
+	err := s.db.RemoveCharacterForUser(user.ID, characterID)
+	if err != nil {
+		apiInternalServerError(w, "RemoveCharacterForUser", err)
+		return
+	}
+
+	w.WriteHeader(http.StatusNoContent)
+}
+
 func (s *Server) GetStations(w http.ResponseWriter, r *http.Request) {
 	query := strings.TrimSpace(strings.ToLower(r.FormValue("q")))
 	result := []*sde.Station{}
