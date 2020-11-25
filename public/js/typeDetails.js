@@ -12,7 +12,21 @@ viewData = (function(window, document, undefined) {
     }
   }
 
+  function waitForChart(id, historyfn) {
+    const observer = new MutationObserver(() => {
+      let div = document.getElementById(id);
+      if (div) {
+        observer.disconnect();
+        let history = historyfn().map(d => chartPoint(d));
+        let width = div.parentElement.parentElement.clientWidth;
+        renderChart('#' + id, history, 400, width);
+      }
+    });
+    observer.observe(document.querySelector('main'), { childList: true, subtree: true });
+  }
+
   return {
+    tab: window.location.hash ? window.location.hash.slice(1,2) : 'a',
     type: undefined,
     typeID: typeID,
 
@@ -24,29 +38,22 @@ viewData = (function(window, document, undefined) {
     },
 
     initialize() {
-      const observer = new MutationObserver(() => {
-        let div = document.getElementById("chartA");
-        if (div) {
-          observer.disconnect();
-          renderChart("#chartA", this.infoA.history, 400, div.clientWidth);
-        }
-      });
-
-      observer.observe(document.querySelector('main'), { childList: true, subtree: true });
-
+      waitForChart('chartA', () => this.infoA.history);
+      waitForChart('chartB', () => this.infoB.history);
       data.then(data => {
         document.title += ' - ' + data.type.name;
         this.type = data.type;
         this.favorite = data.favorite;
         this.group = data.group;
         this.parentGroups = data.parent_groups.reverse();
-
         this.infoA = data.infoA;
-        this.infoA.history = data.infoA.history.map(d => chartPoint(d));
-
         this.infoB = data.infoB;
-        this.infoB.history = data.infoB.history.map(d => chartPoint(d));
       });
+    },
+
+    selectTab(tab) {
+      this.tab = tab;
+      window.location.hash = tab;
     }
   }
 })(window, document);
