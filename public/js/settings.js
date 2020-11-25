@@ -45,15 +45,16 @@ viewData = (function(window, document, undefined) {
 
       initialize() {
         data.then(data => {
-          this.station = data.station;
+          this.station = data.stationA;
         });
       },
 
       beginEdit(event, nextTick) {
         this.editing = true
         let input = event.target.parentElement.parentElement.parentElement.querySelector('input');
-        console.log(input);
-        nextTick(() => { input.focus(); });
+        nextTick(() => {
+          input.focus();
+        });
       },
 
       fetch() {

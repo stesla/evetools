@@ -256,7 +256,6 @@ func (m *testDB) GetUser(userID int) (*model.User, error) {
 		ID:                  userID,
 		ActiveCharacterHash: "OWNER-HASH",
 		ActiveCharacterID:   1234567890,
-		StationID:           65432108,
 	}, nil
 }
 

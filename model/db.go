@@ -95,7 +95,8 @@ type User struct {
 	ActiveCharacterHash string `json:"-"`
 
 	ActiveCharacterID int `json:"activeCharacterID"`
-	StationID         int `json:"stationID"`
+	StationA          int `json:"stationA"`
+	StatoinB          int `json:"statoinB"`
 }
 
 const createCharacter = `INSERT INTO characters 
@@ -200,7 +201,7 @@ func (m *databaseModel) FindOrCreateUserAndCharacter(verify esi.VerifyOK) (user 
 			ActiveCharacterHash: verify.CharacterOwnerHash,
 			ActiveCharacterID:   verify.CharacterID,
 			// Jita IV - Moon 4 - Caldari Navy Assembly Plant
-			StationID: 60003760,
+			StationA: 60003760,
 		}
 
 		character = &Character{
@@ -213,7 +214,7 @@ func (m *databaseModel) FindOrCreateUserAndCharacter(verify esi.VerifyOK) (user 
 	} else {
 		user = &User{ID: character.UserID}
 		err = tx.QueryRow(selectUser, character.UserID).Scan(
-			&user.ActiveCharacterHash, &user.ActiveCharacterID, &user.StationID)
+			&user.ActiveCharacterHash, &user.ActiveCharacterID, &user.StationA)
 		if err != nil {
 			return
 		}
@@ -313,7 +314,7 @@ func (m *databaseModel) GetUser(userID int) (*User, error) {
                         WHERE u.id = ?`
 	u := &User{ID: userID}
 	err := m.db.QueryRow(selectUser, userID).
-		Scan(&u.ActiveCharacterHash, &u.ActiveCharacterID, &u.StationID)
+		Scan(&u.ActiveCharacterHash, &u.ActiveCharacterID, &u.StationA)
 	if err == sql.ErrNoRows {
 		return nil, ErrNotFound
 	}

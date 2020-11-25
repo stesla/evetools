@@ -134,7 +134,7 @@ func (s *Server) PutUserStation(w http.ResponseWriter, r *http.Request) {
 	}
 
 	session := currentSession(r)
-	user.StationID = station.ID
+	user.StationA = station.ID
 	session.Values["user"] = user
 	if err := session.Save(r, w); err != nil {
 		apiInternalServerError(w, "save session", err)

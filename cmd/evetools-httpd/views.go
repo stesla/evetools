@@ -73,7 +73,7 @@ func (s *Server) ViewDashboard(w http.ResponseWriter, r *http.Request) {
 	}
 
 	json.NewEncoder(w).Encode(map[string]interface{}{
-		"broker_fee":     calculateBrokerFee(user.StationID, standings, skills),
+		"broker_fee":     calculateBrokerFee(user.StationA, standings, skills),
 		"buy_total":      buyTotal,
 		"favorites":      favoriteTypes,
 		"sell_total":     sellTotal,
@@ -278,15 +278,15 @@ func (s *Server) ViewSettings(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	station, found := sde.Stations[user.StationID]
+	station, found := sde.Stations[user.StationA]
 	if !found {
-		apiInternalServerError(w, "GetStation", fmt.Errorf("no station for id %d", user.StationID))
+		apiInternalServerError(w, "GetStation", fmt.Errorf("no station for id %d", user.StationA))
 		return
 	}
 
 	json.NewEncoder(w).Encode(map[string]interface{}{
 		"characters": characters,
-		"station":    station,
+		"stationA":   station,
 		"stations":   sde.Stations,
 	})
 }
@@ -375,9 +375,9 @@ func (s *Server) ViewTypeDetails(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	station, found := sde.Stations[user.StationID]
+	station, found := sde.Stations[user.StationA]
 	if !found {
-		apiInternalServerError(w, "GetStation", fmt.Errorf("no station for id %d", user.StationID))
+		apiInternalServerError(w, "GetStation", fmt.Errorf("no station for id %d", user.StationA))
 		return
 	}
 
@@ -426,7 +426,7 @@ func (s *Server) ViewTypeDetails(w http.ResponseWriter, r *http.Request) {
 		},
 		"group":         group,
 		"parent_groups": parentGroups,
-		"station":       station,
+		"stationA":      station,
 		"system":        solarSystem,
 		"type":          marketType,
 	})
