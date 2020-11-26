@@ -98,7 +98,10 @@ func main() {
 	store = sessions.NewCookieStore([]byte(viper.GetString("httpd.session.auth_key")))
 
 	staticFiles := http.Dir(viper.GetString("httpd.static.dir"))
-	var handler http.Handler = NewServer(http.FileServer(staticFiles), db)
+
+	views := &templateViewRenderer{viper.GetString("template.dir")}
+
+	var handler http.Handler = NewServer(http.FileServer(staticFiles), db, views)
 	handler = handlers.LoggingHandler(os.Stdout, handler)
 	handler = handlers.ProxyHeaders(handler)
 
@@ -133,17 +136,24 @@ type Server struct {
 	esi  esi.Client
 	mux  *mux.Router
 	db   model.DB
+
+	viewRenderer
 }
 
-func NewServer(static http.Handler, db model.DB) *Server {
+func NewServer(static http.Handler, db model.DB, vr viewRenderer) *Server {
 	s := &Server{
-		mux: mux.NewRouter(),
-		db:  db,
+		mux:          mux.NewRouter(),
+		db:           db,
+		viewRenderer: vr,
 	}
 	s.esi = esi.NewClient(&s.http)
 
 	cache := diskcache.New(viper.GetString("http.cache.dir"))
 	s.http.Transport = httpcache.NewTransport(cache)
+
+	s.mux.NotFoundHandler = s.ShowView("notFound")
+	s.mux.Use(s.haveSession)
+	s.mux.Use(s.haveLoggedInUser)
 
 	// Static
 	s.mux.PathPrefix("/css").Handler(static)
@@ -158,8 +168,6 @@ func NewServer(static http.Handler, db model.DB) *Server {
 	s.mux.Methods("GET").Path("/logout").HandlerFunc(s.Logout)
 
 	// Views
-	s.mux.NotFoundHandler = s.ShowView("notFound")
-	s.mux.Use(s.haveLoggedInUser)
 	s.mux.Methods("GET").Path("/").Handler(s.ShowView("dashboard"))
 	s.mux.Methods("GET").Path("/authorize").Handler(s.ShowView("authorize"))
 	s.mux.Methods("GET").Path("/browse").Handler(s.ShowView("browse"))
@@ -173,7 +181,6 @@ func NewServer(static http.Handler, db model.DB) *Server {
 
 	// API
 	api := s.mux.PathPrefix("/api/v1").Subrouter()
-	api.Use(s.apiHaveLoggedInUser)
 	api.Use(contentType("application/json").Middleware)
 	api.Methods("GET").Path("/stations").HandlerFunc(s.GetStations)
 	api.Methods("PUT").Path("/types/{typeID:[0-9]+}/favorite").HandlerFunc(s.PutTypeFavorite)
@@ -364,23 +371,31 @@ func (s *Server) Logout(w http.ResponseWriter, r *http.Request) {
 
 func (s *Server) ShowView(name string) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		renderView(w, r, name, nil, nil)
+		s.renderView(w, r, name, nil, nil)
 	})
 }
 
-func renderView(w http.ResponseWriter, r *http.Request, name string, helpers template.FuncMap, data interface{}) {
+type viewRenderer interface {
+	renderView(w http.ResponseWriter, r *http.Request, name string, helpers template.FuncMap, data interface{})
+}
+
+type templateViewRenderer struct {
+	dir string
+}
+
+func (tvr *templateViewRenderer) renderView(w http.ResponseWriter, r *http.Request, name string, helpers template.FuncMap, data interface{}) {
 	funcs := template.FuncMap{}
 	for k, v := range helpers {
 		funcs[k] = v
 	}
 	t := template.New("template").Funcs(funcs)
-	tpl, err := loadTemplate("layout.html")
+	tpl, err := tvr.loadTemplate("layout.html")
 	if err != nil {
 		internalServerError(w, "loadTemplate", err)
 		return
 	}
 	t = template.Must(t.Parse(tpl))
-	tpl, err = loadTemplate(name + ".html")
+	tpl, err = tvr.loadTemplate(name + ".html")
 	if err != nil {
 		internalServerError(w, "loadTemplate", err)
 		return
@@ -394,8 +409,8 @@ func renderView(w http.ResponseWriter, r *http.Request, name string, helpers tem
 	}
 }
 
-func loadTemplate(filename string) (string, error) {
-	filepath := path.Join(viper.GetString("template.dir"), filename)
+func (t *templateViewRenderer) loadTemplate(filename string) (string, error) {
+	filepath := path.Join(t.dir, filename)
 	input, err := os.Open(filepath)
 	if err != nil {
 		return "", err

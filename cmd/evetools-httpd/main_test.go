@@ -7,6 +7,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"html/template"
 	"net/http"
 	"net/http/httptest"
 	"net/url"
@@ -153,7 +154,7 @@ func (h *failHandler) ServeHTTP(http.ResponseWriter, *http.Request) {
 
 func handleRequest(t *testing.T, r *http.Request) *http.Response {
 	w := httptest.NewRecorder()
-	s := NewServer(&failHandler{t}, &testDB{})
+	s := NewServer(&failHandler{t}, &testDB{}, &testViewRenderer{})
 	s.http.Transport = mrt
 	s.ServeHTTP(w, r)
 	mrt.Reset()
@@ -265,3 +266,8 @@ func (*testDB) SaveTokenForCharacter(int, string, string) error { return nil }
 func (*testDB) SaveTransaction(*esi.WalletTransaction) error    { return ErrNotImplemented }
 func (*testDB) SaveUserStationA(userID, stationID int) error    { return ErrNotImplemented }
 func (*testDB) SaveUserStationB(userID, stationID int) error    { return ErrNotImplemented }
+
+type testViewRenderer struct{}
+
+func (*testViewRenderer) renderView(http.ResponseWriter, *http.Request, string, template.FuncMap, interface{}) {
+}

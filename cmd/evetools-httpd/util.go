@@ -3,7 +3,6 @@ package main
 import (
 	"context"
 	"encoding/json"
-	"errors"
 	"log"
 	"net/http"
 	"net/url"
@@ -77,31 +76,7 @@ func getSession(r *http.Request) *sessions.Session {
 	return r.Context().Value(CurrentSessionKey).(*sessions.Session)
 }
 
-var errNotAuth = errors.New("not authorized")
-
-func (s *Server) apiHaveLoggedInUser(next http.Handler) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		var ctx = r.Context()
-		session := getSession(r)
-
-		oldTok, ok := session.Values["token"].(oauth2.Token)
-		if !ok {
-			apiError(w, errNotAuth, http.StatusUnauthorized)
-			return
-		}
-		tokSrc := oauthConfig.TokenSource(r.Context(), &oldTok)
-		newTok, err := tokSrc.Token()
-		if err != nil {
-			apiError(w, errNotAuth, http.StatusUnauthorized)
-			return
-		}
-		ctx = context.WithValue(ctx, esi.AccessTokenKey, newTok.AccessToken)
-
-		next.ServeHTTP(w, r.WithContext(ctx))
-	})
-}
-
-func (s *Server) haveLoggedInUser(next http.Handler) http.Handler {
+func (s *Server) haveSession(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		var ctx = r.Context()
 
@@ -111,6 +86,38 @@ func (s *Server) haveLoggedInUser(next http.Handler) http.Handler {
 			return
 		}
 		ctx = context.WithValue(ctx, CurrentSessionKey, session)
+		next.ServeHTTP(w, r.WithContext(ctx))
+	})
+}
+
+func (s *Server) haveLoggedInUser(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if strings.HasPrefix(r.URL.Path, "/login") || strings.HasPrefix(r.URL.Path, "/logout") {
+			next.ServeHTTP(w, r)
+		}
+
+		var ctx = r.Context()
+		session := getSession(r)
+		login := func() {
+			if r.URL.Path == "/" {
+				s.renderView(w, r, "login", nil, nil)
+			} else {
+				http.Redirect(w, r, "/", http.StatusFound)
+			}
+		}
+
+		oldTok, ok := session.Values["token"].(oauth2.Token)
+		if !ok {
+			login()
+			return
+		}
+		tokSrc := oauthConfig.TokenSource(r.Context(), &oldTok)
+		newTok, err := tokSrc.Token()
+		if err != nil {
+			login()
+			return
+		}
+		ctx = context.WithValue(ctx, esi.AccessTokenKey, newTok.AccessToken)
 
 		sessionUserID, ok := session.Values["userid"].(int)
 		if ok {
@@ -121,10 +128,8 @@ func (s *Server) haveLoggedInUser(next http.Handler) http.Handler {
 			}
 			ctx = context.WithValue(ctx, CurrentUserKey, user)
 			next.ServeHTTP(w, r.WithContext(ctx))
-		} else if strings.HasPrefix(r.URL.Path, "/login") || strings.HasPrefix(r.URL.Path, "/logout") {
-			next.ServeHTTP(w, r.WithContext(ctx))
 		} else {
-			s.ShowView("login").ServeHTTP(w, r)
+			login()
 		}
 	})
 }
