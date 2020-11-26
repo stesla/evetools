@@ -27,6 +27,7 @@ import (
 	"github.com/spf13/viper"
 	"github.com/stesla/evetools/esi"
 	"github.com/stesla/evetools/model"
+	"github.com/stesla/evetools/sde"
 )
 
 type contextKey int
@@ -174,7 +175,7 @@ func NewServer(static http.Handler, db model.DB, vr viewRenderer) *Server {
 	s.mux.Methods("GET").Path("/groups/{groupID:[0-9]+}").Handler(s.ShowView("groupDetails"))
 	s.mux.Methods("GET").Path("/history").Handler(s.ShowView("orders"))
 	s.mux.Methods("GET").Path("/orders").Handler(s.ShowView("orders"))
-	s.mux.Methods("GET").Path("/search").Handler(s.ShowView("search"))
+	s.mux.Methods("GET").Path("/search").HandlerFunc(s.ShowSearch)
 	s.mux.Methods("GET").Path("/settings").Handler(s.ShowView("settings"))
 	s.mux.Methods("GET").Path("/transactions").Handler(s.ShowView("transactions"))
 	s.mux.Methods("GET").Path("/types/{typeID:[0-9]+}").Handler(s.ShowView("typeDetails"))
@@ -189,6 +190,7 @@ func NewServer(static http.Handler, db model.DB, vr viewRenderer) *Server {
 		HandlerFunc(s.DeleteUserCharacter)
 	api.Methods("POST").Path("/user/characters/{characterID:[0-9]+}/activate").
 		HandlerFunc(s.PostUserCharacterActivate)
+	api.Methods("GET").Path("/user/favorites").HandlerFunc(s.GetUserFavorites)
 	api.Methods("PUT").Path("/user/stationA").HandlerFunc(s.PutUserStationA)
 	api.Methods("PUT").Path("/user/stationB").HandlerFunc(s.PutUserStationB)
 
@@ -197,7 +199,6 @@ func NewServer(static http.Handler, db model.DB, vr viewRenderer) *Server {
 	view.Methods("GET").Path("/dashboard").HandlerFunc(s.ViewDashboard)
 	view.Methods("GET").Path("/groupDetails/{groupID:[0-9]+}").HandlerFunc(s.ViewGroupDetails)
 	view.Methods("GET").Path("/marketOrders").HandlerFunc(s.ViewMarketOrders)
-	view.Methods("GET").Path("/search").HandlerFunc(s.ViewSearch)
 	view.Methods("GET").Path("/settings").HandlerFunc(s.ViewSettings)
 	view.Methods("GET").Path("/transactions").HandlerFunc(s.ViewTransactions)
 	view.Methods("GET").Path("/typeDetails/{typeID:[0-9]+}").HandlerFunc(s.ViewTypeDetails)
@@ -398,6 +399,16 @@ func (tvr *templateViewRenderer) renderView(w http.ResponseWriter, r *http.Reque
 			}()
 			u = currentUser(r)
 			return
+		},
+		"iconURL": func(t *sde.MarketType) string {
+			if t == nil {
+				return ""
+			}
+			imgType := "icon"
+			if strings.Contains(t.Name, "Blueprint") || strings.Contains(t.Name, "Formula") {
+				imgType = "bp"
+			}
+			return fmt.Sprintf("https://images.evetech.net/types/%d/%s?size=128", t.ID, imgType)
 		},
 	}
 	for k, v := range helpers {

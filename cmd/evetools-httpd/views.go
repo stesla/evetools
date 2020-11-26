@@ -228,31 +228,22 @@ func (s *Server) processOrders(orders []*esi.MarketOrder, days time.Duration) (b
 	return
 }
 
-func (s *Server) ViewSearch(w http.ResponseWriter, r *http.Request) {
-	user := currentUser(r)
-
+func (s *Server) ShowSearch(w http.ResponseWriter, r *http.Request) {
 	q := strings.ToLower(r.FormValue("q"))
 	if q == "" {
 		apiError(w, fmt.Errorf("must provide query string"), http.StatusBadRequest)
 		return
 	}
 
-	favorites, err := s.db.GetFavoriteTypes(user.ID)
-	if err != nil {
-		apiInternalServerError(w, "FavoriteTypes", err)
-		return
-	}
-
-	marketTypes := []*sde.MarketType{}
+	marketTypes := map[string]*sde.MarketType{}
 	for _, t := range sde.MarketTypes {
 		if strings.Contains(strings.ToLower(t.Name), q) {
-			marketTypes = append(marketTypes, t)
+			marketTypes[t.Name] = t
 		}
 	}
 
-	json.NewEncoder(w).Encode(map[string]interface{}{
-		"favorites": favorites,
-		"types":     marketTypes,
+	s.renderView(w, r, "search", nil, map[string]interface{}{
+		"Types": marketTypes,
 	})
 }
 

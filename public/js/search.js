@@ -13,11 +13,8 @@ viewData = (function(window, document, undefined) {
     fetchData() {
       const params = new URLSearchParams();
       params.set("q", this.filter);
-      retrieve('/api/v1/view/search?' + params.toString())
-      .then(data => {
-        this.favorites = data.favorites;
-        this.marketTypes = data.types.sort(byName);
-      });
+      retrieve('/api/v1/user/favorites')
+      .then(data => { this.favorites = data });
     },
 
     handleSearch(e) {
@@ -34,14 +31,14 @@ viewData = (function(window, document, undefined) {
       return this.favorites.find(id => id === typeID);
     },
 
-    toggleFavorite(type) {
-      let val = !this.isFavorite(type.id);
-      setFavorite(type.id, val)
+    toggleFavorite(typeID) {
+      let val = !this.isFavorite(typeID);
+      setFavorite(typeID, val)
       .then(() => {
         if (val) {
-          this.favorites.push(type.id);
+          this.favorites.push(typeID);
         } else {
-          this.favorites = this.favorites.filter(x => x !== type.id);
+          this.favorites = this.favorites.filter(x => x !== typeID);
         }
       });
     },

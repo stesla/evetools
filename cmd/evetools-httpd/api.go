@@ -38,6 +38,16 @@ func (s *Server) GetStations(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(result)
 }
 
+func (s *Server) GetUserFavorites(w http.ResponseWriter, r *http.Request) {
+	user := currentUser(r)
+	favorites, err := s.db.GetFavoriteTypes(user.ID)
+	if err != nil {
+		apiInternalServerError(w, "FavoriteTypes", err)
+		return
+	}
+	json.NewEncoder(w).Encode(&favorites)
+}
+
 func (s *Server) GetVerify(w http.ResponseWriter, r *http.Request) {
 	verify, err := s.esi.Verify(r.Context())
 	if err != nil {
