@@ -11,7 +11,7 @@
       </a>
     </div>
     <template x-if="!type">
-      <p class="mt-64 text-2xl text-center italic text-gray-500">Fetching type infoA...</p>
+      <p class="mt-64 text-2xl text-center italic text-gray-500">Loading...</p>
     </template>
     <template x-if="type">
       <div class="py-4 w-full sm:w-4/5 mt-4 mx-auto border-t border-b sm:border-l sm:border-r border-gray-500 sm:rounded-xl sm:shadow-xl bg-gray-100">
@@ -47,25 +47,21 @@
           <div class="">
             <div class="mt-4 mx-4 flex items-center justify-between grid grid-cols-2 gap-2">
               <div class="col-span-full text-lg text-center font-bold" x-text="infoA.system.name"></div>
-              <div class="col-span-full">
-                <dt class="text-center">Average Volume</dt>
-                <dd class="text-center font-bold " x-text="formatNumber(infoA.volume)"></dd>
-              </div>
               <div>
-                <dt class="">Buy</dt>
-                <dd class="font-bold  text-red-500" x-text="formatISK(infoA.buy)">
-              </div>
-              <div>
-                <dt class="text-right">Sell</dt>
-                <dd class="text-right font-bold  text-green-500" x-text="formatISK(infoA.sell)">
-              </div>
-               <div>
-                <dt class="">Margin</dt>
-                <dd class="font-bold " x-text="formatNumber(infoA.margin) + '%'"></dd>
+                <dt>Average Volume</dt>
+                <dd class="font-bold" x-text="formatNumber(infoA.volume)"></dd>
               </div>
               <div>
                 <dd class="text-right">Average Price</dt>
                 <dd class="text-right font-bold" x-text="formatISK(infoA.average)"></dd>
+              </div>
+               <div>
+                <dt class="">Buy</dt>
+                <dd class="font-bold text-red-500" x-text="formatISK(infoA.buy)">
+              </div>
+              <div>
+                <dt class="text-right">Sell</dt>
+                <dd class="text-right font-bold  text-green-500" x-text="formatISK(infoA.sell)">
               </div>
               <div>
                 <dd class="">Lowest Price</dt>
@@ -75,30 +71,34 @@
                 <dd class="text-right">Highest Price</dt>
                 <dd class="text-right font-bold " x-text="formatISK(infoA.highest)"></dd>
               </div>
+              <div>
+                <dt class="">Margin</dt>
+                <dd class="font-bold " x-text="formatNumber(infoA.margin) + '%'"></dd>
+              </div>
+              <div>
+                <dt class="text-right">Broker Fee</dt>
+                <dd class="text-right font-bold" x-text="formatPercent(infoA.brokerFee)"></dd>
+              </div>
             </div>
           </div>
           <div class="">
             <div class="mt-4 mx-4 flex items-center justify-between grid grid-cols-2 gap-2">
               <div class="col-span-full text-lg text-center font-bold" x-text="infoB.system.name"></div>
-              <div class="col-span-full">
-                <dt class="text-center">Average Volume</dt>
-                <dd class="text-center font-bold " x-text="formatNumber(infoB.volume)"></dd>
-              </div>
               <div>
-                <dt class="">Buy</dt>
-                <dd class="font-bold  text-red-500" x-text="formatISK(infoB.buy)">
-              </div>
-              <div>
-                <dt class="text-right">Sell</dt>
-                <dd class="text-right font-bold  text-green-500" x-text="formatISK(infoB.sell)">
-              </div>
-               <div>
-                <dt class="">Margin</dt>
-                <dd class="font-bold " x-text="formatNumber(infoB.margin) + '%'"></dd>
+                <dt>Average Volume</dt>
+                <dd class="font-bold" x-text="formatNumber(infoB.volume)"></dd>
               </div>
               <div>
                 <dd class="text-right">Average Price</dt>
                 <dd class="text-right font-bold" x-text="formatISK(infoB.average)"></dd>
+              </div>
+               <div>
+                <dt class="">Buy</dt>
+                <dd class="font-bold text-red-500" x-text="formatISK(infoB.buy)">
+              </div>
+              <div>
+                <dt class="text-right">Sell</dt>
+                <dd class="text-right font-bold  text-green-500" x-text="formatISK(infoB.sell)">
               </div>
               <div>
                 <dd class="">Lowest Price</dt>
@@ -107,6 +107,14 @@
               <div>
                 <dd class="text-right">Highest Price</dt>
                 <dd class="text-right font-bold " x-text="formatISK(infoB.highest)"></dd>
+              </div>
+              <div>
+                <dt class="">Margin</dt>
+                <dd class="font-bold " x-text="formatNumber(infoB.margin) + '%'"></dd>
+              </div>
+              <div>
+                <dt class="text-right">Broker Fee</dt>
+                <dd class="text-right font-bold" x-text="formatPercent(infoB.brokerFee)"></dd>
               </div>
             </div>
           </div>

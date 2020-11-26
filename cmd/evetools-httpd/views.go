@@ -46,18 +46,6 @@ func (s *Server) ViewDashboard(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	skills, err := s.esi.GetCharacterSkills(r.Context(), user.ActiveCharacterID)
-	if err != nil {
-		apiInternalServerError(w, "GetCharacterSkills", err)
-		return
-	}
-
-	standings, err := s.esi.GetCharacterStandings(r.Context(), user.ActiveCharacterID)
-	if err != nil {
-		apiInternalServerError(w, "GetCharacterStandings", err)
-		return
-	}
-
 	var buyTotal, sellTotal float64
 	orders, err := s.esi.GetMarketOrders(r.Context(), user.ActiveCharacterID)
 	if err != nil {
@@ -73,7 +61,6 @@ func (s *Server) ViewDashboard(w http.ResponseWriter, r *http.Request) {
 	}
 
 	json.NewEncoder(w).Encode(map[string]interface{}{
-		"broker_fee":     calculateBrokerFee(user.StationA, standings, skills),
 		"buy_total":      buyTotal,
 		"favorites":      favoriteTypes,
 		"sell_total":     sellTotal,
@@ -382,12 +369,12 @@ func (s *Server) ViewTypeDetails(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	infoA, err := s.stationInfo(r.Context(), typeID, user.StationA)
+	infoA, err := s.stationInfo(r.Context(), user.ActiveCharacterID, typeID, user.StationA)
 	if err != nil {
 		apiInternalServerError(w, "stationA info", err)
 	}
 
-	infoB, err := s.stationInfo(r.Context(), typeID, user.StationB)
+	infoB, err := s.stationInfo(r.Context(), user.ActiveCharacterID, typeID, user.StationB)
 	if err != nil {
 		apiInternalServerError(w, "stationB info", err)
 	}
@@ -402,13 +389,23 @@ func (s *Server) ViewTypeDetails(w http.ResponseWriter, r *http.Request) {
 	})
 }
 
-func (s *Server) stationInfo(ctx context.Context, typeID, stationID int) (map[string]interface{}, error) {
+func (s *Server) stationInfo(ctx context.Context, characterID, typeID, stationID int) (map[string]interface{}, error) {
 	station, found := sde.Stations[stationID]
 	if !found {
 		return nil, fmt.Errorf("no station for id %d", stationID)
 	}
 
 	solarSystem, _ := sde.SolarSystems[station.SystemID]
+
+	skills, err := s.esi.GetCharacterSkills(ctx, characterID)
+	if err != nil {
+		return nil, fmt.Errorf("GetCharacterSkills: %v", err)
+	}
+
+	standings, err := s.esi.GetCharacterStandings(ctx, characterID)
+	if err != nil {
+		return nil, fmt.Errorf("GetCharacterStandings: %v", err)
+	}
 
 	price, err := s.esi.GetMarketPrices(ctx, station.ID, solarSystem.RegionID, typeID)
 	if err != nil {
@@ -438,15 +435,16 @@ func (s *Server) stationInfo(ctx context.Context, typeID, stationID int) (map[st
 	}
 
 	return map[string]interface{}{
-		"average": average,
-		"buy":     price.Buy,
-		"highest": highest,
-		"history": history,
-		"lowest":  lowest,
-		"margin":  price.Margin(),
-		"sell":    price.Sell,
-		"station": station,
-		"system":  solarSystem,
-		"volume":  volume,
+		"average":   average,
+		"brokerFee": calculateBrokerFee(station.ID, standings, skills),
+		"buy":       price.Buy,
+		"highest":   highest,
+		"history":   history,
+		"lowest":    lowest,
+		"margin":    price.Margin(),
+		"sell":      price.Sell,
+		"station":   station,
+		"system":    solarSystem,
+		"volume":    volume,
 	}, nil
 }
