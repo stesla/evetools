@@ -12,14 +12,15 @@
     [x-cloak] { display: none; }
   </style>
 </head>
-<body class="bg-gray-300 text-gray-900"
-      x-data="evetools.globalState()"
-      x-init="initialize()">
+<body class="bg-gray-300 text-gray-900" x-data="{ navOpen: false, avatarOpen: false, marketOpen: false }">
+
+  {{ $user := currentUser }}
 
   <header class="lg:px-4 lg:py-2 lg:flex lg:items-center lg:justify-between lg:h-16 bg-gray-900 text-gray-300">
     <div class="flex items-center justify-between px-4 py-3 lg:p-0">
       <a class="text-2xl" href="/">evetools</a>
-      <div x-show="loggedIn" class="lg:hidden">
+      {{ if $user }}
+      <div class="lg:hidden">
         <button @click="navOpen = !navOpen" type="button" class="block text-gray-500 hover:text-gray-300 focus:text-gray-300 focus:outline-none">
           <svg class="h-6 w-6 fill-current" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path x-show="!navOpen" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
@@ -27,8 +28,10 @@
           </svg>
         </button>
       </div>
+      {{ end }}
     </div>
-    <nav x-cloak x-show="loggedIn" :class="navOpen ? 'block' :'hidden'" class="lg:block">
+    {{ if $user }}
+    <nav x-cloak :class="navOpen ? 'block' :'hidden'" class="lg:block">
       <div class="px-2 py-2 lg:flex lg:items-center lg:p-0">
         <a href="/" class="block px-2 py-1 text-gray-100 font-semibold rounded hover:bg-gray-800">Home</a>
         <a href="/browse" class="mt-1 block px-2 py-1 text-gray-100 font-semibold rounded hover:bg-gray-800 lg:mt-0 lg:ml-2">Find Items</a>
@@ -41,11 +44,11 @@
             <a href="/history" class="mt-1 px-8 py-1 block text-gray-100 font-semibold rounded hover:bg-gray-800 lg:mt-0 lg:ml-2">Order History</a>
           </dd>
         </div>
-        <div class="hidden lg:relative lg:block lg:ml-4" @keydown.window.escape="marketMenuOpen = false" @click.away="marketMenuOpen = false">
-          <button class="px-1 py-4 focus:outline-none font-semibold" @click="marketMenuOpen = !marketMenuOpen">
+        <div class="hidden lg:relative lg:block lg:ml-4" @keydown.window.escape="marketOpen = false" @click.away="marketOpen = false">
+          <button class="px-1 py-4 focus:outline-none font-semibold" @click="marketOpen = !marketOpen">
             Market
           </button>
-          <div x-cloak x-show='marketMenuOpen' class="absolute right-0 mt-2 py-2 w-40 bg-white rounded-lg shadow-xl">
+          <div x-cloak x-show='marketOpen' class="absolute right-0 mt-2 py-2 w-40 bg-white rounded-lg shadow-xl">
             <a href="/orders" class="block px-4 py-2 text-gray-900 hover:bg-blue-500 hover:text-gray-100">Current Orders</a>
             <a href="/history" class="block px-4 py-2 text-gray-900 hover:bg-blue-500 hover:text-gray-100">Order History</a>
           </div>
@@ -53,14 +56,14 @@
         <!-- END market menu -->
 
         <!-- BEGIN avatar menu -->
-        <div class="hidden lg:relative lg:block lg:ml-4" @keydown.window.escape="avatarMenuOpen = false" @click.away="avatarMenuOpen = false">
-          <button class="p-1 flex items-center focus:outline-none" @click="avatarMenuOpen = !avatarMenuOpen">
-            <span class="mx-2 font-semibold" x-text="character.name"></span>
+        <div class="hidden lg:relative lg:block lg:ml-4" @keydown.window.escape="avatarOpen = false" @click.away="avatarOpen = false">
+          <button class="p-1 flex items-center focus:outline-none" @click="avatarOpen = !avatarOpen">
+            <span class="mx-2 font-semibold">{{ $user.ActiveCharacterName }}</span>
             <figure class="h-12 w-12 rounded-full overflow-hidden border-2 border-gray-700 focus:outline-none">
-              <img class="h-full w-full object-cover" :src="avatarURL(character.id)" :alt="character.name">
+              <img class="h-full w-full object-cover" src="{{ $user.ActiveCharacterID | avatarURL }}" alt="{{ $user.ActiveCharacterName }}">
             </figure>
           </button>
-          <div x-cloak x-show='avatarMenuOpen' class="absolute right-0 mt-2 py-2 w-40 bg-white rounded-lg shadow-xl">
+          <div x-cloak x-show='avatarOpen' class="absolute right-0 mt-2 py-2 w-40 bg-white rounded-lg shadow-xl">
             <a class="block px-4 py-2 text-gray-900 hover:bg-blue-500 hover:text-gray-100" href="/settings">Settings</a>
             <a class="block px-4 py-2 text-gray-900 hover:bg-blue-500 hover:text-gray-100" href="/logout">Logout</a>
           </div>
@@ -68,8 +71,8 @@
       </div>
       <div class="px-4 py-4 border-t border-gray-800 lg:hidden">
         <div class="flex items-center">
-          <img class="h-8 w-8 border-2 border-gray-700 rounded-full object-cover" :src="avatarURL(character.id)" :alt="character.name">
-          <span class="ml-3 font-semibold text-gray-300" x-text="character.name"></span>
+          <img class="h-8 w-8 border-2 border-gray-700 rounded-full object-cover" src="{{ $user.ActiveCharacterID | avatarURL }}" alt="{{ $user.ActiveCharacterName }}">
+          <span class="ml-3 font-semibold text-gray-300">{{ $user.ActiveCharacterName }}</span>
         </div>
         <div class="mt-4">
           <a class="block text-gray-500 hover:text-gray-300" href="/settings">Settings</a>
@@ -78,6 +81,7 @@
       </div>
       <!-- END avatar menu -->
     </nav>
+    {{ end }}
   </header>
 
   {{ template "content" . }}
@@ -86,7 +90,6 @@
   <script src='/js/d3.v6.min.js'></script>
   <script src="/js/charts.js"></script>
   <script src="/js/util.js"></script>
-  <script src='/js/app.js'></script>
   {{ template "javascripts" . }}
 </body>
 </html>

@@ -191,7 +191,6 @@ func NewServer(static http.Handler, db model.DB, vr viewRenderer) *Server {
 		HandlerFunc(s.PostUserCharacterActivate)
 	api.Methods("PUT").Path("/user/stationA").HandlerFunc(s.PutUserStationA)
 	api.Methods("PUT").Path("/user/stationB").HandlerFunc(s.PutUserStationB)
-	api.Methods("GET").Path("/verify").HandlerFunc(s.GetVerify)
 
 	// View Data
 	view := api.PathPrefix("/view").Subrouter()
@@ -388,7 +387,20 @@ type templateViewRenderer struct {
 }
 
 func (tvr *templateViewRenderer) renderView(w http.ResponseWriter, r *http.Request, name string, helpers template.FuncMap, data interface{}) {
-	funcs := template.FuncMap{}
+	funcs := template.FuncMap{
+		"avatarURL": func(id int) string {
+			return fmt.Sprintf("https://images.evetech.net/characters/%d/portrait?size=128", id)
+		},
+		"currentUser": func() (u *model.User) {
+			defer func() {
+				if r := recover(); r != nil {
+					u = nil
+				}
+			}()
+			u = currentUser(r)
+			return
+		},
+	}
 	for k, v := range helpers {
 		funcs[k] = v
 	}

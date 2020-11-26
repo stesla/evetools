@@ -95,10 +95,10 @@ type Character struct {
 type User struct {
 	ID                  int    `json:"-"`
 	ActiveCharacterHash string `json:"-"`
-
-	ActiveCharacterID int `json:"activeCharacterID"`
-	StationA          int `json:"stationA"`
-	StationB          int `json:"statoinB"`
+	ActiveCharacterID   int    `json:"activeCharacterID"`
+	ActiveCharacterName string `json:"activeCharacterName"`
+	StationA            int    `json:"stationA"`
+	StationB            int    `json:"statoinB"`
 }
 
 const createCharacter = `INSERT INTO characters 
@@ -202,6 +202,7 @@ func (m *databaseModel) FindOrCreateUserAndCharacter(verify esi.VerifyOK) (user 
 			ID:                  int(userID),
 			ActiveCharacterHash: verify.CharacterOwnerHash,
 			ActiveCharacterID:   verify.CharacterID,
+			ActiveCharacterName: verify.CharacterName,
 			// Jita IV - Moon 4 - Caldari Navy Assembly Plant
 			StationA: 60003760,
 			// Amarr VIII (Oris) - Emperor Family Academy
@@ -313,12 +314,12 @@ func (m *databaseModel) GetTransactions() ([]*esi.WalletTransaction, error) {
 }
 
 func (m *databaseModel) GetUser(userID int) (*User, error) {
-	const selectUser = `SELECT u.activeCharacterHash, c.characterID, u.stationA, u.stationB
+	const selectUser = `SELECT u.activeCharacterHash, c.characterID, c.characterName, u.stationA, u.stationB
                         FROM users u JOIN characters c ON u.activeCharacterHash = c.characterOwnerHash
                         WHERE u.id = ?`
 	u := &User{ID: userID}
 	err := m.db.QueryRow(selectUser, userID).
-		Scan(&u.ActiveCharacterHash, &u.ActiveCharacterID, &u.StationA, &u.StationB)
+		Scan(&u.ActiveCharacterHash, &u.ActiveCharacterID, &u.ActiveCharacterName, &u.StationA, &u.StationB)
 	if err == sql.ErrNoRows {
 		return nil, ErrNotFound
 	}
