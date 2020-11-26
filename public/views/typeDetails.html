@@ -28,9 +28,24 @@
             <p class="mt-4" x-text="type.description"></p>
           </template>
         </div>
-        <div class="mt-4 border-t-2">
-          <div>
-            <div class="mt-4 mx-4 sm:w-3/4 sm:mx-auto max-w-sm flex items-center justify-between grid grid-cols-2 gap-2">
+        <div class="mt-4 border-t-2 px-4 pt-4 flex items-center flex-row-reverse">
+          <button @click="toggleFavorite()" class="focus:outline-none">
+            <svg class="h-6 w-6 stroke-current text-gray-500"
+                 :class="{'text-blue-500': favorite, 'fill-current': favorite}"
+                 xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z" />
+            </svg>
+          </button>
+          <button @click="openTypeInEVE(typeID)" class="mr-8 focus:outline-none">
+            <svg class="h-6 w-6 stroke-current text-gray-500 hover:text-blue-500"
+                 xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+            </svg>
+          </button>
+        </div>
+        <div class="sm:grid sm:grid-cols-2 border-t-2 mt-4">
+          <div class="">
+            <div class="mt-4 mx-4 flex items-center justify-between grid grid-cols-2 gap-2">
               <div class="col-span-full text-lg text-center font-bold" x-text="infoA.system.name"></div>
               <div class="col-span-full">
                 <dt class="text-center">Average Volume</dt>
@@ -61,9 +76,9 @@
                 <dd class="text-right font-bold " x-text="formatISK(infoA.highest)"></dd>
               </div>
             </div>
-         </div>
-         <div class="mt-4 border-t-2">
-            <div class="mt-4 mx-4 sm:w-3/4 sm:mx-auto max-w-sm flex items-center justify-between grid grid-cols-2 gap-2">
+          </div>
+          <div class="">
+            <div class="mt-4 mx-4 flex items-center justify-between grid grid-cols-2 gap-2">
               <div class="col-span-full text-lg text-center font-bold" x-text="infoB.system.name"></div>
               <div class="col-span-full">
                 <dt class="text-center">Average Volume</dt>
@@ -94,28 +109,13 @@
                 <dd class="text-right font-bold " x-text="formatISK(infoB.highest)"></dd>
               </div>
             </div>
-         </div>
-         <div id="chartA" class="mt-4 border-t-2 pt-4">
-           <h3 class="text-center font-bold text-md"><span x-text="infoA.system.name"></span> Average Price</h3>
-         </div>
-         <div id="chartB" class="mt-4 border-t-2 pt-4">
-           <h3 class="text-center font-bold text-md"><span x-text="infoB.system.name"></span> Average Price</h3>
-         </div>
-         <div class="mt-4 border-t-2 px-4 pt-4 flex items-center flex-row-reverse">
-            <button @click="toggleFavorite()" class="focus:outline-none">
-              <svg class="h-6 w-6 stroke-current text-gray-500"
-                   :class="{'text-blue-500': favorite, 'fill-current': favorite}"
-                   xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z" />
-              </svg>
-            </button>
-            <button @click="openTypeInEVE(typeID)" class="mr-8 focus:outline-none">
-              <svg class="h-6 w-6 stroke-current text-gray-500 hover:text-blue-500"
-                   xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
-              </svg>
-            </button>
           </div>
+        </div>
+        <div id="chartA" class="mt-4 border-t-2 pt-4">
+          <h3 class="text-center font-bold text-md"><span x-text="infoA.system.name"></span> Average Price</h3>
+        </div>
+        <div id="chartB" class="mt-4 border-t-2 pt-4">
+          <h3 class="text-center font-bold text-md"><span x-text="infoB.system.name"></span> Average Price</h3>
         </div>
       </div>
     </template>
