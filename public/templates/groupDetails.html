@@ -8,61 +8,60 @@
       x-init="initialize()">
   <div>
     <a class="text-gray-500 hover:text-gray-700 transition duration-150 ease-in-out inline-flex items-center"
-       :href="parent ? hrefGroup(parent.id) : '/browse'">
+       href="{{ with .Parent }}/groups/{{ .ID }}{{ else }}/browse{{ end }}">
       <svg class="arrow-left w-6 h-6"
         xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
       </svg>
-      <template x-if="parent">
-        <span class="ml-2" x-text="parent.name"></span>
-      </template>
-      <template x-if="!parent">
-        <span class="ml-2">Find Items</span>
-      </template>
+      {{ with .Parent }}
+      <span class="ml-2">{{ .Name }}</span>
+      {{ else }}
+      <span class="ml-2">Find Items</span>
+      {{ end }}
     </a>
   </div>
-  <h1 class="mt-4 text-center text-4xl font-bold" x-text="group.name"></h1>
+  <h1 class="mt-4 text-center text-4xl font-bold">{{ .Group.Name }}</h1>
   <div class="mx-4 mt-4 grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
-    <template x-for="child in children" x-ref="child.id">
-      <div>
-        <template x-if="child.isGroup">
-          <div class="mt-4 p-4 w-full h-40 flex flex-col justify-between border border-gray-500 rounded-xl shadow-xl bg-gray-100">
-            <div>
-              <h2 class="text-lg font-semibold clearfix" x-text="child.name"></h2>
-            </div>
-            <a class="block object-bottom mt-4 py-2 px-4 rounded-md shadow-md bg-blue-500 text-gray-300 text-center"
-               :href="hrefGroup(child.id)">View Details</a>
+    {{ $hasTypes := .HasTypes }}
+    {{ range .Children }}
+    <div>
+      {{ if $hasTypes }}
+      <div class="mt-4 py-4 w-full h-48 flex flex-col justify-between border border-gray-500 rounded-xl shadow-xl bg-gray-100">
+        <div class="px-4">
+          <div>
+            <img class="h-12 w-12 float-right" src="{{ . | iconURL }}">
+            <h2 class="text-lg font-semibold clearfix">{{ .Name }}</h2>
           </div>
-        </template>
-        <template x-if="child.isType">
-          <div class="mt-4 py-4 w-full h-48 flex flex-col justify-between border border-gray-500 rounded-xl shadow-xl bg-gray-100">
-            <div class="px-4">
-              <div>
-                <img class="h-12 w-12 float-right" :src="imgURL(child)">
-                <h2 class="text-lg font-semibold clearfix" x-text="child.name"></h2>
-              </div>
-              <a class="block object-bottom mt-4 py-2 px-4 rounded-md shadow-md bg-blue-500 text-gray-300 text-center"
-                 :href="hrefType(child.id)">View Details</a>
-            </div>
-            <div class="mt-4 px-4 border-t-2 px-4 pt-4 flex items-center flex-row-reverse">
-              <button @click="toggleFavorite(child)" class="focus:outline-none">
-                <svg class="h-6 w-6 stroke-current text-gray-500"
-                     :class="{'text-blue-500': isFavorite(child.id), 'fill-current': isFavorite(child.id)}"
-                     xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z" />
-                </svg>
-              </button>
-              <button @click="openTypeInEVE(child.id)" class="mr-8 focus:outline-none">
-                <svg class="h-6 w-6 stroke-current text-gray-500 hover:text-blue-500"
-                     xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
-                </svg>
-              </button>
-            </div>
-          </div>
-        </template>
+          <a class="block object-bottom mt-4 py-2 px-4 rounded-md shadow-md bg-blue-500 text-gray-300 text-center"
+             href="/types/{{ .ID }}">View Details</a>
+        </div>
+        <div class="mt-4 px-4 border-t-2 px-4 pt-4 flex items-center flex-row-reverse">
+          <button @click="toggleFavorite({{ .ID }})" class="focus:outline-none">
+            <svg class="h-6 w-6 stroke-current text-gray-500"
+                 :class="{'text-blue-500': isFavorite({{ .ID }}), 'fill-current': isFavorite({{ .ID }})}"
+                 xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z" />
+            </svg>
+          </button>
+          <button @click="openTypeInEVE({{ .ID }})" class="mr-8 focus:outline-none">
+            <svg class="h-6 w-6 stroke-current text-gray-500 hover:text-blue-500"
+                 xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+            </svg>
+          </button>
+        </div>
       </div>
-    </template>
+      {{ else }}
+      <div class="mt-4 p-4 w-full h-40 flex flex-col justify-between border border-gray-500 rounded-xl shadow-xl bg-gray-100">
+        <div>
+          <h2 class="text-lg font-semibold clearfix">{{ .Name }}</h2>
+        </div>
+        <a class="block object-bottom mt-4 py-2 px-4 rounded-md shadow-md bg-blue-500 text-gray-300 text-center"
+           href="/groups/{{ .ID }}">View Details</a>
+      </div>
+      {{ end }}
+    </div>
+    {{ end }}
   </div>
 </main>
 {{ end }}

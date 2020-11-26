@@ -172,7 +172,7 @@ func NewServer(static http.Handler, db model.DB, vr viewRenderer) *Server {
 	s.mux.Methods("GET").Path("/").Handler(s.ShowView("dashboard"))
 	s.mux.Methods("GET").Path("/authorize").Handler(s.ShowView("authorize"))
 	s.mux.Methods("GET").Path("/browse").HandlerFunc(s.ShowBrowse)
-	s.mux.Methods("GET").Path("/groups/{groupID:[0-9]+}").Handler(s.ShowView("groupDetails"))
+	s.mux.Methods("GET").Path("/groups/{groupID:[0-9]+}").HandlerFunc(s.ShowGroupDetails)
 	s.mux.Methods("GET").Path("/history").Handler(s.ShowView("orders"))
 	s.mux.Methods("GET").Path("/orders").Handler(s.ShowView("orders"))
 	s.mux.Methods("GET").Path("/search").HandlerFunc(s.ShowSearch)
@@ -197,7 +197,6 @@ func NewServer(static http.Handler, db model.DB, vr viewRenderer) *Server {
 	// View Data
 	view := api.PathPrefix("/view").Subrouter()
 	view.Methods("GET").Path("/dashboard").HandlerFunc(s.ViewDashboard)
-	view.Methods("GET").Path("/groupDetails/{groupID:[0-9]+}").HandlerFunc(s.ViewGroupDetails)
 	view.Methods("GET").Path("/marketOrders").HandlerFunc(s.ViewMarketOrders)
 	view.Methods("GET").Path("/settings").HandlerFunc(s.ViewSettings)
 	view.Methods("GET").Path("/transactions").HandlerFunc(s.ViewTransactions)

@@ -17,8 +17,12 @@ import (
 )
 
 func (s *Server) ShowBrowse(w http.ResponseWriter, r *http.Request) {
+	groups := make(map[string]*sde.MarketGroup, len(sde.MarketGroupRoots))
+	for _, g := range sde.MarketGroupRoots {
+		groups[g.Name] = g
+	}
 	s.renderView(w, r, "browse", nil, map[string]interface{}{
-		"Groups": sde.MarketGroupRoots,
+		"Groups": groups,
 	})
 }
 
@@ -93,17 +97,9 @@ func calculateBrokerFee(stationID int, standings []esi.Standing, skills []esi.Sk
 	return 0.05 - (0.003 * brokerRelations) - (0.0003 * factionStanding) - (0.0002 * corpStanding)
 }
 
-func (s *Server) ViewGroupDetails(w http.ResponseWriter, r *http.Request) {
-	user := currentUser(r)
-
+func (s *Server) ShowGroupDetails(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	groupID, _ := strconv.Atoi(vars["groupID"])
-
-	favorites, err := s.db.GetFavoriteTypes(user.ID)
-	if err != nil {
-		apiInternalServerError(w, "FavoriteTypes", err)
-		return
-	}
 
 	group, found := sde.MarketGroups[groupID]
 	if !found {
@@ -115,25 +111,29 @@ func (s *Server) ViewGroupDetails(w http.ResponseWriter, r *http.Request) {
 
 	log.Println(len(group.Groups), len(group.Types))
 
-	groups := make([]*sde.MarketGroup, len(group.Groups))
-	for i, id := range group.Groups {
+	groups := make(map[string]*sde.MarketGroup, len(group.Groups))
+	for _, id := range group.Groups {
 		g, _ := sde.MarketGroups[id]
-		groups[i] = g
+		groups[g.Name] = g
 	}
 
-	types := make([]*sde.MarketType, len(group.Types))
-	for i, id := range group.Types {
+	types := make(map[string]*sde.MarketType, len(group.Types))
+	for _, id := range group.Types {
 		t, _ := sde.MarketTypes[id]
-		types[i] = t
+		types[t.Name] = t
 	}
 
-	json.NewEncoder(w).Encode(map[string]interface{}{
-		"favorites": favorites,
-		"group":     group,
-		"groups":    groups,
-		"parent":    parent,
-		"types":     types,
-	})
+	data := map[string]interface{}{
+		"Group":  group,
+		"Parent": parent,
+	}
+	if len(types) == 0 {
+		data["Children"] = groups
+	} else {
+		data["Children"] = types
+		data["HasTypes"] = true
+	}
+	s.renderView(w, r, "groupDetails", nil, data)
 }
 
 func (s *Server) ViewMarketOrders(w http.ResponseWriter, r *http.Request) {
