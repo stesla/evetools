@@ -16,9 +16,9 @@ import (
 	"github.com/stesla/evetools/sde"
 )
 
-func (s *Server) ViewBrowse(w http.ResponseWriter, r *http.Request) {
-	json.NewEncoder(w).Encode(map[string]interface{}{
-		"groups": sde.MarketGroupRoots,
+func (s *Server) ShowBrowse(w http.ResponseWriter, r *http.Request) {
+	s.renderView(w, r, "browse", nil, map[string]interface{}{
+		"Groups": sde.MarketGroupRoots,
 	})
 }
 

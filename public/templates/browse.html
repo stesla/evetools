@@ -1,16 +1,12 @@
-{{ define "javascripts" }}
-<script src="/js/browse.js"></script>
-{{ end }}
+{{ define "title"}} - Find Items{{ end }}
 
 {{ define "content" }}
-<main class="mt-10 mb-10 container mx-auto max-w-6xl"
-      x-data="viewData"
-      x-init="initialize()">
+<main class="mt-10 mb-10 container mx-auto max-w-6xl">
   <h1 class="mx-4 mb-10 text-3xl text-left text-gray-500 font-semibold">Search by name...</h1>
-  <form id="search" @submit="handleSearch($event)">
+  <form id="search" action="/search">
     <div class="mx-auto flex w-full sm:w-4/5 max-w-screen-sm items-center rounded-xl overflow-hidden border border-gray-500">
       <input x-model="filter" class="px-4 py-4 w-full bg-gray-100 focus:outline-none"
-             placeholder="Item name...">
+             name="q" placeholder="Item name...">
       <button form="search" class="px-4 py-4 bg-blue-500 text-gray-100">
         Search
       </button>
@@ -18,15 +14,15 @@
   </form>
   <h1 class="mx-4 mt-10 text-3xl text-right text-gray-500 font-semibold">...or browse by category.</h1>
   <div class="mx-4 mt-10 grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
-    <template x-for="group in groups" x-ref="group.id">
-      <div class="mt-4 p-4 w-full h-40 flex flex-col justify-between border border-gray-500 rounded-xl shadow-xl bg-gray-100">
-        <div>
-          <h2 class="text-lg font-semibold clearfix" x-text="group.name"></h2>
-        </div>
-        <a class="block object-bottom mt-4 py-2 px-4 rounded-md shadow-md bg-blue-500 text-gray-300 text-center"
-           :href="hrefGroup(group.id)">View Details</a>
+    {{ range .Groups }}
+    <div class="mt-4 p-4 w-full h-40 flex flex-col justify-between border border-gray-500 rounded-xl shadow-xl bg-gray-100">
+      <div>
+        <h2 class="text-lg font-semibold clearfix">{{ .Name }}</h2>
       </div>
-    </template>
+      <a class="block object-bottom mt-4 py-2 px-4 rounded-md shadow-md bg-blue-500 text-gray-300 text-center"
+         href="/groups/{{ .ID }}">View Details</a>
+    </div>
+    {{ end }}
   </div>
 </main>
 {{ end }}
