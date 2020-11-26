@@ -7,6 +7,7 @@ import (
 	"log"
 	"net/http"
 	"net/url"
+	"strings"
 
 	"github.com/gorilla/sessions"
 	"github.com/spf13/viper"
@@ -72,22 +73,16 @@ func currentUser(r *http.Request) *model.User {
 	return r.Context().Value(CurrentUserKey).(*model.User)
 }
 
-func getSession(r *http.Request) (*sessions.Session, error) {
-	return store.Get(r, viper.GetString("httpd.session.name"))
+func getSession(r *http.Request) *sessions.Session {
+	return r.Context().Value(CurrentSessionKey).(*sessions.Session)
 }
 
 var errNotAuth = errors.New("not authorized")
 
-func (s *Server) haveLoggedInUser(next http.Handler) http.Handler {
+func (s *Server) apiHaveLoggedInUser(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		var ctx = r.Context()
-
-		session, err := getSession(r)
-		if err != nil {
-			apiInternalServerError(w, "store.Get", err)
-			return
-		}
-		ctx = context.WithValue(ctx, CurrentSessionKey, session)
+		session := getSession(r)
 
 		oldTok, ok := session.Values["token"].(oauth2.Token)
 		if !ok {
@@ -102,21 +97,35 @@ func (s *Server) haveLoggedInUser(next http.Handler) http.Handler {
 		}
 		ctx = context.WithValue(ctx, esi.AccessTokenKey, newTok.AccessToken)
 
-		if r.URL.Path != "/api/v1/verify" {
-			sessionUserID, ok := session.Values["userid"].(int)
-			if !ok {
-				apiError(w, errNotAuth, http.StatusUnauthorized)
-				return
-			}
+		next.ServeHTTP(w, r.WithContext(ctx))
+	})
+}
+
+func (s *Server) haveLoggedInUser(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		var ctx = r.Context()
+
+		session, err := store.Get(r, viper.GetString("httpd.session.name"))
+		if err != nil {
+			internalServerError(w, "store.Get", err)
+			return
+		}
+		ctx = context.WithValue(ctx, CurrentSessionKey, session)
+
+		sessionUserID, ok := session.Values["userid"].(int)
+		if ok {
 			user, err := s.db.GetUser(sessionUserID)
 			if err != nil {
 				internalServerError(w, "GetUser", err)
 				return
 			}
 			ctx = context.WithValue(ctx, CurrentUserKey, user)
+			next.ServeHTTP(w, r.WithContext(ctx))
+		} else if strings.HasPrefix(r.URL.Path, "/login") || strings.HasPrefix(r.URL.Path, "/logout") {
+			next.ServeHTTP(w, r.WithContext(ctx))
+		} else {
+			s.ShowView("login").ServeHTTP(w, r)
 		}
-
-		next.ServeHTTP(w, r.WithContext(ctx))
 	})
 }
 

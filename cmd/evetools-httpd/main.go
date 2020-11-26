@@ -1,14 +1,17 @@
 package main
 
 import (
+	"bytes"
 	"context"
 	"crypto/rand"
 	"encoding/base64"
 	"encoding/gob"
 	"fmt"
+	"html/template"
 	"log"
 	"net/http"
 	"os"
+	"path"
 	"sort"
 	"strings"
 
@@ -52,6 +55,7 @@ func init() {
 	viper.SetDefault("oauth.basePath", "https://login.eveonline.com")
 	viper.SetDefault("http.cache.dir", "./cache")
 	viper.SetDefault("sde.dir", "./data")
+	viper.SetDefault("template.dir", "./public/templates")
 
 	gob.Register(oauth2.Token{})
 	gob.Register(model.User{})
@@ -141,18 +145,35 @@ func NewServer(static http.Handler, db model.DB) *Server {
 	cache := diskcache.New(viper.GetString("http.cache.dir"))
 	s.http.Transport = httpcache.NewTransport(cache)
 
-	s.mux.NotFoundHandler = onlyAllowGet(alwaysThisPath("/", static))
+	// Static
 	s.mux.PathPrefix("/css").Handler(static)
 	s.mux.PathPrefix("/data").Handler(static)
 	s.mux.PathPrefix("/js").Handler(static)
 	s.mux.PathPrefix("/views").Handler(static)
+
+	// Login Stuff
 	s.mux.Methods("GET").Path("/login").HandlerFunc(s.Login)
 	s.mux.Methods("GET").Path("/login/authorize").HandlerFunc(s.Authorize)
 	s.mux.Methods("GET").Path("/login/callback").HandlerFunc(s.LoginCallback)
 	s.mux.Methods("GET").Path("/logout").HandlerFunc(s.Logout)
 
+	// Views
+	s.mux.NotFoundHandler = s.ShowView("notFound")
+	s.mux.Use(s.haveLoggedInUser)
+	s.mux.Methods("GET").Path("/").Handler(s.ShowView("dashboard"))
+	s.mux.Methods("GET").Path("/authorize").Handler(s.ShowView("authorize"))
+	s.mux.Methods("GET").Path("/browse").Handler(s.ShowView("browse"))
+	s.mux.Methods("GET").Path("/groups/{groupID:[0-9]+}").Handler(s.ShowView("groupDetails"))
+	s.mux.Methods("GET").Path("/history").Handler(s.ShowView("orders"))
+	s.mux.Methods("GET").Path("/orders").Handler(s.ShowView("orders"))
+	s.mux.Methods("GET").Path("/search").Handler(s.ShowView("search"))
+	s.mux.Methods("GET").Path("/settings").Handler(s.ShowView("settings"))
+	s.mux.Methods("GET").Path("/transactions").Handler(s.ShowView("transactions"))
+	s.mux.Methods("GET").Path("/types/{typeID:[0-9]+}").Handler(s.ShowView("typeDetails"))
+
+	// API
 	api := s.mux.PathPrefix("/api/v1").Subrouter()
-	api.Use(s.haveLoggedInUser)
+	api.Use(s.apiHaveLoggedInUser)
 	api.Use(contentType("application/json").Middleware)
 	api.Methods("GET").Path("/stations").HandlerFunc(s.GetStations)
 	api.Methods("PUT").Path("/types/{typeID:[0-9]+}/favorite").HandlerFunc(s.PutTypeFavorite)
@@ -165,6 +186,7 @@ func NewServer(static http.Handler, db model.DB) *Server {
 	api.Methods("PUT").Path("/user/stationB").HandlerFunc(s.PutUserStationB)
 	api.Methods("GET").Path("/verify").HandlerFunc(s.GetVerify)
 
+	// View Data
 	view := api.PathPrefix("/view").Subrouter()
 	view.Methods("GET").Path("/browse").HandlerFunc(s.ViewBrowse)
 	view.Methods("GET").Path("/dashboard").HandlerFunc(s.ViewDashboard)
@@ -334,11 +356,52 @@ func hasScopes(a string, bs []string) bool {
 }
 
 func (s *Server) Logout(w http.ResponseWriter, r *http.Request) {
-	session, err := store.Get(r, viper.GetString("httpd.session.name"))
-	if err != nil {
-		return
-	}
+	session := currentSession(r)
 	session.Options.MaxAge = -1
 	session.Save(r, w)
 	http.Redirect(w, r, "/", http.StatusFound)
+}
+
+func (s *Server) ShowView(name string) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		renderView(w, r, name, nil, nil)
+	})
+}
+
+func renderView(w http.ResponseWriter, r *http.Request, name string, helpers template.FuncMap, data interface{}) {
+	funcs := template.FuncMap{}
+	for k, v := range helpers {
+		funcs[k] = v
+	}
+	t := template.New("template").Funcs(funcs)
+	tpl, err := loadTemplate("layout.html")
+	if err != nil {
+		internalServerError(w, "loadTemplate", err)
+		return
+	}
+	t = template.Must(t.Parse(tpl))
+	tpl, err = loadTemplate(name + ".html")
+	if err != nil {
+		internalServerError(w, "loadTemplate", err)
+		return
+	}
+	t = template.Must(t.Parse(tpl))
+	if err := t.ExecuteTemplate(w, "base", data); err != nil {
+		// No internalServerError here because if we wrote to w in
+		// ExecuteTemplate, it's already set the status code to 200, an setting
+		// it again is an error.
+		log.Println("ExecuteTemplate:", err)
+	}
+}
+
+func loadTemplate(filename string) (string, error) {
+	filepath := path.Join(viper.GetString("template.dir"), filename)
+	input, err := os.Open(filepath)
+	if err != nil {
+		return "", err
+	}
+	defer input.Close()
+	var buf bytes.Buffer
+	_, err = buf.ReadFrom(input)
+	return buf.String(), err
 }

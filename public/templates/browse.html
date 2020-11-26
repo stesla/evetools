@@ -1,3 +1,8 @@
+{{ define "javascripts" }}
+<script src="/js/browse.js"></script>
+{{ end }}
+
+{{ define "content" }}
 <main class="mt-10 mb-10 container mx-auto max-w-6xl"
       x-data="viewData"
       x-init="initialize()">
@@ -24,3 +29,4 @@
     </template>
   </div>
 </main>
+{{ end }}

@@ -1,10 +1,15 @@
+{{ define "javascripts"}}
+<script src="/js/dashboard.js"></script>
+{{ end }}
+
+{{ define "content" }}
 <main class="mt-10 mb-10 container mx-auto max-w-6xl"
       x-data="viewData"
-      x-init="initialize()">
+      x-init="initialize()"
+      x-cloak>
 
   <h1 class="mt-10 text-3xl text-center text-gray-700 font-bold">Dashboard</h1>
-  <p x-show="!loaded" class="text-center italic text-gray-500">Loading...</p>
-  <dl x-show="loaded" class="mt-4 mx-4 flex flex-col sm:flex-row justify-around px-4 py-2 border border-gray-500 bg-gray-100 rounded-xl shadow-xl">
+  <dl class="mt-4 mx-4 flex flex-col sm:flex-row justify-around px-4 py-2 border border-gray-500 bg-gray-100 rounded-xl shadow-xl">
     <div class="">
       <dt class="border-b border-dashed border-gray-500">Wallet Balance</dt>
       <dd class="font-bold" x-text="formatISK(walletBalance)"></dd>
@@ -21,8 +26,7 @@
 
 
   <h1 class="mt-10 text-3xl text-center text-gray-700 font-bold">Shopping List</h1>
-  <p x-show="!loaded" class="text-center italic text-gray-500">Loading...</p>
-  <div x-show="loaded" class="mx-4 grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+  <div class="mx-4 grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
     <template x-for="type in favorites" :key="type.id">
       <div class="mt-4 py-4 w-full flex flex-col justify-between border border-gray-500 rounded-xl shadow-xl bg-gray-100">
         <div class="px-4">
@@ -54,3 +58,4 @@
     </template>
   </div>
 </main>
+{{ end }}

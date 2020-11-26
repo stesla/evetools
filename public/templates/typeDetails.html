@@ -1,3 +1,8 @@
+{{ define "javascripts" }}
+<script src="/js/typeDetails.js"></script>
+{{ end }}
+
+{{ define "content" }}
 <main class="mt-10 mb-10 w-full md:w-4/5 max-w-screen-md container mx-auto">
   <div x-data="viewData" x-init="initialize()">
     <template x-if="!type">
@@ -119,3 +124,4 @@
     </template>
   </div>
 </main>
+{{ end }}

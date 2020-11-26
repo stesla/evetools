@@ -1,3 +1,8 @@
+{{ define "javascripts" }}
+<script src="/js/orders.js"></script>
+{{ end }}
+
+{{ define "content" }}
 <main class="mt-10 mb-10 container mx-auto max-w-screen-md"
       x-data="viewData"
       x-init="initialize()">
@@ -95,3 +100,4 @@
     </div>
   </template>
 </main>
+{{ end }}
