@@ -151,7 +151,7 @@ func NewServer(static http.Handler, db model.DB, vr viewRenderer) *Server {
 	cache := diskcache.New(viper.GetString("http.cache.dir"))
 	s.http.Transport = httpcache.NewTransport(cache)
 
-	s.mux.NotFoundHandler = s.ShowView("notFound")
+	s.mux.NotFoundHandler = http.HandlerFunc(s.NotFound)
 	s.mux.Use(s.haveSession)
 	s.mux.Use(s.haveLoggedInUser)
 
@@ -367,6 +367,10 @@ func (s *Server) Logout(w http.ResponseWriter, r *http.Request) {
 	session.Options.MaxAge = -1
 	session.Save(r, w)
 	http.Redirect(w, r, "/", http.StatusFound)
+}
+
+func (s *Server) NotFound(w http.ResponseWriter, r *http.Request) {
+	s.renderView(w, r, "notFound", nil, nil)
 }
 
 func (s *Server) ShowView(name string) http.Handler {
