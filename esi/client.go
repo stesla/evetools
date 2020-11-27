@@ -16,6 +16,8 @@ type Client interface {
 	GetMarketPrices(ctx context.Context, stationID, regionID, typeID int) (*Price, error)
 	GetNames(ids []int) (map[int]string, error)
 	GetPriceHistory(ctx context.Context, regionID, typeID int) (result []HistoryDay, err error)
+	GetStructure(ctx context.Context, id int) (*Structure, error)
+	GetStructures() ([]int, error)
 	GetWalletBalance(ctx context.Context, characterID int) (balance float64, err error)
 	GetWalletTransactions(ctx context.Context, characterID int) ([]*WalletTransaction, error)
 	OpenMarketWindow(ctx context.Context, typeID int) (crr error)

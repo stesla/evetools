@@ -5,12 +5,15 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"net/http"
 	"os"
 
 	"golang.org/x/oauth2"
 
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
+	"github.com/stesla/evetools/esi"
+	"github.com/stesla/evetools/sde"
 )
 
 var (
@@ -26,10 +29,12 @@ func init() {
 	rootCmd.PersistentFlags().StringVar(&cfgFile, "config", "./evetools.yaml", "config file")
 	rootCmd.PersistentFlags().StringVar(&token, "token", "", "refresh token to save")
 	viper.SetDefault("cli.token", "./evetools.token")
+	viper.SetDefault("esi.basePath", "https://esi.evetech.net")
 	viper.SetDefault("oauth.basePath", "https://login.eveonline.com")
 
 	var cmd *cobra.Command
 
+	// token management
 	tokenCmd := &cobra.Command{Use: "token"}
 	rootCmd.AddCommand(tokenCmd)
 
@@ -51,6 +56,16 @@ func init() {
 		Run: refreshTokenCmd,
 	}
 	tokenCmd.AddCommand(cmd)
+
+	// structures
+	structuresCmd := &cobra.Command{Use: "structures"}
+	rootCmd.AddCommand(structuresCmd)
+
+	cmd = &cobra.Command{
+		Use: "list",
+		Run: listStructuresCmd,
+	}
+	structuresCmd.AddCommand(cmd)
 }
 
 func initConfig() {
@@ -173,4 +188,33 @@ func refreshTokenCmd(cmd *cobra.Command, args []string) {
 		die("error loading token:", err)
 	}
 	json.NewEncoder(os.Stdout).Encode(&token)
+}
+
+func listStructuresCmd(cmd *cobra.Command, args []string) {
+	token, err := getToken()
+	if err != nil {
+		die("error loading token: %v", err)
+	}
+
+	var client http.Client
+	eclient := esi.NewClient(&client)
+
+	ids, err := eclient.GetStructures()
+	if err != nil {
+		die("error fetching structures: %v", err)
+	}
+
+	ctx := context.Background()
+	ctx = context.WithValue(ctx, esi.AccessTokenKey, token.AccessToken)
+	encoder := json.NewEncoder(os.Stdout)
+	for _, id := range ids {
+		station, err := eclient.GetStructure(ctx, id)
+		if err != nil {
+			die("error fetching structure:", err)
+		}
+		station.ID = id
+		system := sde.SolarSystems[station.SystemID]
+		station.RegionID = system.RegionID
+		encoder.Encode(&station)
+	}
 }
