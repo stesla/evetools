@@ -65,7 +65,8 @@ func (s *Server) ShowDashboard(w http.ResponseWriter, r *http.Request) {
 
 	s.renderView(w, r, "dashboard", nil, map[string]interface{}{
 		"BuyTotal":      buyTotal,
-		"Favorites":     favoriteTypes,
+		"Favorites":     favorites,
+		"FavoriteTypes": favoriteTypes,
 		"SellTotal":     sellTotal,
 		"WalletBalance": wallet,
 	})
@@ -122,9 +123,17 @@ func (s *Server) ShowGroupDetails(w http.ResponseWriter, r *http.Request) {
 		types[t.Name] = t
 	}
 
+	user := currentUser(r)
+	favorites, err := s.db.GetFavoriteTypes(user.ID)
+	if err != nil {
+		internalServerError(w, "FavoriteTypes", err)
+		return
+	}
+
 	data := map[string]interface{}{
-		"Group":  group,
-		"Parent": parent,
+		"Group":     group,
+		"Parent":    parent,
+		"Favorites": favorites,
 	}
 	if len(types) == 0 {
 		data["Children"] = groups
@@ -243,8 +252,16 @@ func (s *Server) ShowSearch(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
+	user := currentUser(r)
+	favorites, err := s.db.GetFavoriteTypes(user.ID)
+	if err != nil {
+		internalServerError(w, "FavoriteTypes", err)
+		return
+	}
+
 	s.renderView(w, r, "search", nil, map[string]interface{}{
-		"Types": marketTypes,
+		"Favorites": favorites,
+		"Types":     marketTypes,
 	})
 }
 

@@ -5,7 +5,10 @@
 {{ end }}
 
 {{ define "content" }}
-<main class="mt-10 mb-10 container mx-auto max-w-6xl" x-data="favorites" x-init="initialize()" x-cloak>
+<script>
+  var favoriteIDs = {{ .Favorites | json | trim | safeJS }};
+</script>
+<main class="mt-10 mb-10 container mx-auto max-w-6xl" x-data="favorites(favoriteIDs)" x-cloak>
   <h1 class="mt-10 text-3xl text-center text-gray-700 font-bold">Dashboard</h1>
   <dl class="mt-4 mx-4 flex flex-col sm:flex-row justify-around px-4 py-2 border border-gray-500 bg-gray-100 rounded-xl shadow-xl">
     <div class="">
@@ -25,7 +28,7 @@
 
   <h1 class="mt-10 text-3xl text-center text-gray-700 font-bold">Shopping List</h1>
   <div class="mx-4 grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
-    {{ range .Favorites }}
+    {{ range .FavoriteTypes }}
     <div class="mt-4 py-4 w-full flex flex-col justify-between border border-gray-500 rounded-xl shadow-xl bg-gray-100">
       <div class="px-4">
         <img class="h-12 w-12 float-right" src="{{ . | iconURL }}">

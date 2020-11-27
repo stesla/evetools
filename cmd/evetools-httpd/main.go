@@ -425,10 +425,16 @@ func (tvr *templateViewRenderer) renderView(w http.ResponseWriter, r *http.Reque
 			}
 			return fmt.Sprintf("https://images.evetech.net/types/%d/%s?size=128", t.ID, imgType)
 		},
-		"json": func(obj interface{}) (template.JS, error) {
+		"json": func(obj interface{}) (string, error) {
 			var buf bytes.Buffer
 			err := json.NewEncoder(&buf).Encode(obj)
-			return template.JS(buf.String()), err
+			return buf.String(), err
+		},
+		"safeJS": func(str string) template.JS {
+			return template.JS(str)
+		},
+		"trim": func(str string) string {
+			return strings.TrimSpace(str)
 		},
 	}
 	for k, v := range helpers {

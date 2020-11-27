@@ -4,7 +4,10 @@
 {{ end }} 
 
 {{ define "content" }}
-<main class="mt-10 mb-10 container mx-auto max-w-6xl" x-data="favorites" x-init="initialize()">
+<script>
+  var favoriteIDs = {{ .Favorites | json | trim | safeJS }};
+</script>
+<main class="mt-10 mb-10 container mx-auto max-w-6xl" x-data="favorites(favoriteIDs)" x-cloak>
   <form id="search" action="/search">
     <div class="mx-auto flex w-full sm:w-4/5 max-w-screen-sm items-center rounded-xl overflow-hidden border border-gray-500">
       <input class="px-4 py-4 w-full bg-gray-100 focus:outline-none" name="q" placeholder="Search by name...">

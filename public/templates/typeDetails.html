@@ -90,7 +90,7 @@
   <h3 class="text-center font-bold text-md">{{ .Info.system.Name }} Average Price</h3>
   <script>
     (function() {
-      let history = {{ .Info.history | json }}.map(d => chartPoint(d));
+      let history = {{ .Info.history | json | trim | safeJS }}.map(d => chartPoint(d));
       let div = document.getElementById({{ .ChartID }});
       let width = div.parentElement.parentElement.clientWidth;
       renderChart('#' + {{ .ChartID }}, history, 400, width);
