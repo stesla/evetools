@@ -24,6 +24,7 @@ import (
 	"github.com/lestrrat-go/jwx/jwt"
 	"github.com/spf13/viper"
 
+	"github.com/stesla/evetools/config"
 	"github.com/stesla/evetools/esi"
 	"github.com/stesla/evetools/model"
 	"github.com/stretchr/testify/assert"
@@ -44,7 +45,7 @@ func TestMain(m *testing.M) {
 	viper.Set("cli.oauth.clientId", "CLIENT_ID")
 	viper.Set("cli.oauth.clientSecret", "CLIENT_SECRET")
 	viper.Set("cli.oauth.redirectURL", "REDIRECT_URL")
-	initOAuthConfig()
+	config.InitializeOAuth()
 	os.Exit(m.Run())
 }
 
@@ -249,7 +250,7 @@ func (*testDB) GetTokenForCharacter(characterID int) (*model.Token, error) {
 		ID:           13,
 		CharacterID:  characterID,
 		RefreshToken: "REFRESH",
-		Scopes:       strings.Join(oauthConfig.Scopes, " "),
+		Scopes:       strings.Join(config.OAuthForHTTP.Scopes, " "),
 	}, nil
 }
 

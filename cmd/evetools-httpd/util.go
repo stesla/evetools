@@ -10,6 +10,7 @@ import (
 
 	"github.com/gorilla/sessions"
 	"github.com/spf13/viper"
+	"github.com/stesla/evetools/config"
 	"github.com/stesla/evetools/esi"
 	"github.com/stesla/evetools/model"
 	"golang.org/x/oauth2"
@@ -114,7 +115,7 @@ func (s *Server) haveLoggedInUser(next http.Handler) http.Handler {
 			login()
 			return
 		}
-		tokSrc := oauthConfig.TokenSource(r.Context(), &oldTok)
+		tokSrc := config.OAuthForHTTP.TokenSource(r.Context(), &oldTok)
 		newTok, err := tokSrc.Token()
 		if err != nil {
 			login()
@@ -139,7 +140,7 @@ func (s *Server) haveLoggedInUser(next http.Handler) http.Handler {
 
 func refreshToken(ctx context.Context, refreshToken string) (*oauth2.Token, error) {
 	oldTok := oauth2.Token{RefreshToken: refreshToken}
-	tokSrc := oauthConfig.TokenSource(ctx, &oldTok)
+	tokSrc := config.OAuthForHTTP.TokenSource(ctx, &oldTok)
 	token, err := tokSrc.Token()
 	if err != nil {
 		return nil, err

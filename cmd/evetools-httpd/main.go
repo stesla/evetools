@@ -26,6 +26,7 @@ import (
 	"github.com/gregjones/httpcache/diskcache"
 	"github.com/spf13/pflag"
 	"github.com/spf13/viper"
+	"github.com/stesla/evetools/config"
 	"github.com/stesla/evetools/esi"
 	"github.com/stesla/evetools/model"
 	"github.com/stesla/evetools/sde"
@@ -44,72 +45,34 @@ var cfgFile string
 
 func init() {
 	pflag.StringVar(&cfgFile, "config", "", "config file, default: $HOME/.evetools.yaml")
-
 	pflag.String("addr", ":8080", "address to listen on")
 	pflag.String("dir", "./public", "directory to serve files from")
-
 	viper.BindPFlag("httpd.address", pflag.Lookup("addr"))
 	viper.BindPFlag("httpd.static.dir", pflag.Lookup("dir"))
 	viper.SetDefault("httpd.session.auth_key", securecookie.GenerateRandomKey(64))
 	viper.SetDefault("httpd.session.name", "evetools")
-	viper.SetDefault("model.database", "./evetools.sqlite3")
-	viper.SetDefault("esi.basePath", "https://esi.evetech.net")
-	viper.SetDefault("oauth.basePath", "https://login.eveonline.com")
-	viper.SetDefault("http.cache.dir", "./cache")
-	viper.SetDefault("sde.dir", "./data")
-	viper.SetDefault("template.dir", "./public/templates")
+	viper.SetDefault("httpd.template.dir", "./public/templates")
 
 	gob.Register(oauth2.Token{})
 	gob.Register(model.User{})
 }
 
-var oauthConfig = oauth2.Config{
-	Scopes: []string{
-		"esi-markets.read_character_orders.v1",
-		"esi-ui.open_window.v1",
-		"esi-characters.read_standings.v1",
-		"esi-skills.read_skills.v1",
-		"esi-wallet.read_character_wallet.v1",
-		"publicData",
-	},
-}
-
-var cliOauthConfig = oauth2.Config{
-	Scopes: []string{
-		"esi-search.search_structures.v1",
-		"esi-universe.read_structures.v1",
-		"esi-markets.structure_markets.v1",
-	},
-}
-
 func main() {
 	pflag.Parse()
-
-	if cfgFile != "" {
-		viper.SetConfigFile(cfgFile)
-	} else {
-		viper.SetConfigName(".evetools")
-		viper.SetConfigType("yaml")
-		viper.AddConfigPath("$HOME")
-	}
-	if err := viper.ReadInConfig(); err != nil {
-		log.Fatalf("error loading config file: %s", err)
+	if err := config.Initialize(cfgFile); err != nil {
+		log.Fatalf("error initializing config: %v", err)
 	}
 
-	db, err := model.Initialize(viper.GetString("model.database"))
+	db, err := model.Initialize(config.DatabaseFile())
 	if err != nil {
 		log.Fatalf("error initializing model: %s", err)
-	}
-
-	if err := initOAuthConfig(); err != nil {
-		log.Fatalf("error initializing oauth: %s", err)
 	}
 
 	store = sessions.NewCookieStore([]byte(viper.GetString("httpd.session.auth_key")))
 
 	staticFiles := http.Dir(viper.GetString("httpd.static.dir"))
 
-	views := &templateViewRenderer{viper.GetString("template.dir")}
+	views := &templateViewRenderer{viper.GetString("httpd.template.dir")}
 
 	var handler http.Handler = NewServer(http.FileServer(staticFiles), db, views)
 	handler = handlers.LoggingHandler(os.Stdout, handler)
@@ -118,41 +81,6 @@ func main() {
 	addr := viper.GetString("httpd.address")
 	log.Println("listening on", addr)
 	log.Fatal(http.ListenAndServe(addr, handler))
-}
-
-func initOAuthConfig() error {
-	oauthConfig.ClientID = viper.GetString("oauth.clientID")
-	if oauthConfig.ClientID == "" {
-		return fmt.Errorf("must provide oauth.clientID")
-	}
-	oauthConfig.ClientSecret = viper.GetString("oauth.clientSecret")
-	if oauthConfig.ClientSecret == "" {
-		return fmt.Errorf("must provide oauth.clientSecret")
-	}
-	oauthConfig.RedirectURL = viper.GetString("oauth.redirectURL")
-	if oauthConfig.RedirectURL == "" {
-		return fmt.Errorf("must provide oauth.redirectURL")
-	}
-	cliOauthConfig.ClientID = viper.GetString("cli.oauth.clientID")
-	if cliOauthConfig.ClientID == "" {
-		return fmt.Errorf("must provide cli.oauth.clientID")
-	}
-	cliOauthConfig.ClientSecret = viper.GetString("cli.oauth.clientSecret")
-	if cliOauthConfig.ClientSecret == "" {
-		return fmt.Errorf("must provide cli.oauth.clientSecret")
-	}
-	cliOauthConfig.RedirectURL = viper.GetString("cli.oauth.redirectURL")
-	if cliOauthConfig.RedirectURL == "" {
-		return fmt.Errorf("must provide cli.oauth.redirectURL")
-	}
-	basePath := viper.GetString("oauth.basePath")
-	endpoint := oauth2.Endpoint{
-		AuthURL:  fmt.Sprintf("%s/v2/oauth/authorize", basePath),
-		TokenURL: fmt.Sprintf("%s/v2/oauth/token", basePath),
-	}
-	oauthConfig.Endpoint = endpoint
-	cliOauthConfig.Endpoint = endpoint
-	return nil
 }
 
 type Server struct {
@@ -172,7 +100,7 @@ func NewServer(static http.Handler, db model.DB, vr viewRenderer) *Server {
 	}
 	s.esi = esi.NewClient(&s.http)
 
-	cache := diskcache.New(viper.GetString("http.cache.dir"))
+	cache := diskcache.New(config.CacheDir())
 	s.http.Transport = httpcache.NewTransport(cache)
 
 	s.mux.NotFoundHandler = http.HandlerFunc(s.NotFound)
@@ -236,7 +164,7 @@ func (s *Server) Authorize(w http.ResponseWriter, r *http.Request) {
 		internalServerError(w, "session.Save", err)
 		return
 	}
-	url := oauthConfig.AuthCodeURL(state)
+	url := config.OAuthForHTTP.AuthCodeURL(state)
 	http.Redirect(w, r, url, http.StatusFound)
 }
 
@@ -250,7 +178,7 @@ func (s *Server) Login(w http.ResponseWriter, r *http.Request) {
 		internalServerError(w, "session.Save", err)
 		return
 	}
-	var scopelessConfig = oauthConfig
+	var scopelessConfig = config.OAuthForHTTP
 	scopelessConfig.Scopes = nil
 	url := scopelessConfig.AuthCodeURL(state)
 	http.Redirect(w, r, url, http.StatusFound)
@@ -270,7 +198,7 @@ func (s *Server) LoginCallback(w http.ResponseWriter, r *http.Request) {
 	}
 
 	code := r.FormValue("code")
-	jwt, err := oauthConfig.Exchange(r.Context(), code)
+	jwt, err := config.OAuthForHTTP.Exchange(r.Context(), code)
 	if err != nil {
 		internalServerError(w, "oauth.Exchange", err)
 		return
@@ -327,7 +255,7 @@ func (s *Server) LoginCallback(w http.ResponseWriter, r *http.Request) {
 	} else if err != nil {
 		internalServerError(w, "GetTokenForCharacter", err)
 		return
-	} else if hasScopes(token.Scopes, oauthConfig.Scopes) {
+	} else if hasScopes(token.Scopes, config.OAuthForHTTP.Scopes) {
 		jwt, err = refreshToken(r.Context(), token.RefreshToken)
 		if err != nil {
 			internalServerError(w, "refreshToken", err)
@@ -363,7 +291,7 @@ func (s *Server) LoginCallback(w http.ResponseWriter, r *http.Request) {
 
 func (s *Server) TokenCallback(w http.ResponseWriter, r *http.Request) {
 	code := r.FormValue("code")
-	jwt, err := cliOauthConfig.Exchange(r.Context(), code)
+	jwt, err := config.OAuthForCLI.Exchange(r.Context(), code)
 	if err != nil {
 		http.Error(w, fmt.Sprintf("oauth exchange failed: %v", err), http.StatusForbidden)
 		return

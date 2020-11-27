@@ -4,11 +4,12 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"github.com/spf13/viper"
 	"io"
 	"net/http"
 	"net/url"
 	"time"
+
+	"github.com/stesla/evetools/config"
 )
 
 type contextKey int
@@ -25,12 +26,12 @@ func (d Date) MarshalJSON() ([]byte, error) {
 }
 
 func newESIRequest(ctx context.Context, method, path string, body io.Reader) (*http.Request, error) {
-	return newESIRequestWithURL(ctx, method, viper.GetString("esi.basePath")+"/latest"+path, body)
+	return newESIRequestWithURL(ctx, method, config.EsiBasePath()+"/latest"+path, body)
 
 }
 
 func newMetaRequest(ctx context.Context, method, path string, body io.Reader) (*http.Request, error) {
-	return newESIRequestWithURL(ctx, method, viper.GetString("esi.basePath")+path, body)
+	return newESIRequestWithURL(ctx, method, config.EsiBasePath()+path, body)
 }
 
 func newESIRequestWithURL(ctx context.Context, method, addr string, body io.Reader) (*http.Request, error) {
