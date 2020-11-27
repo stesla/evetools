@@ -336,7 +336,7 @@ func (s *Server) ViewTransactions(w http.ResponseWriter, r *http.Request) {
 	})
 }
 
-func (s *Server) ViewTypeDetails(w http.ResponseWriter, r *http.Request) {
+func (s *Server) ShowTypeDetails(w http.ResponseWriter, r *http.Request) {
 	user := currentUser(r)
 
 	vars := mux.Vars(r)
@@ -348,10 +348,10 @@ func (s *Server) ViewTypeDetails(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	group, _ := sde.MarketGroups[marketType.MarketGroupID]
+	marketGroup, _ := sde.MarketGroups[marketType.MarketGroupID]
 
 	parentGroups := []*sde.MarketGroup{}
-	parentID := group.ParentID
+	parentID := marketGroup.ParentID
 	for parentID != 0 {
 		g, _ := sde.MarketGroups[parentID]
 		parentID = g.ParentID
@@ -360,27 +360,27 @@ func (s *Server) ViewTypeDetails(w http.ResponseWriter, r *http.Request) {
 
 	favorite, err := s.db.IsFavorite(user.ID, typeID)
 	if err != nil && err != model.ErrNotFound {
-		apiInternalServerError(w, "GetType", err)
+		internalServerError(w, "GetType", err)
 		return
 	}
 
 	infoA, err := s.stationInfo(r.Context(), user.ActiveCharacterID, typeID, user.StationA)
 	if err != nil {
-		apiInternalServerError(w, "stationA info", err)
+		log.Println("API Error:", err)
 	}
 
 	infoB, err := s.stationInfo(r.Context(), user.ActiveCharacterID, typeID, user.StationB)
 	if err != nil {
-		apiInternalServerError(w, "stationB info", err)
+		log.Println("API Error:", err)
 	}
 
-	json.NewEncoder(w).Encode(map[string]interface{}{
-		"favorite":      favorite,
-		"type":          marketType,
-		"group":         group,
-		"parent_groups": parentGroups,
-		"infoA":         infoA,
-		"infoB":         infoB,
+	s.renderView(w, r, "typeDetails", nil, map[string]interface{}{
+		"IsFavorite":   favorite,
+		"Type":         marketType,
+		"Group":        marketGroup,
+		"ParentGroups": parentGroups,
+		"InfoA":        infoA,
+		"InfoB":        infoB,
 	})
 }
 

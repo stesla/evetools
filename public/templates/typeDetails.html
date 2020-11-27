@@ -4,124 +4,97 @@
 
 {{ define "content" }}
 <main class="mt-10 mb-10 w-full md:w-4/5 max-w-screen-md container mx-auto">
-  <div x-data="viewData" x-init="initialize()">
-    <template x-if="!type">
-      <p class="mt-64 text-2xl text-center italic text-gray-500">Loading...</p>
-    </template>
-    <template x-if="type">
-      <div class="py-4 w-full sm:w-4/5 mt-4 mx-auto border-t border-b sm:border-l sm:border-r border-gray-500 sm:rounded-xl sm:shadow-xl bg-gray-100">
-        <div class="px-4 mr-2">
-          <img class="float-right" :src="imgURL(type)">
-          <h1 class="text-4xl font-bold" x-text="type.name"></h1>
-          <div class="mt-4">
-            <template x-for="g in parentGroups">
-              <a class="text-xl italic font-semibold" :href="hrefGroup(g.id)" x-text="g.name"></a> &gt;
-            </template>
-            <a class="text-xl italic font-semibold" :href="hrefGroup(group.id)" x-text="group.name"></a>
-          </div>
-          <template x-if="type">
-            <p class="mt-4" x-text="type.description"></p>
-          </template>
+  <div x-data="viewData" x-init="initialize({{ .Type.ID }}, {{ .IsFavorite }})">
+    <div class="py-4 w-full sm:w-4/5 mt-4 mx-auto border-t border-b sm:border-l sm:border-r border-gray-500 sm:rounded-xl sm:shadow-xl bg-gray-100">
+      <div class="px-4 mr-2">
+        <img class="float-right" src="{{ .Type | iconURL }}">
+        <h1 class="text-4xl font-bold">{{ .Type.Name }}</h1>
+        <div class="mt-4">
+          {{ range .ParentGroups }}
+          <a class="text-xl italic font-semibold" href="/groups/{{ .ID }}">{{ .Name }}</a> &gt;
+          {{ end }}
+          {{ with .Group }}
+          <a class="text-xl italic font-semibold" href="/groups/{{ .ID }}">{{ .Name }}</a>
+          {{ end }}
         </div>
-        <div class="mt-4 border-t-2 px-4 pt-4 flex items-center flex-row-reverse">
-          <button @click="toggleFavorite()" class="focus:outline-none">
-            <svg class="h-6 w-6 stroke-current text-gray-500"
-                 :class="{'text-blue-500': favorite, 'fill-current': favorite}"
-                 xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z" />
-            </svg>
-          </button>
-          <button @click="openTypeInEVE(typeID)" class="mr-8 focus:outline-none">
-            <svg class="h-6 w-6 stroke-current text-gray-500 hover:text-blue-500"
-                 xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
-            </svg>
-          </button>
-        </div>
-        <div class="sm:grid sm:grid-cols-2 border-t-2 mt-4">
-          <div class="">
-            <div class="mt-4 mx-4 flex items-center justify-between grid grid-cols-2 gap-2">
-              <div class="col-span-full text-lg text-center font-bold" x-text="infoA.system.name"></div>
-              <div>
-                <dt>Average Volume</dt>
-                <dd class="font-bold" x-text="formatNumber(infoA.volume)"></dd>
-              </div>
-              <div>
-                <dd class="text-right">Average Price</dt>
-                <dd class="text-right font-bold" x-text="formatISK(infoA.average)"></dd>
-              </div>
-               <div>
-                <dt class="">Buy</dt>
-                <dd class="font-bold text-red-500" x-text="formatISK(infoA.buy)">
-              </div>
-              <div>
-                <dt class="text-right">Sell</dt>
-                <dd class="text-right font-bold  text-green-500" x-text="formatISK(infoA.sell)">
-              </div>
-              <div>
-                <dd class="">Lowest Price</dt>
-                <dd class="font-bold " x-text="formatISK(infoA.lowest)"></dd>
-              </div>
-              <div>
-                <dd class="text-right">Highest Price</dt>
-                <dd class="text-right font-bold " x-text="formatISK(infoA.highest)"></dd>
-              </div>
-              <div>
-                <dt class="">Margin</dt>
-                <dd class="font-bold " x-text="formatNumber(infoA.margin) + '%'"></dd>
-              </div>
-              <div>
-                <dt class="text-right">Broker Fee</dt>
-                <dd class="text-right font-bold" x-text="formatPercent(infoA.brokerFee)"></dd>
-              </div>
-            </div>
-          </div>
-          <div class="">
-            <div class="mt-4 mx-4 flex items-center justify-between grid grid-cols-2 gap-2">
-              <div class="col-span-full text-lg text-center font-bold" x-text="infoB.system.name"></div>
-              <div>
-                <dt>Average Volume</dt>
-                <dd class="font-bold" x-text="formatNumber(infoB.volume)"></dd>
-              </div>
-              <div>
-                <dd class="text-right">Average Price</dt>
-                <dd class="text-right font-bold" x-text="formatISK(infoB.average)"></dd>
-              </div>
-               <div>
-                <dt class="">Buy</dt>
-                <dd class="font-bold text-red-500" x-text="formatISK(infoB.buy)">
-              </div>
-              <div>
-                <dt class="text-right">Sell</dt>
-                <dd class="text-right font-bold  text-green-500" x-text="formatISK(infoB.sell)">
-              </div>
-              <div>
-                <dd class="">Lowest Price</dt>
-                <dd class="font-bold " x-text="formatISK(infoB.lowest)"></dd>
-              </div>
-              <div>
-                <dd class="text-right">Highest Price</dt>
-                <dd class="text-right font-bold " x-text="formatISK(infoB.highest)"></dd>
-              </div>
-              <div>
-                <dt class="">Margin</dt>
-                <dd class="font-bold " x-text="formatNumber(infoB.margin) + '%'"></dd>
-              </div>
-              <div>
-                <dt class="text-right">Broker Fee</dt>
-                <dd class="text-right font-bold" x-text="formatPercent(infoB.brokerFee)"></dd>
-              </div>
-            </div>
-          </div>
-        </div>
-        <div id="chartA" class="mt-4 border-t-2 pt-4">
-          <h3 class="text-center font-bold text-md"><span x-text="infoA.system.name"></span> Average Price</h3>
-        </div>
-        <div id="chartB" class="mt-4 border-t-2 pt-4">
-          <h3 class="text-center font-bold text-md"><span x-text="infoB.system.name"></span> Average Price</h3>
-        </div>
+        <p class="mt-4">{{ .Type.Description }}</p>
       </div>
-    </template>
+      <div class="mt-4 border-t-2 px-4 pt-4 flex items-center flex-row-reverse">
+        <button @click="toggleFavorite()" class="focus:outline-none">
+          <svg class="h-6 w-6 stroke-current text-gray-500"
+               :class="{'text-blue-500': favorite, 'fill-current': favorite}"
+               xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z" />
+          </svg>
+        </button>
+        <button @click="openTypeInEVE({{ .Type.ID }})" class="mr-8 focus:outline-none">
+          <svg class="h-6 w-6 stroke-current text-gray-500 hover:text-blue-500"
+               xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+          </svg>
+        </button>
+      </div>
+      <div class="sm:grid sm:grid-cols-2 border-t-2 mt-4">
+        {{ template "marketInfo" .InfoA }}
+        {{ template "marketInfo" .InfoB }}
+      </div>
+      {{ template "marketChart" dict "ChartID" "chartA" "Info" .InfoA }}
+      {{ template "marketChart" dict "ChartID" "chartB" "Info" .InfoB }}
+    </div>
   </div>
 </main>
+{{ end }}
+
+{{ define "marketInfo" }}
+<div class="">
+  <div class="mt-4 mx-4 flex items-center justify-between grid grid-cols-2 gap-2">
+    <div class="col-span-full text-lg text-center font-bold">{{ .system.Name }}</div>
+    <div>
+      <dt>Average Volume</dt>
+      <dd class="font-bold" x-text="formatNumber({{ .volume }})"></dd>
+    </div>
+    <div>
+      <dd class="text-right">Average Price</dt>
+      <dd class="text-right font-bold" x-text="formatISK({{ .average }})"></dd>
+    </div>
+     <div>
+      <dt class="">Buy</dt>
+      <dd class="font-bold text-red-500" x-text="formatISK({{ .buy }})">
+    </div>
+    <div>
+      <dt class="text-right">Sell</dt>
+      <dd class="text-right font-bold  text-green-500" x-text="formatISK({{ .sell }})">
+    </div>
+    <div>
+      <dd class="">Lowest Price</dt>
+      <dd class="font-bold " x-text="formatISK({{ .lowest }})"></dd>
+    </div>
+    <div>
+      <dd class="text-right">Highest Price</dt>
+      <dd class="text-right font-bold " x-text="formatISK({{ .highest }})"></dd>
+    </div>
+    <div>
+      <dt class="">Margin</dt>
+      <dd class="font-bold " x-text="formatPercent({{ .margin }})"></dd>
+    </div>
+    <div>
+      <dt class="text-right">Broker Fee</dt>
+      <dd class="text-right font-bold" x-text="formatPercent({{ .brokerFee }})"></dd>
+    </div>
+  </div>
+</div>
+{{ end }}
+
+{{ define "marketChart" }}
+<div id="{{ .ChartID }}" class="mt-4 border-t-2 pt-4">
+  <h3 class="text-center font-bold text-md">{{ .Info.system.Name }} Average Price</h3>
+  <script>
+    (function() {
+      let history = {{ .Info.history | json }}.map(d => chartPoint(d));
+      let div = document.getElementById({{ .ChartID }});
+      let width = div.parentElement.parentElement.clientWidth;
+      renderChart('#' + {{ .ChartID }}, history, 400, width);
+    })();
+  </script>
+</div>
 {{ end }}

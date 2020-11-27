@@ -43,7 +43,7 @@ func (p Price) Margin() float64 {
 	if p.Buy == 0 {
 		return 0
 	}
-	return (p.Sell - p.Buy) / p.Buy * 100
+	return (p.Sell - p.Buy) / p.Buy
 }
 
 type MarketOrder struct {

@@ -6,6 +6,7 @@ import (
 	"crypto/rand"
 	"encoding/base64"
 	"encoding/gob"
+	"encoding/json"
 	"fmt"
 	"html/template"
 	"log"
@@ -171,7 +172,6 @@ func NewServer(static http.Handler, db model.DB, vr viewRenderer) *Server {
 	// Static Views
 	s.mux.Methods("GET").Path("/authorize").Handler(s.ShowView("authorize"))
 	s.mux.Methods("GET").Path("/transactions").Handler(s.ShowView("transactions"))
-	s.mux.Methods("GET").Path("/types/{typeID:[0-9]+}").Handler(s.ShowView("typeDetails"))
 
 	// Server Views
 	s.mux.Methods("GET").Path("/").HandlerFunc(s.ShowDashboard)
@@ -181,6 +181,7 @@ func NewServer(static http.Handler, db model.DB, vr viewRenderer) *Server {
 	s.mux.Methods("GET").Path("/orders/history").HandlerFunc(s.ShowMarketOrdersHistory)
 	s.mux.Methods("GET").Path("/search").HandlerFunc(s.ShowSearch)
 	s.mux.Methods("GET").Path("/settings").HandlerFunc(s.ShowSettings)
+	s.mux.Methods("GET").Path("/types/{typeID:[0-9]+}").HandlerFunc(s.ShowTypeDetails)
 
 	// API
 	api := s.mux.PathPrefix("/api/v1").Subrouter()
@@ -199,7 +200,6 @@ func NewServer(static http.Handler, db model.DB, vr viewRenderer) *Server {
 	// View Data
 	view := api.PathPrefix("/view").Subrouter()
 	view.Methods("GET").Path("/transactions").HandlerFunc(s.ViewTransactions)
-	view.Methods("GET").Path("/typeDetails/{typeID:[0-9]+}").HandlerFunc(s.ViewTypeDetails)
 
 	return s
 }
@@ -424,6 +424,11 @@ func (tvr *templateViewRenderer) renderView(w http.ResponseWriter, r *http.Reque
 				imgType = "bp"
 			}
 			return fmt.Sprintf("https://images.evetech.net/types/%d/%s?size=128", t.ID, imgType)
+		},
+		"json": func(obj interface{}) (template.JS, error) {
+			var buf bytes.Buffer
+			err := json.NewEncoder(&buf).Encode(obj)
+			return template.JS(buf.String()), err
 		},
 	}
 	for k, v := range helpers {

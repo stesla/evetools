@@ -11,6 +11,11 @@
   <style>
     [x-cloak] { display: none; }
   </style>
+  <script src='/js/alpine.js'></script>
+  <script src='/js/d3.v6.min.js'></script>
+  <script src="/js/charts.js"></script>
+  <script src="/js/util.js"></script>
+  {{ template "javascripts" . }}
 </head>
 <body class="bg-gray-300 text-gray-900" x-data="{ navOpen: false, avatarOpen: false, marketOpen: false }">
 
@@ -83,14 +88,7 @@
     </nav>
     {{ end }}
   </header>
-
   {{ template "content" . }}
-
-  <script src='/js/alpine.js'></script>
-  <script src='/js/d3.v6.min.js'></script>
-  <script src="/js/charts.js"></script>
-  <script src="/js/util.js"></script>
-  {{ template "javascripts" . }}
 </body>
 </html>
 {{ end }}

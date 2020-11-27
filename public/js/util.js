@@ -80,4 +80,10 @@
     return a.type.name < b.type.name ? -1 : 1;
   }
 
+  window.chartPoint = function(d) {
+    return {
+      date: Date.parse(d.date),
+      average: +d.average,
+    }
+  }
 })(window, document);
