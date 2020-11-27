@@ -26,49 +26,48 @@ func (s *Server) ShowBrowse(w http.ResponseWriter, r *http.Request) {
 	})
 }
 
-func (s *Server) ViewDashboard(w http.ResponseWriter, r *http.Request) {
+func (s *Server) ShowDashboard(w http.ResponseWriter, r *http.Request) {
 	user := currentUser(r)
 
 	favorites, err := s.db.GetFavoriteTypes(user.ID)
 	if err != nil {
-		apiInternalServerError(w, "FavoriteTypes", err)
+		internalServerError(w, "FavoriteTypes", err)
 		return
 	}
-	favoriteTypes := make([]*sde.MarketType, len(favorites))
-	for i, id := range favorites {
+	favoriteTypes := make(map[string]*sde.MarketType, len(favorites))
+	for _, id := range favorites {
 		t, found := sde.MarketTypes[id]
 		if !found {
 			apiInternalServerError(w, "GetMarketType", fmt.Errorf("type %d not found", id))
 			return
 		}
-		favoriteTypes[i] = t
+		favoriteTypes[t.Name] = t
 	}
 
 	wallet, err := s.esi.GetWalletBalance(r.Context(), user.ActiveCharacterID)
 	if err != nil {
-		apiInternalServerError(w, "WalletBalance", err)
-		return
+		log.Println("API Error: GetWalletBalance:", err)
 	}
 
 	var buyTotal, sellTotal float64
 	orders, err := s.esi.GetMarketOrders(r.Context(), user.ActiveCharacterID)
 	if err != nil {
-		apiInternalServerError(w, "GetMarketOrders", err)
-		return
-	}
-	for _, o := range orders {
-		if o.IsBuyOrder {
-			buyTotal += o.Escrow
-		} else {
-			sellTotal += float64(o.VolumeRemain) * o.Price
+		log.Println("API Error: GetMarketOrders:", err)
+	} else {
+		for _, o := range orders {
+			if o.IsBuyOrder {
+				buyTotal += o.Escrow
+			} else {
+				sellTotal += float64(o.VolumeRemain) * o.Price
+			}
 		}
 	}
 
-	json.NewEncoder(w).Encode(map[string]interface{}{
-		"buy_total":      buyTotal,
-		"favorites":      favoriteTypes,
-		"sell_total":     sellTotal,
-		"wallet_balance": wallet,
+	s.renderView(w, r, "dashboard", nil, map[string]interface{}{
+		"BuyTotal":      buyTotal,
+		"Favorites":     favoriteTypes,
+		"SellTotal":     sellTotal,
+		"WalletBalance": wallet,
 	})
 }
 
