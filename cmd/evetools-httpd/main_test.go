@@ -41,6 +41,9 @@ func TestMain(m *testing.M) {
 	viper.Set("oauth.clientId", "CLIENT_ID")
 	viper.Set("oauth.clientSecret", "CLIENT_SECRET")
 	viper.Set("oauth.redirectURL", "REDIRECT_URL")
+	viper.Set("cli.oauth.clientId", "CLIENT_ID")
+	viper.Set("cli.oauth.clientSecret", "CLIENT_SECRET")
+	viper.Set("cli.oauth.redirectURL", "REDIRECT_URL")
 	initOAuthConfig()
 	os.Exit(m.Run())
 }
