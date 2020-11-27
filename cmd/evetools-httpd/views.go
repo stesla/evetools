@@ -135,67 +135,57 @@ func (s *Server) ShowGroupDetails(w http.ResponseWriter, r *http.Request) {
 	s.renderView(w, r, "groupDetails", nil, data)
 }
 
-func (s *Server) ViewMarketOrders(w http.ResponseWriter, r *http.Request) {
+func (s *Server) ShowMarketOrdersCurrent(w http.ResponseWriter, r *http.Request) {
 	user := currentUser(r)
 
-	var days time.Duration
-	if str := r.FormValue("days"); str != "" {
-		if i, err := strconv.Atoi(str); err != nil {
-			apiError(w, fmt.Errorf("'days' must be an integer"), http.StatusBadRequest)
-			return
-		} else {
-			days = time.Duration(i)
-		}
+	orders, err := s.esi.GetMarketOrders(r.Context(), user.ActiveCharacterID)
+	if err != nil {
+		log.Println("API Error: fetching orders:", err)
 	}
 
-	var f func(context.Context, int) ([]*esi.MarketOrder, error)
-	if days > 0 {
-		f = s.esi.GetMarketOrderHistory
-	} else {
-		f = s.esi.GetMarketOrders
+	buy, sell, err := s.processOrders(orders, 0)
+	if err != nil {
+		internalServerError(w, "processOrders", err)
+		return
 	}
 
-	orders, err := f(r.Context(), user.ActiveCharacterID)
+	s.renderView(w, r, "orders", nil, map[string]interface{}{
+		"Buy":  buy,
+		"Sell": sell,
+	})
+}
+
+func (s *Server) ShowMarketOrdersHistory(w http.ResponseWriter, r *http.Request) {
+	user := currentUser(r)
+
+	orders, err := s.esi.GetMarketOrderHistory(r.Context(), user.ActiveCharacterID)
 	if err != nil {
 		apiInternalServerError(w, "fetching orders", err)
 		return
 	}
 
-	buy, sell, err := s.processOrders(orders, days*24*time.Hour)
+	buy, sell, err := s.processOrders(orders, 30*24*time.Hour)
 	if err != nil {
 		apiInternalServerError(w, "processOrders", err)
 		return
 	}
 
-	types := map[int]*sde.MarketType{}
-	stations := map[int]*sde.Station{}
-	for _, o := range orders {
-		t, found := sde.MarketTypes[o.TypeID]
-		if !found {
-			apiInternalServerError(w, "GetMarketType", fmt.Errorf("no type for id %d", o.TypeID))
-			return
-		}
-		types[t.ID] = t
-
-		s, found := sde.Stations[o.LocationID]
-		if !found {
-			apiInternalServerError(w, "GetStation", fmt.Errorf("no station for id %d", o.LocationID))
-			return
-		}
-		stations[s.ID] = s
-	}
-
-	json.NewEncoder(w).Encode(map[string]interface{}{
-		"buy":      buy,
-		"sell":     sell,
-		"stations": stations,
-		"types":    types,
+	s.renderView(w, r, "orders", nil, map[string]interface{}{
+		"Buy":       buy,
+		"Sell":      sell,
+		"IsHistory": true,
 	})
 }
 
-func (s *Server) processOrders(orders []*esi.MarketOrder, days time.Duration) (buy, sell []*esi.MarketOrder, _ error) {
-	buy = []*esi.MarketOrder{}
-	sell = []*esi.MarketOrder{}
+type displayOrder struct {
+	Order   *esi.MarketOrder
+	Type    *sde.MarketType
+	Station *sde.Station
+}
+
+func (s *Server) processOrders(orders []*esi.MarketOrder, days time.Duration) (buy, sell []*displayOrder, _ error) {
+	buy = []*displayOrder{}
+	sell = []*displayOrder{}
 	for _, order := range orders {
 		issued, err := time.Parse("2006-01-02T15:04:05Z", order.Issued)
 		if err != nil {
@@ -218,10 +208,22 @@ func (s *Server) processOrders(orders []*esi.MarketOrder, days time.Duration) (b
 
 		order.TimeRemaining = fmt.Sprintf("%dd %dh %dm %ds", days, hours, minutes, seconds)
 
+		t, found := sde.MarketTypes[order.TypeID]
+		if !found {
+			return nil, nil, fmt.Errorf("no type for id %d", order.TypeID)
+		}
+
+		s, found := sde.Stations[order.LocationID]
+		if !found {
+			return nil, nil, fmt.Errorf("no station for id %d", order.LocationID)
+			return
+		}
+
+		do := &displayOrder{Order: order, Type: t, Station: s}
 		if order.IsBuyOrder {
-			buy = append(buy, order)
+			buy = append(buy, do)
 		} else {
-			sell = append(sell, order)
+			sell = append(sell, do)
 		}
 	}
 	return

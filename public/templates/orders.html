@@ -6,98 +6,91 @@
 <main class="mt-10 mb-10 container mx-auto max-w-screen-md"
       x-data="viewData"
       x-init="initialize()">
-  <template x-for="s in sections">
-    <div>
-      <h1 class="mt-10 mb-10 text-3xl text-center text-gray-700 font-bold" x-text="s.name"></h1>
-      <div class="mx-4 flex flex-col">
-        <div class="py-2 align-middle inline-block w-full sm:px-6 lg:px-8">
-           <template x-if="!s.orders">
-              <p class="text-center italic text-gray-500">Loading orders...</p>
-            </template>
-            <template x-if="s.orders">
-              <div class="sm:hidden shadow overflow-hidden border border-gray-500 rounded-lg">
-                <template x-for="order in s.orders" x-ref="order.order_id">
-                  <div class="px-4 py-2 border-b border-gray-500 bg-gray-100">
-                    <div class="flex items-center">
-                      <div class="flex-shrink-0 h-10 w-10">
-                        <img class="h-10 w-10" :src="imgURL(order.type)" alt="">
-                      </div>
-                      <div class="ml-4 text-sm leading-6">
-                        <div class="flex">
-                          <a :href="hrefType(order.type_id)">
-                            <div class="font-bold text-gray-900" x-text="order.type.name"></div>
-                          </a>
-                          <button @click="openTypeInEVE(order.type_id)" class="ml-2 focus:outline-none">
-                            <svg class="h-4 w-4 stroke-current text-gray-500 hover:text-blue-500"
-                                 xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
-                            </svg>
-                          </button>
-                        </div>
-                        <div class="text-gray-900 italic" x-text="order.station_name"></div>
-                        <div class="text-xs" x-text="isCurrent ? order.time_remaining : order.state"
-                             :class="{'capitalize': !isCurrent}"></div>
-                        <div class="flex items-center justify-between">
-                          <span class="font-bold" x-text="formatISK(order.price)"></span>
-                          <div class="flex flex-row-reverse items-center text-xs">
-                            <div class="ml-1">
-                              <span x-text="order.volume_remain"></span>/<span x-text="order.volume_total"></span>
-                            </div>
-                            <span>Volume:</span>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                 </div>
-                </template>
+{{ template "orders" dict "Section" "Sell Orders" "Orders" .Sell "IsHistory" .IsHistory}}
+{{ template "orders" dict "Section" "Buy Orders" "Orders" .Buy "IsHistory" .IsHistory}}
+</main>
+{{ end }}
+
+{{ define "orders" }}
+<div>
+  <h1 class="mt-10 mb-10 text-3xl text-center text-gray-700 font-bold">{{ .Section }}</h1>
+  <div class="mx-4 flex flex-col">
+    <div class="py-2 align-middle inline-block w-full sm:px-6 lg:px-8">
+      <div class="sm:hidden shadow overflow-hidden border border-gray-500 rounded-lg">
+        {{ range .Orders }}
+        <div class="px-4 py-2 border-b border-gray-500 bg-gray-100">
+          <div class="flex items-center">
+            <div class="flex-shrink-0 h-10 w-10">
+              <img class="h-10 w-10" src="{{ .Type | iconURL }}" alt="{{ .Type.Name }}">
+            </div>
+            <div class="ml-4 text-sm leading-6">
+              <div class="flex">
+                <a href="/types/{{ .Type.ID }}">
+                  <div class="font-bold text-gray-900">{{ .Type.Name }}</div>
+                </a>
+                <button @click="openTypeInEVE(order.type_id)" class="ml-2 focus:outline-none">
+                  <svg class="h-4 w-4 stroke-current text-gray-500 hover:text-blue-500"
+                       xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                  </svg>
+                </button>
               </div>
-             </template>
-            <template x-if="s.orders">
-              <div class="hidden sm:block shadow overflow-hidden border border-gray-500 rounded-lg"
-                   :class="{'border-b': s.orders, 'shadow': s.orders}">
-                <table class="table-auto w-full divide-y divide-gray-500">
-                  <tbody class="bg-white divide-y divide-gray-500">
-                    <template x-for="order in s.orders" x-ref="order.order_id">
-                      <tr>
-                        <td class="px-4 py-4 flex items-center">
-                          <div class="flex-shrink-0 h-10 w-10">
-                            <img class="h-10 w-10" :src="imgURL(order.type)" alt="">
-                          </div>
-                          <div>
-                            <div class="flex">
-                              <a :href="hrefType(order.type_id)">
-                                <div class="ml-4 text-sm leading-5 font-bold text-gray-900" x-text="order.type.name"></div>
-                              </a>
-                              <button @click="openTypeInEVE(order.type_id)" class="ml-2 focus:outline-none">
-                                <svg class="h-4 w-4 stroke-current text-gray-500 hover:text-blue-500"
-                                     xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
-                                </svg>
-                              </button>
-                            </div>
-                            <div class="ml-4 text-sm leading-5 text-gray-900 italic" x-text="order.station_name"></div>
-                            <div class="ml-4 text-xs" x-text="isCurrent ? order.time_remaining : order.state"
-                                 :class="{'capitalize': !isCurrent}"></div>
-                          </div>
-                        </td>
-                        <td class="w-40 px-4 py-4 text-right">
-                          <span class="ml-2 font-bold" x-text="formatISK(order.price)"></span>
-                          <div class="flex flex-row-reverse items-center text-xs">
-                            <div class="ml-2">
-                              <span x-text="order.volume_remain"></span>/<span x-text="order.volume_total"></span>
-                            </div>
-                            <span>Volume:</span>
-                          </div>
-                        </td>
-                      </tr>
-                    </template>
-                  </tbody>
-                </table>
+              <div class="text-gray-900 italic">{{ .Station.Name }}</div>
+              <div class="text-xs">{{ if $.IsHistory }}{{ .Order.State | capitalize }}{{ else }}{{ .Order.TimeRemaining }}{{ end }}</div>
+              <div class="flex items-center justify-between">
+                <span class="font-bold" x-text="formatISK({{ .Order.Price }})"></span>
+                <div class="flex flex-row-reverse items-center text-xs">
+                  <div class="ml-1">
+                    <span>{{ .Order.VolumeRemain }}</span>/<span>{{ .Order.VolumeTotal }}</span>
+                  </div>
+                  <span>Volume:</span>
+                </div>
               </div>
-            </template>
+            </div>
+          </div>
         </div>
+        {{ end }}
+      </div>
+      <div class="hidden sm:block shadow overflow-hidden border border-gray-500 rounded-lg">
+        <table class="table-auto w-full divide-y divide-gray-500">
+          <tbody class="bg-white divide-y divide-gray-500">
+            {{ range .Orders }}
+            <tr>
+              <td class="px-4 py-4 flex items-center">
+                <div class="flex-shrink-0 h-10 w-10">
+                  <img class="h-10 w-10" src="{{ .Type | iconURL }}" alt="{{ .Type.Name }}">
+                </div>
+                <div>
+                  <div class="flex">
+                    <a href="/types/{{ .Type.ID }}">
+                      <div class="ml-4 text-sm leading-5 font-bold text-gray-900">{{ .Type.Name }}</div>
+                    </a>
+                    <button @click="openTypeInEVE({{ .Type.ID }})" class="ml-2 focus:outline-none">
+                      <svg class="h-4 w-4 stroke-current text-gray-500 hover:text-blue-500"
+                           xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                      </svg>
+                    </button>
+                  </div>
+                  <div class="ml-4 text-sm leading-5 text-gray-900 italic">{{ .Station.Name }}</div>
+                  <div class="ml-4 text-xs">{{ if $.IsHistory }}{{ .Order.State | capitalize }}{{ else }}{{ .Order.TimeRemaining }}{{ end }}</div>
+                </div>
+              </td>
+              <td class="w-40 px-4 py-4 text-right">
+                <span class="ml-2 font-bold" x-text="formatISK({{ .Order.Price }})"></span>
+                <div class="flex flex-row-reverse items-center text-xs">
+                  <div class="ml-2">
+                    <span>{{ .Order.VolumeRemain }}</span>/<span>{{ .Order.VolumeTotal }}</span>
+                  </div>
+                  <span>Volume:</span>
+                </div>
+              </td>
+            </tr>
+            {{ end }}
+          </tbody>
+        </table>
       </div>
     </div>
-  </template>
-</main>
+  </div>
+</div>
 {{ end }}

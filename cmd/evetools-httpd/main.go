@@ -170,8 +170,6 @@ func NewServer(static http.Handler, db model.DB, vr viewRenderer) *Server {
 
 	// Static Views
 	s.mux.Methods("GET").Path("/authorize").Handler(s.ShowView("authorize"))
-	s.mux.Methods("GET").Path("/history").Handler(s.ShowView("orders"))
-	s.mux.Methods("GET").Path("/orders").Handler(s.ShowView("orders"))
 	s.mux.Methods("GET").Path("/transactions").Handler(s.ShowView("transactions"))
 	s.mux.Methods("GET").Path("/types/{typeID:[0-9]+}").Handler(s.ShowView("typeDetails"))
 
@@ -179,6 +177,8 @@ func NewServer(static http.Handler, db model.DB, vr viewRenderer) *Server {
 	s.mux.Methods("GET").Path("/").HandlerFunc(s.ShowDashboard)
 	s.mux.Methods("GET").Path("/browse").HandlerFunc(s.ShowBrowse)
 	s.mux.Methods("GET").Path("/groups/{groupID:[0-9]+}").HandlerFunc(s.ShowGroupDetails)
+	s.mux.Methods("GET").Path("/orders/current").HandlerFunc(s.ShowMarketOrdersCurrent)
+	s.mux.Methods("GET").Path("/orders/history").HandlerFunc(s.ShowMarketOrdersHistory)
 	s.mux.Methods("GET").Path("/search").HandlerFunc(s.ShowSearch)
 	s.mux.Methods("GET").Path("/settings").HandlerFunc(s.ShowSettings)
 
@@ -198,7 +198,6 @@ func NewServer(static http.Handler, db model.DB, vr viewRenderer) *Server {
 
 	// View Data
 	view := api.PathPrefix("/view").Subrouter()
-	view.Methods("GET").Path("/marketOrders").HandlerFunc(s.ViewMarketOrders)
 	view.Methods("GET").Path("/transactions").HandlerFunc(s.ViewTransactions)
 	view.Methods("GET").Path("/typeDetails/{typeID:[0-9]+}").HandlerFunc(s.ViewTypeDetails)
 
@@ -389,6 +388,9 @@ func (tvr *templateViewRenderer) renderView(w http.ResponseWriter, r *http.Reque
 	funcs := template.FuncMap{
 		"avatarURL": func(id int) string {
 			return fmt.Sprintf("https://images.evetech.net/characters/%d/portrait?size=128", id)
+		},
+		"capitalize": func(str string) string {
+			return strings.Title(str)
 		},
 		"currentUser": func() (u *model.User) {
 			defer func() {
