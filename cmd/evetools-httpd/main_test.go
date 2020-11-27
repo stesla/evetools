@@ -254,8 +254,6 @@ func (*testDB) GetTokenForCharacter(characterID int) (*model.Token, error) {
 	}, nil
 }
 
-func (*testDB) GetTransactions() ([]*esi.WalletTransaction, error) { return nil, ErrNotImplemented }
-
 func (m *testDB) GetUser(userID int) (*model.User, error) {
 	return &model.User{
 		ID:                  userID,
@@ -267,7 +265,6 @@ func (m *testDB) GetUser(userID int) (*model.User, error) {
 func (*testDB) RemoveCharacterForUser(int, int) error           { return ErrNotImplemented }
 func (*testDB) SaveActiveCharacterHash(int, string) error       { return ErrNotImplemented }
 func (*testDB) SaveTokenForCharacter(int, string, string) error { return nil }
-func (*testDB) SaveTransaction(*esi.WalletTransaction) error    { return ErrNotImplemented }
 func (*testDB) SaveUserStationA(userID, stationID int) error    { return ErrNotImplemented }
 func (*testDB) SaveUserStationB(userID, stationID int) error    { return ErrNotImplemented }
 
