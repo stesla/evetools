@@ -1,15 +1,13 @@
+{{ define "title" }} - Search{{ end }}
 {{ define "javascripts" }}
-<script src="/js/search.js"></script>
+<script src="/js/favorites.js"></script>
 {{ end }} 
 
 {{ define "content" }}
-<main class="mt-10 mb-10 container mx-auto max-w-6xl"
-      x-data="viewData"
-      x-init="initialize()">
+<main class="mt-10 mb-10 container mx-auto max-w-6xl" x-data="favorites" x-init="initialize()">
   <form id="search" action="/search">
     <div class="mx-auto flex w-full sm:w-4/5 max-w-screen-sm items-center rounded-xl overflow-hidden border border-gray-500">
-      <input x-model="filter" class="px-4 py-4 w-full bg-gray-100 focus:outline-none"
-             name="q" placeholder="Search by name...">
+      <input class="px-4 py-4 w-full bg-gray-100 focus:outline-none" name="q" placeholder="Search by name...">
       <button form="search" class="px-4 py-4 bg-blue-500 text-gray-100">
         Search
       </button>

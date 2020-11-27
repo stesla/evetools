@@ -1,4 +1,4 @@
-viewData = (function(window, document, undefined) {
+favorites = (function(window, document, undefined) {
   return {
     favorites: [],
 
@@ -8,7 +8,7 @@ viewData = (function(window, document, undefined) {
     },
 
     isFavorite(typeID) {
-      return this.favorites.find(id => id === typeID)
+      return this.favorites.find(id => id === typeID);
     },
 
     toggleFavorite(typeID) {

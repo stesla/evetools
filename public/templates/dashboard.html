@@ -1,15 +1,11 @@
 {{ define "title" }}- Dashboard{{ end }}
 
 {{ define "javascripts"}}
-<script src="/js/dashboard.js"></script>
+<script src="/js/favorites.js"></script>
 {{ end }}
 
 {{ define "content" }}
-<main class="mt-10 mb-10 container mx-auto max-w-6xl"
-      x-data="viewData"
-      x-init="initialize()"
-      x-cloak>
-
+<main class="mt-10 mb-10 container mx-auto max-w-6xl" x-data="favorites" x-init="initialize()" x-cloak>
   <h1 class="mt-10 text-3xl text-center text-gray-700 font-bold">Dashboard</h1>
   <dl class="mt-4 mx-4 flex flex-col sm:flex-row justify-around px-4 py-2 border border-gray-500 bg-gray-100 rounded-xl shadow-xl">
     <div class="">
