@@ -169,18 +169,16 @@ func NewServer(static http.Handler, db model.DB, vr viewRenderer) *Server {
 	s.mux.Methods("GET").Path("/login/callback").HandlerFunc(s.LoginCallback)
 	s.mux.Methods("GET").Path("/logout").HandlerFunc(s.Logout)
 
-	// Static Views
-	s.mux.Methods("GET").Path("/authorize").Handler(s.ShowView("authorize"))
-	s.mux.Methods("GET").Path("/transactions").Handler(s.ShowView("transactions"))
-
-	// Server Views
+	// Views
 	s.mux.Methods("GET").Path("/").HandlerFunc(s.ShowDashboard)
+	s.mux.Methods("GET").Path("/authorize").Handler(s.ShowView("authorize"))
 	s.mux.Methods("GET").Path("/browse").HandlerFunc(s.ShowBrowse)
 	s.mux.Methods("GET").Path("/groups/{groupID:[0-9]+}").HandlerFunc(s.ShowGroupDetails)
 	s.mux.Methods("GET").Path("/orders/current").HandlerFunc(s.ShowMarketOrdersCurrent)
 	s.mux.Methods("GET").Path("/orders/history").HandlerFunc(s.ShowMarketOrdersHistory)
 	s.mux.Methods("GET").Path("/search").HandlerFunc(s.ShowSearch)
 	s.mux.Methods("GET").Path("/settings").HandlerFunc(s.ShowSettings)
+	s.mux.Methods("GET").Path("/transactions").HandlerFunc(s.ShowTransactions)
 	s.mux.Methods("GET").Path("/types/{typeID:[0-9]+}").HandlerFunc(s.ShowTypeDetails)
 
 	// API
@@ -196,10 +194,6 @@ func NewServer(static http.Handler, db model.DB, vr viewRenderer) *Server {
 	api.Methods("GET").Path("/user/favorites").HandlerFunc(s.GetUserFavorites)
 	api.Methods("PUT").Path("/user/stationA").HandlerFunc(s.PutUserStationA)
 	api.Methods("PUT").Path("/user/stationB").HandlerFunc(s.PutUserStationB)
-
-	// View Data
-	view := api.PathPrefix("/view").Subrouter()
-	view.Methods("GET").Path("/transactions").HandlerFunc(s.ViewTransactions)
 
 	return s
 }

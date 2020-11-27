@@ -1,6 +1,7 @@
 package esi
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
 	"net/http"
@@ -13,6 +14,7 @@ type Client interface {
 	GetMarketOrderHistory(ctx context.Context, characterID int) ([]*MarketOrder, error)
 	GetMarketOrders(ctx context.Context, characterID int) ([]*MarketOrder, error)
 	GetMarketPrices(ctx context.Context, stationID, regionID, typeID int) (*Price, error)
+	GetNames(ids []int) (map[int]string, error)
 	GetPriceHistory(ctx context.Context, regionID, typeID int) (result []HistoryDay, err error)
 	GetWalletBalance(ctx context.Context, characterID int) (balance float64, err error)
 	GetWalletTransactions(ctx context.Context, characterID int) ([]*WalletTransaction, error)
@@ -52,4 +54,46 @@ func (c *client) Verify(ctx context.Context) (result VerifyOK, err error) {
 
 	err = json.NewDecoder(resp.Body).Decode(&result)
 	return
+}
+
+func (c *client) GetNames(ids []int) (map[int]string, error) {
+	idMap := make(map[int]bool, len(ids))
+	for _, id := range ids {
+		idMap[id] = true
+	}
+	ids = []int{}
+	for id, _ := range idMap {
+		ids = append(ids, id)
+	}
+	var buf bytes.Buffer
+	json.NewEncoder(&buf).Encode(&ids)
+
+	req, err := newESIRequest(context.Background(), http.MethodPost, "/universe/names/", &buf)
+	if err != nil {
+		return nil, err
+	}
+	req.Header.Add("Content-Type", "application/json")
+
+	resp, err := c.http.Do(req)
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+
+	results := []struct {
+		Category string `json:"category"`
+		ID       int    `json:"id"`
+		Name     string `json:"name"`
+	}{}
+	json.NewDecoder(resp.Body).Decode(&results)
+
+	names := make(map[int]string, len(results))
+	for _, r := range results {
+		if r.Category != "character" {
+			continue
+		}
+		names[r.ID] = r.Name
+	}
+
+	return names, nil
 }

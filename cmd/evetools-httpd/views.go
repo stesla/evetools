@@ -2,8 +2,8 @@ package main
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
+	"html/template"
 	"log"
 	"net/http"
 	"strconv"
@@ -297,59 +297,53 @@ func (s *Server) ShowSettings(w http.ResponseWriter, r *http.Request) {
 	})
 }
 
-func (s *Server) ViewTransactions(w http.ResponseWriter, r *http.Request) {
+func (s *Server) ShowTransactions(w http.ResponseWriter, r *http.Request) {
 	user := currentUser(r)
 
 	txns, err := s.esi.GetWalletTransactions(r.Context(), user.ActiveCharacterID)
 	if err != nil {
-		apiInternalServerError(w, "GetWalletTransactions", err)
+		internalServerError(w, "GetWalletTransactions", err)
 		return
 	}
 
-	maxTxnID, err := s.db.GetLatestTxnID()
+	clientIDs := make([]int, len(txns))
+	for i, txn := range txns {
+		clientIDs[i] = txn.ClientID
+	}
+	characterNames, err := s.esi.GetNames(clientIDs)
 	if err != nil {
-		apiInternalServerError(w, "GetLatestTxnID", err)
+		internalServerError(w, "GetNames", err)
 		return
 	}
 
-	types := map[int]*sde.MarketType{}
-	stations := map[int]*sde.Station{}
-	for _, txn := range txns {
-		if txn.TransactionID > maxTxnID {
-			txn.ClientName, err = s.esi.GetCharacterName(txn.ClientID)
-			if err != nil {
-				apiInternalServerError(w, "GetCharacterName", err)
-				return
+	funcs := template.FuncMap{
+		"character": func(txn *esi.WalletTransaction) string {
+			if name, found := characterNames[txn.ClientID]; found {
+				return name
+			} else {
+				return "UKNOWN"
 			}
-			s.db.SaveTransaction(txn)
-		}
-
-		t, found := sde.MarketTypes[txn.TypeID]
-		if !found {
-			apiInternalServerError(w, "GetMarketType", fmt.Errorf("no type for id %d", txn.TypeID))
-			return
-		}
-		types[t.ID] = t
-
-		s, found := sde.Stations[txn.LocationID]
-		if !found {
-			apiInternalServerError(w, "GetStation", fmt.Errorf("no station for id %d", txn.LocationID))
-			return
-		}
-		stations[s.ID] = s
-
+		},
+		"station": func(txn *esi.WalletTransaction) (string, error) {
+			station, ok := sde.Stations[txn.LocationID]
+			if !ok {
+				return "", fmt.Errorf("station not found for id %d", txn.LocationID)
+			}
+			return station.Name, nil
+		},
+		"total": func(txn *esi.WalletTransaction) float64 {
+			return float64(txn.Quantity) * txn.UnitPrice
+		},
+		"type": func(txn *esi.WalletTransaction) (*sde.MarketType, error) {
+			t, ok := sde.MarketTypes[txn.TypeID]
+			if !ok {
+				return nil, fmt.Errorf("type not found for id %d", txn.TypeID)
+			}
+			return t, nil
+		},
 	}
-
-	txns, err = s.db.GetTransactions()
-	if err != nil {
-		apiInternalServerError(w, "GetTransactions", err)
-		return
-	}
-
-	json.NewEncoder(w).Encode(map[string]interface{}{
-		"stations":     stations,
-		"transactions": txns,
-		"types":        types,
+	s.renderView(w, r, "transactions", funcs, map[string]interface{}{
+		"Transactions": txns,
 	})
 }
 

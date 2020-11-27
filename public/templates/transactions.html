@@ -1,95 +1,87 @@
-{{ define "javascripts" }}
-<script src="/js/transactions.js"></script>
-{{ end }}
+{{ define "title"}} - Market Transactions{{ end }}
 
 {{ define "content" }}
-<main class="mt-10 mb-10 container mx-auto max-w-screen-md"
-      x-data="viewData"
-      x-init="initialize()">
+<main class="mt-10 mb-10 container mx-auto max-w-screen-md" x-cloak>
   <div>
     <h1 class="mt-10 mb-10 text-3xl text-center text-gray-700 font-bold">Market Transactions</h1>
     <div class="mx-4 flex flex-col">
       <div class="py-2 align-middle inline-block w-full sm:px-6 lg:px-8">
-         <template x-if="!txns">
-            <p class="text-center italic text-gray-500">Loading transactions...</p>
-          </template>
-          <template x-if="txns">
-            <div class="sm:hidden shadow overflow-hidden border border-gray-500 rounded-lg">
-              <template x-for="txn in txns" x-ref="txn.order_id">
-                <div class="px-4 py-2 border-b border-gray-500 bg-gray-100 flex items-center">
-                  <div class="flex-shrink-0 h-10 w-10">
-                    <img class="h-10 w-10" :src="imgURL(txn.type)" alt="">
-                  </div>
-                  <div class="ml-4 text-sm leading-5">
-                    <a :href="hrefType(txn.type_id)">
-                      <div class="font-bold text-gray-900" x-text="txn.type.name"></div>
-                    </a>
-                    <div class="text-gray-900 italic" x-text="txn.station_name"></div>
-                    <div class="text-xs" x-text="txn.date"></div>
-                    <div class="text-xs">
-                      <span x-text="txn.is_buy ? 'Bought from' : 'Sold to'"></span>
-                      <span x-text="txn.client_name"></span>
-                    </div>
-                    <div class="flex items-center justify-between">
-                      <div class="font-bold text-sm"
-                            :class="{'text-green-500': !txn.is_buy, 'text-red-500': txn.is_buy}"
-                            x-text="formatISK(txn.unit_price * txn.quantity)"></div>
-                      <div class="flex flex-row-reverse items-center text-xs text-right text-gray-900">
-                        <span class="ml-1" x-text="formatISK(txn.unit_price)"></span>
-                        <span>Price:</span>
-                      </div>
-                      <div class="flex flex-row-reverse items-center text-xs text-right text-gray-900">
-                        <span class="ml-1" x-text="txn.quantity"></span>
-                        <span>Quantity:</span>
-                      </div>
-                    </div>
-                  </div>
+        <!-- smaller than small -->
+        <div class="sm:hidden shadow overflow-hidden border border-gray-500 rounded-lg">
+          {{ range .Transactions }}
+          {{ $type := . | type }}
+          <div class="px-4 py-2 border-b border-gray-500 bg-gray-100 flex items-center">
+            <div class="flex-shrink-0 h-10 w-10">
+              <img class="h-10 w-10" src="{{ $type | iconURL }}" alt="">
+            </div>
+            <div class="ml-4 text-sm leading-5">
+              <a href="/types/{{ $type.ID }}">
+                <div class="font-bold text-gray-900">{{ $type.Name }}</div>
+              </a>
+              <div class="text-gray-900 italic">{{ . | station }}</div>
+              <div class="text-xs" x-text="formatDate('{{ .Date }}')"></div>
+              <div class="text-xs">
+                <span>{{ if .IsBuy }}Bought from{{ else }}Sold to{{ end }}</span>
+                <span>{{ . | character }}</span>
+              </div>
+              <div class="font-bold text-sm {{ if .IsBuy }}text-red-500{{ else }}text-green-500{{ end }}"
+                     x-text="formatISK({{ . | total }})">
+              </div>
+              <div class="flex items-center justify-between">
+              <div class="flex flex-row-reverse items-center text-xs text-right text-gray-900">
+                <span class="ml-1" x-text="formatISK({{ .UnitPrice }})"></span>
+                  <span>Price:</span>
                 </div>
-              </template>
+                <div class="flex flex-row-reverse items-center text-xs text-right text-gray-900">
+                  <span class="ml-1" x-text="formatNumber({{ .Quantity }})"></span>
+                  <span>Quantity:</span>
+                </div>
+              </div>
             </div>
-          </template>
-          <template x-if="txns">
-            <div class="hidden sm:block shadow overflow-hidden border border-gray-500 rounded-lg"
-                 :class="{'border-b': txns, 'shadow': txns}">
-              <table class="table-auto w-full divide-y divide-gray-500">
-                <tbody class="bg-white divide-y divide-gray-500">
-                  <template x-for="txn in txns" x-ref="txn.order_id">
-                    <tr>
-                      <td class="px-4 py-4 flex items-center">
-                        <div class="flex-shrink-0 h-10 w-10">
-                          <img class="h-10 w-10" :src="imgURL(txn.type)" alt="">
-                        </div>
-                        <div>
-                          <a :href="hrefType(txn.type_id)">
-                            <div class="ml-4 text-sm leading-5 font-bold text-gray-900" x-text="txn.type.name"></div>
-                          </a>
-                          <div class="ml-4 text-sm leading-5 text-gray-900 italic" x-text="txn.station_name"></div>
-                          <div class="ml-4 text-xs leading-5" x-text="txn.date"></div>
-                          <div class="ml-4 text-xs leading-5">
-                            <span x-text="txn.is_buy ? 'Bought from' : 'Sold to'"></span>
-                            <span x-text="txn.client_name"></span>
-                          </div>
-                        </div>
-                      </td>
-                      <td class="w-40 px-4 py-4 text-right">
-                        <div class="ml-2 font-bold"
-                              :class="{'text-green-500': !txn.is_buy, 'text-red-500': txn.is_buy}"
-                              x-text="formatISK(txn.unit_price * txn.quantity)"></div>
-                        <div class="flex flex-row-reverse items-center text-xs leading-5 text-right text-gray-900">
-                          <span class="ml-2" x-text="formatISK(txn.unit_price)"></span>
-                          <span>Price:</span>
-                        </div>
-                        <div class="flex flex-row-reverse items-center text-xs leading-5 text-right text-gray-900">
-                          <span class="ml-2" x-text="txn.quantity"></span>
-                          <span>Quantity:</span>
-                        </div>
-                      </td>
-                    </tr>
-                  </template>
-                </tbody>
-              </table>
-            </div>
-          </template>
+          </div>
+          {{ end }}
+        </div>
+
+        <!-- small and up -->
+        <div class="hidden sm:block shadow overflow-hidden border border-gray-500 rounded-lg">
+          <table class="table-auto w-full divide-y divide-gray-500">
+            <tbody class="bg-white divide-y divide-gray-500">
+              {{ range .Transactions }}
+              {{ $type := . | type }}
+              <tr>
+                <td class="px-4 py-4 flex items-center">
+                  <div class="flex-shrink-0 h-10 w-10">
+                    <img class="h-10 w-10" src="{{ $type | iconURL }}" alt="">
+                  </div>
+                  <div>
+                    <a href="/types/{{ $type.ID }}">
+                      <div class="ml-4 text-sm leading-5 font-bold text-gray-900">{{ $type.Name }}</div>
+                    </a>
+                    <div class="ml-4 text-sm leading-5 text-gray-900 italic">{{ . | station }}</div>
+                    <div class="ml-4 text-xs leading-5" x-text="formatDate('{{ .Date }}')"></div>
+                    <div class="ml-4 text-xs leading-5">
+                      <span>{{ if .IsBuy }}Bought from{{ else }}Sold to{{ end }}</span>
+                      <span>{{ . | character }}</span>
+                    </div>
+                  </div>
+                </td>
+                <td class="w-40 px-4 py-4 text-right">
+                  <div class="ml-2 font-bold {{ if .IsBuy }}text-red-500{{ else }}text-green-500{{ end }}"
+                       x-text="formatISK({{ . | total }})"></div>
+                  <div class="flex flex-row-reverse items-center text-xs leading-5 text-right text-gray-900">
+                    <span class="ml-2" x-text="formatISK({{ .UnitPrice }})"></span>
+                    <span>Price:</span>
+                  </div>
+                  <div class="flex flex-row-reverse items-center text-xs leading-5 text-right text-gray-900">
+                    <span class="ml-2" x-text="formatNumber({{ .Quantity }})"></span>
+                    <span>Quantity:</span>
+                  </div>
+                </td>
+              </tr>
+              {{ end }}
+            </tbody>
+          </table>
+        </div>
       </div>
     </div>
   </div>

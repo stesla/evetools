@@ -48,6 +48,18 @@
     return formatDecimal(100 * amt, 2, 2) + "%"
   }
 
+  const leadingZero = n => n > 9 ? n : '0' + n;
+
+  window.formatDate = function(str) {
+    let date = new Date(str);
+    return date.getFullYear() + '-' +
+        leadingZero(date.getMonth() + 1) + '-' +
+        leadingZero(date.getDate()) + ' ' +
+        leadingZero(date.getHours()) + ':' +
+        leadingZero(date.getMinutes()) + ':' +
+        leadingZero(date.getSeconds());
+  }
+
   window.handleSearch = function(q) {
     window.location = '/search?q=' + q;
   }
