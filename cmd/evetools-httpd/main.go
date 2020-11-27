@@ -172,7 +172,6 @@ func NewServer(static http.Handler, db model.DB, vr viewRenderer) *Server {
 	s.mux.Methods("GET").Path("/authorize").Handler(s.ShowView("authorize"))
 	s.mux.Methods("GET").Path("/history").Handler(s.ShowView("orders"))
 	s.mux.Methods("GET").Path("/orders").Handler(s.ShowView("orders"))
-	s.mux.Methods("GET").Path("/settings").Handler(s.ShowView("settings"))
 	s.mux.Methods("GET").Path("/transactions").Handler(s.ShowView("transactions"))
 	s.mux.Methods("GET").Path("/types/{typeID:[0-9]+}").Handler(s.ShowView("typeDetails"))
 
@@ -181,6 +180,7 @@ func NewServer(static http.Handler, db model.DB, vr viewRenderer) *Server {
 	s.mux.Methods("GET").Path("/browse").HandlerFunc(s.ShowBrowse)
 	s.mux.Methods("GET").Path("/groups/{groupID:[0-9]+}").HandlerFunc(s.ShowGroupDetails)
 	s.mux.Methods("GET").Path("/search").HandlerFunc(s.ShowSearch)
+	s.mux.Methods("GET").Path("/settings").HandlerFunc(s.ShowSettings)
 
 	// API
 	api := s.mux.PathPrefix("/api/v1").Subrouter()
@@ -199,7 +199,6 @@ func NewServer(static http.Handler, db model.DB, vr viewRenderer) *Server {
 	// View Data
 	view := api.PathPrefix("/view").Subrouter()
 	view.Methods("GET").Path("/marketOrders").HandlerFunc(s.ViewMarketOrders)
-	view.Methods("GET").Path("/settings").HandlerFunc(s.ViewSettings)
 	view.Methods("GET").Path("/transactions").HandlerFunc(s.ViewTransactions)
 	view.Methods("GET").Path("/typeDetails/{typeID:[0-9]+}").HandlerFunc(s.ViewTypeDetails)
 
@@ -399,6 +398,20 @@ func (tvr *templateViewRenderer) renderView(w http.ResponseWriter, r *http.Reque
 			}()
 			u = currentUser(r)
 			return
+		},
+		"dict": func(values ...interface{}) (map[string]interface{}, error) {
+			if len(values)%2 != 0 {
+				return nil, fmt.Errorf("must pass even number of args to dict")
+			}
+			dict := make(map[string]interface{}, len(values)/2)
+			for i := 0; i < len(values); i += 2 {
+				key, ok := values[i].(string)
+				if !ok {
+					return nil, fmt.Errorf("dict keys must be strings")
+				}
+				dict[key] = values[i+1]
+			}
+			return dict, nil
 		},
 		"iconURL": func(t *sde.MarketType) string {
 			if t == nil {

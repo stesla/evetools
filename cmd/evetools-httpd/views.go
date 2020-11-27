@@ -246,13 +246,17 @@ func (s *Server) ShowSearch(w http.ResponseWriter, r *http.Request) {
 	})
 }
 
-func (s *Server) ViewSettings(w http.ResponseWriter, r *http.Request) {
+func (s *Server) ShowSettings(w http.ResponseWriter, r *http.Request) {
 	user := currentUser(r)
 
 	characters, err := s.db.GetCharactersForUser(user.ID)
 	if err != nil {
 		apiInternalServerError(w, "GetCharactersForUser", err)
 		return
+	}
+	charactersByName := make(map[string]*model.Character, len(characters))
+	for _, c := range characters {
+		charactersByName[c.CharacterName] = c
 	}
 
 	stationA, found := sde.Stations[user.StationA]
@@ -267,11 +271,10 @@ func (s *Server) ViewSettings(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	json.NewEncoder(w).Encode(map[string]interface{}{
-		"characters": characters,
-		"stationA":   stationA,
-		"stationB":   stationB,
-		"stations":   sde.Stations,
+	s.renderView(w, r, "settings", nil, map[string]interface{}{
+		"Characters": charactersByName,
+		"StationA":   stationA,
+		"StationB":   stationB,
 	})
 }
 

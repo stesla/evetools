@@ -1,53 +1,11 @@
 viewData = (function(window, document, undefined) {
-  var data = retrieve('/api/v1/view/settings', 'error fetching data view');
-  var loaded = false;
-  data.then(() => { loaded = true; });
-
-  function settings() {
-    return {
-      characters: {},
-
-      initialize() {
-        document.title += " - Settings";
-        data.then(data => {
-          this.characters = data.characters;
-        });
-      },
-
-      get characterList() {
-        return Object.values(this.characters).sort(byName);
-      },
-
-      get loaded() {
-        return loaded;
-      },
-
-      makeActiveCharacter(cid) {
-        retrieve('/api/v1/user/characters/' + cid + '/activate', 'error activating user', {
-          raw: true,
-          method: 'POST',
-        })
-        .then(() => {
-          window.location.href = "/";
-        });
-      },
-
-    }
-  }
-
-  function stationList(stationAorB) {
+  function stationList(slot, name, id) {
     return {
       editing: false,
       listOpen: false,
-      station: { name: "" },
+      station: { name: name, id: id },
       stationName: "",
       stationList: [],
-
-      initialize() {
-        data.then(data => {
-          this.station = data[stationAorB];
-        });
-      },
 
       beginEdit(event, nextTick) {
         this.editing = true
@@ -80,7 +38,7 @@ viewData = (function(window, document, undefined) {
           return;
         }
         station = this.stationList.find(s => s.name === this.stationName);
-        return retrieve('/api/v1/user/'+stationAorB, 'error saving station', {
+        return retrieve('/api/v1/user/'+slot, 'error saving station', {
           raw: true,
           method: 'PUT',
           body: JSON.stringify(station),
@@ -101,9 +59,5 @@ viewData = (function(window, document, undefined) {
       },
     };
   }
-
-  return {
-    settings: settings,
-    stationList: stationList,
-  }
+  return stationList
 })(window, document, undefined);

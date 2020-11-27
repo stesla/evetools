@@ -1,95 +1,31 @@
+{{ define "title" }} - Settings{{ end }}
 {{ define "javascripts" }}
 <script src="/js/settings.js"></script>
 {{ end }}
 
 {{ define "content" }}
-<main class="mt-10 text-center max-w-6x1 mx-auto container"
-      x-data="viewData.settings()"
-      x-init="initialize()">
-
+<main class="mt-10 text-center max-w-6x1 mx-auto container">
   <h1 class="mt-10 text-3xl text-center text-gray-700 font-bold">My Trading Stations</h1>
-  <p x-show="!loaded" class="mt-4 text-center italic text-gray-500">Loading...</p>
-  <div x-show="loaded" x-data="viewData.stationList('stationA')" x-init="initialize()"
-    class="mt-10 w-11/12 pl-4 max-w-3xl mx-auto bg-gray-100 border border-gray-500 rounded-xl shadow-xl overflow-hidden">
-    <div class="text-center py-4" x-show="!editing">
-      <span class="leading-none text-lg" x-text="station.name"></span>
-      <button class="ml-2" @click="beginEdit($event, $nextTick)">
-        <svg class="h-4 w-4"
-             xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-        </svg>
-      </button>
-    </div>
-    <div x-show="editing" @click.away="editing = false; stationName = ''">
-      <form @submit="$event.preventDefault()">
-        <div class="flex items-center" @keydown.enter="save()">
-          <input class="inline-block w-full px-4 py-4 bg-gray-100 text-gray-900 focus:outline-none"
-                 type="text" id="stations" autocomplete="off" placeholder="Station name..."
-                 x-model="stationName" @input="fetch()" @focus="listOpen = true">
-          <button class="inline-block px-8 py-4 bg-blue-500 text-gray-300" @click="save()">Save</button>
-        </div>
-        <datalist x-show="listOpen" class="block absolute bg-gray-900 text-gray-100 rounded-xl rounded-t-none shadow-xl">
-          <template x-for="s in stationList" x-ref="s.id">
-            <option class="mb-1 px-4 py-2 hover:bg-gray-700 focus:bg-gray-700 focus:outline-none cursor-pointer"
-                    @focus="stationName=$event.target.value"
-                    @click="select($event, $nextTick)"
-                    @keydown.enter="select($event, $nextTick)"
-                    :value="s.name" x-text="s.name" tabindex="0"></option>
-          </template>
-        </datalist>
-      </form>
-    </div>
-  </div>
-  <div x-show="loaded" x-data="viewData.stationList('stationB')" x-init="initialize()"
-    class="mt-10 w-11/12 pl-4 max-w-3xl mx-auto bg-gray-100 border border-gray-500 rounded-xl shadow-xl overflow-hidden">
-    <div class="text-center py-4" x-show="!editing">
-      <span class="leading-none text-lg" x-text="station.name"></span>
-      <button class="ml-2" @click="beginEdit($event, $nextTick)">
-        <svg class="h-4 w-4"
-             xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-        </svg>
-      </button>
-    </div>
-    <div x-show="editing" @click.away="editing = false; stationName = ''">
-      <form @submit="$event.preventDefault()">
-        <div class="flex items-center" @keydown.enter="save()">
-          <input class="inline-block w-full px-4 py-4 bg-gray-100 text-gray-900 focus:outline-none"
-                 type="text" id="stations" autocomplete="off" placeholder="Station name..."
-                 x-model="stationName" @input="fetch()" @focus="listOpen = true">
-          <button class="inline-block px-8 py-4 bg-blue-500 text-gray-300" @click="save()">Save</button>
-        </div>
-        <datalist x-show="listOpen" class="block absolute bg-gray-900 text-gray-100 rounded-xl rounded-t-none shadow-xl">
-          <template x-for="s in stationList" x-ref="s.id">
-            <option class="mb-1 px-4 py-2 hover:bg-gray-700 focus:bg-gray-700 focus:outline-none cursor-pointer"
-                    @focus="stationName=$event.target.value"
-                    @click="select($event, $nextTick)"
-                    @keydown.enter="select($event, $nextTick)"
-                    :value="s.name" x-text="s.name" tabindex="0"></option>
-          </template>
-        </datalist>
-      </form>
-    </div>
-  </div>
+  {{ template "stationControl" dict "Station" .StationA "Slot" "stationA" }}
+  {{ template "stationControl" dict "Station" .StationB "Slot" "stationB" }}
 
   <h1 class="mt-10 text-3xl text-center text-gray-700 font-bold">My Characters</h1>
-  <p x-show="!loaded" class="mt-4 text-center italic text-gray-500">Loading...</p>
-  <div x-show="loaded" class="mx-4 mt-10 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-    <template x-for="c in characterList" x-ref="character.id">
-      <div class="py-3 bg-gray-100 border-b border-gray-500 rounded-xl shadow-xl">
-        <div class="px-4 flex items-center justify-between">
-          <div class="font-bold text-lg" x-text="c.name"></div>
-          <figure class="w-16 h-16 border-2 border-gray-500 rounded-full overflow-hidden">
-            <img class="w-full h-full object-cover" :src="avatarURL(c.id)">
-          </figure>
-        </div>
-        <div class="mt-4 border-t-2 pt-2 px-4 border-gray-300 flex flex-center justify-between">
-          <a href="#" @click="removeCharacter(c.id)" class="font-bold text-sm text-red-500">Remove</a>
-          <a href="/login/authorize" class="font-bold text-sm">Refresh Token</a>
-          <a href="#" @click="makeActiveCharacter(c.id)" class="font-bold text-sm">Make Active</a>
-        </div>
+  <div class="mx-4 mt-10 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+    {{ range .Characters }}
+    <div class="py-3 bg-gray-100 border-b border-gray-500 rounded-xl shadow-xl">
+      <div class="px-4 flex items-center justify-between">
+        <div class="font-bold text-lg">{{ .CharacterName }}</div>
+        <figure class="w-16 h-16 border-2 border-gray-500 rounded-full overflow-hidden">
+          <img class="w-full h-full object-cover" src="{{ .CharacterID | avatarURL }}">
+        </figure>
       </div>
-    </template>
+      <div class="mt-4 border-t-2 pt-2 px-4 border-gray-300 flex flex-center justify-between">
+        <a href="#" @click="removeCharacter({{ .CharacterID }})" class="font-bold text-sm text-red-500">Remove</a>
+        <a href="/login/authorize" class="font-bold text-sm">Refresh Token</a>
+        <a href="#" @click="makeActiveCharacter({{ .CharacterID }})" class="font-bold text-sm">Make Active</a>
+      </div>
+    </div>
+    {{ end }}
     <div class="border-2 border-gray-500 border-dashed py-2 rounded-xl">
       <a class="flex flex-col items-center" href="/login/authorize">
         <svg class="h-24 w-24 stroke-current text-gray-500"
@@ -102,4 +38,38 @@
     </div>
   </div>
 </main>
+{{ end }}
+
+{{ define "stationControl" }}
+<div x-data="viewData('{{ .Slot }}', '{{ .Station.Name }}', {{ .Station.ID }})"
+  class="mt-10 w-11/12 pl-4 max-w-3xl mx-auto bg-gray-100 border border-gray-500 rounded-xl shadow-xl overflow-hidden">
+  <div class="text-center py-4" x-show="!editing">
+    <span class="leading-none text-lg" x-text="station.name"></span>
+    <button class="ml-2" @click="beginEdit($event, $nextTick)">
+      <svg class="h-4 w-4"
+           xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+      </svg>
+    </button>
+  </div>
+  <div x-show="editing" @click.away="editing = false; stationName = ''">
+    <form @submit="$event.preventDefault()">
+      <div class="flex items-center" @keydown.enter="save()">
+        <input class="inline-block w-full px-4 py-4 bg-gray-100 text-gray-900 focus:outline-none"
+               type="text" id="stations" autocomplete="off" placeholder="Station name..."
+               x-model="stationName" @input="fetch()" @focus="listOpen = true">
+        <button class="inline-block px-8 py-4 bg-blue-500 text-gray-300" @click="save()">Save</button>
+      </div>
+      <datalist x-show="listOpen" class="block absolute bg-gray-900 text-gray-100 rounded-xl rounded-t-none shadow-xl">
+        <template x-for="s in stationList" x-ref="s.id">
+          <option class="mb-1 px-4 py-2 hover:bg-gray-700 focus:bg-gray-700 focus:outline-none cursor-pointer"
+                  @focus="stationName=$event.target.value"
+                  @click="select($event, $nextTick)"
+                  @keydown.enter="select($event, $nextTick)"
+                  :value="s.name" x-text="s.name" tabindex="0"></option>
+        </template>
+      </datalist>
+    </form>
+  </div>
+</div>
 {{ end }}
