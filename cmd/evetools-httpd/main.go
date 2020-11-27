@@ -74,6 +74,14 @@ var oauthConfig = oauth2.Config{
 	},
 }
 
+var cliOauthConfig = oauth2.Config{
+	Scopes: []string{
+		"esi-search.search_structures.v1",
+		"esi-universe.read_structures.v1",
+		"esi-markets.structure_markets.v1",
+	},
+}
+
 func main() {
 	pflag.Parse()
 
@@ -125,11 +133,25 @@ func initOAuthConfig() error {
 	if oauthConfig.RedirectURL == "" {
 		return fmt.Errorf("must provide oauth.redirectURL")
 	}
+	cliOauthConfig.ClientID = viper.GetString("cli.oauth.clientID")
+	if cliOauthConfig.ClientID == "" {
+		return fmt.Errorf("must provide cli.oauth.clientID")
+	}
+	cliOauthConfig.ClientSecret = viper.GetString("cli.oauth.clientSecret")
+	if cliOauthConfig.ClientSecret == "" {
+		return fmt.Errorf("must provide cli.oauth.clientSecret")
+	}
+	cliOauthConfig.RedirectURL = viper.GetString("cli.oauth.redirectURL")
+	if cliOauthConfig.RedirectURL == "" {
+		return fmt.Errorf("must provide cli.oauth.redirectURL")
+	}
 	basePath := viper.GetString("oauth.basePath")
-	oauthConfig.Endpoint = oauth2.Endpoint{
+	endpoint := oauth2.Endpoint{
 		AuthURL:  fmt.Sprintf("%s/v2/oauth/authorize", basePath),
 		TokenURL: fmt.Sprintf("%s/v2/oauth/token", basePath),
 	}
+	oauthConfig.Endpoint = endpoint
+	cliOauthConfig.Endpoint = endpoint
 	return nil
 }
 
@@ -168,6 +190,7 @@ func NewServer(static http.Handler, db model.DB, vr viewRenderer) *Server {
 	s.mux.Methods("GET").Path("/login/authorize").HandlerFunc(s.Authorize)
 	s.mux.Methods("GET").Path("/login/callback").HandlerFunc(s.LoginCallback)
 	s.mux.Methods("GET").Path("/logout").HandlerFunc(s.Logout)
+	s.mux.Methods("GET").Path("/token/callback").HandlerFunc(s.TokenCallback)
 
 	// Views
 	s.mux.Methods("GET").Path("/").HandlerFunc(s.ShowDashboard)
@@ -336,6 +359,24 @@ func (s *Server) LoginCallback(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 	http.Redirect(w, r, next, http.StatusFound)
+}
+
+func (s *Server) TokenCallback(w http.ResponseWriter, r *http.Request) {
+	code := r.FormValue("code")
+	jwt, err := cliOauthConfig.Exchange(r.Context(), code)
+	if err != nil {
+		http.Error(w, fmt.Sprintf("oauth exchange failed: %v", err), http.StatusForbidden)
+		return
+	}
+
+	ctx := context.WithValue(r.Context(), esi.AccessTokenKey, jwt.AccessToken)
+	_, err = s.esi.Verify(ctx)
+	if err != nil {
+		http.Error(w, fmt.Sprintf("authorization failed: %v", err), http.StatusForbidden)
+		return
+	}
+
+	fmt.Fprintln(w, jwt.RefreshToken)
 }
 
 func hasScopes(a string, bs []string) bool {

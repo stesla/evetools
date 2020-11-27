@@ -92,8 +92,11 @@ func (s *Server) haveSession(next http.Handler) http.Handler {
 
 func (s *Server) haveLoggedInUser(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if strings.HasPrefix(r.URL.Path, "/login") || strings.HasPrefix(r.URL.Path, "/logout") {
+		if strings.HasPrefix(r.URL.Path, "/login") ||
+			strings.HasPrefix(r.URL.Path, "/logout") ||
+			strings.HasPrefix(r.URL.Path, "/token") {
 			next.ServeHTTP(w, r)
+			return
 		}
 
 		var ctx = r.Context()
