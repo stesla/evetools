@@ -16,6 +16,19 @@ import (
 	"github.com/stesla/evetools/sde"
 )
 
+func (s *Server) PostUserFavorites(w http.ResponseWriter, r *http.Request) {
+	user := currentUser(r)
+	names := strings.Split(r.FormValue("items"), "\n")
+	for _, name := range names {
+		name = strings.TrimSpace(name)
+		t, found := sde.MarketTypesByName[name]
+		if found {
+			s.db.SetFavorite(user.ID, t.ID, true)
+		}
+	}
+	http.Redirect(w, r, "/", http.StatusFound)
+}
+
 func (s *Server) ShowBrowse(w http.ResponseWriter, r *http.Request) {
 	groups := make(map[string]*sde.MarketGroup, len(sde.MarketGroupRoots))
 	for _, g := range sde.MarketGroupRoots {

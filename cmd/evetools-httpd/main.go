@@ -131,6 +131,7 @@ func NewServer(static http.Handler, db model.DB, vr viewRenderer) *Server {
 	s.mux.Methods("GET").Path("/settings").HandlerFunc(s.ShowSettings)
 	s.mux.Methods("GET").Path("/transactions").HandlerFunc(s.ShowTransactions)
 	s.mux.Methods("GET").Path("/types/{typeID:[0-9]+}").HandlerFunc(s.ShowTypeDetails)
+	s.mux.Methods("POST").Path("/user/favorites").HandlerFunc(s.PostUserFavorites)
 
 	// API
 	api := s.mux.PathPrefix("/api/v1").Subrouter()
@@ -143,6 +144,7 @@ func NewServer(static http.Handler, db model.DB, vr viewRenderer) *Server {
 	api.Methods("POST").Path("/user/characters/{characterID:[0-9]+}/activate").
 		HandlerFunc(s.PostUserCharacterActivate)
 	api.Methods("GET").Path("/user/favorites").HandlerFunc(s.GetUserFavorites)
+	api.Methods("DELETE").Path("/user/favorites").HandlerFunc(s.DeleteUserFavorites)
 	api.Methods("PUT").Path("/user/stationA").HandlerFunc(s.PutUserStationA)
 	api.Methods("PUT").Path("/user/stationB").HandlerFunc(s.PutUserStationB)
 

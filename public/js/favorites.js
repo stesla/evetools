@@ -1,4 +1,14 @@
 favorites = (function(window, document, undefined) {
+  window.deleteFavorites = function() {
+    retrieve('/api/v1/user/favorites', 'error deleting favorites', {
+      raw: true,
+      method: 'DELETE',
+    })
+    .then(() => {
+      location.reload(true);
+    });
+  };
+
   return function(faves){
     return {
       favorites: faves,

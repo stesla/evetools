@@ -210,6 +210,7 @@ type testDB struct{}
 var ErrNotImplemented = errors.New("not implemented")
 
 func (*testDB) AllUserStations() ([]*sde.Station, error) { return nil, ErrNotImplemented }
+func (*testDB) DeleteFavorites(userID int) (err error)   { return ErrNotImplemented }
 
 func (*testDB) GetFavoriteTypes(int) ([]int, error) {
 	return []int{587, 10244, 11198, 603}, nil

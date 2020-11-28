@@ -44,6 +44,8 @@ type Station struct {
 
 var MarketGroupRoots []*MarketGroup
 
+var MarketTypesByName = map[string]*MarketType{}
+
 func init() {
 	for id, g := range MarketGroups {
 		if g.ParentID == 0 {
@@ -55,10 +57,12 @@ func init() {
 	}
 
 	for id, t := range MarketTypes {
+		MarketTypesByName[t.Name] = t
 		if pg, found := MarketGroups[t.MarketGroupID]; found {
 			pg.Types = append(pg.Types, id)
 		}
 	}
+
 }
 
 //go:generate gofmt -w .

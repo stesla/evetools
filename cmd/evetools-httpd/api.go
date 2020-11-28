@@ -27,6 +27,15 @@ func (s *Server) DeleteUserCharacter(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusNoContent)
 }
 
+func (s *Server) DeleteUserFavorites(w http.ResponseWriter, r *http.Request) {
+	user := currentUser(r)
+	err := s.db.DeleteFavorites(user.ID)
+	if err != nil {
+		apiInternalServerError(w, "DeleteUserFavorites", err)
+	}
+	w.WriteHeader(http.StatusNoContent)
+}
+
 func (s *Server) GetStations(w http.ResponseWriter, r *http.Request) {
 	query := strings.TrimSpace(strings.ToLower(r.FormValue("q")))
 	result := []*sde.Station{}

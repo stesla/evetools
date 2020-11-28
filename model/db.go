@@ -12,6 +12,7 @@ import (
 
 type DB interface {
 	AllUserStations() ([]*sde.Station, error)
+	DeleteFavorites(int) error
 	FindOrCreateCharacterForUser(int, esi.VerifyOK) (*Character, error)
 	FindOrCreateUserAndCharacter(esi.VerifyOK) (*User, *Character, error)
 	GetCharacterByUserAndCharacterID(int, int) (*Character, error)
@@ -77,6 +78,12 @@ func (m *databaseModel) AllUserStations() ([]*sde.Station, error) {
 	}
 
 	return result, nil
+}
+
+func (m *databaseModel) DeleteFavorites(userID int) (err error) {
+	const query = `DELETE FROM favorites WHERE userID = ?`
+	_, err = m.db.Exec(query, userID)
+	return
 }
 
 func (m *databaseModel) GetFavoriteTypes(userID int) ([]int, error) {
