@@ -19,6 +19,7 @@ type DB interface {
 	GetCharactersForUser(int) (map[int]*Character, error)
 	GetFavoriteTypes(userID int) ([]int, error)
 	GetLatestTxnID() (int, error)
+	GetPricesForStation(int) (map[int]esi.Price, error)
 	GetTokenForCharacter(characterID int) (*Token, error)
 	GetUser(userID int) (*User, error)
 	IsFavorite(userID, typeID int) (bool, error)
@@ -310,6 +311,24 @@ func (m *databaseModel) GetLatestTxnID() (int, error) {
 	var id sql.NullInt64
 	err := m.db.QueryRow(query).Scan(&id)
 	return int(id.Int64), err
+}
+
+func (m *databaseModel) GetPricesForStation(stationID int) (map[int]esi.Price, error) {
+	const query = `SELECT typeID, buy, sell FROM prices WHERE stationID = ?`
+	rows, err := m.db.Query(query, stationID)
+	if err != nil {
+		return nil, err
+	}
+	result := map[int]esi.Price{}
+	for rows.Next() {
+		var id int
+		var price esi.Price
+		if err := rows.Scan(&id, &price.Buy, &price.Sell); err != nil {
+			return nil, err
+		}
+		result[id] = price
+	}
+	return result, rows.Err()
 }
 
 func (m *databaseModel) GetTokenForCharacter(characterID int) (token *Token, err error) {

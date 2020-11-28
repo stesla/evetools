@@ -63,7 +63,33 @@ func (s *Server) ShowDashboard(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	s.renderView(w, r, "dashboard", nil, map[string]interface{}{
+	stationA := sde.Stations[user.StationA]
+	systemA := sde.SolarSystems[stationA.SystemID]
+	stationAPrices, err := s.db.GetPricesForStation(stationA.ID)
+	if err != nil {
+		internalServerError(w, "GetPricesForStation", err)
+		return
+	}
+
+	stationB := sde.Stations[user.StationB]
+	systemB := sde.SolarSystems[stationB.SystemID]
+	stationBPrices, err := s.db.GetPricesForStation(stationB.ID)
+	if err != nil {
+		internalServerError(w, "GetPricesForStation", err)
+		return
+	}
+
+	funcs := template.FuncMap{
+		"systemA":      func() string { return systemA.Name },
+		"stationABuy":  func(t *sde.MarketType) float64 { return stationAPrices[t.ID].Buy },
+		"stationASell": func(t *sde.MarketType) float64 { return stationAPrices[t.ID].Sell },
+
+		"systemB":      func() string { return systemB.Name },
+		"stationBBuy":  func(t *sde.MarketType) float64 { return stationBPrices[t.ID].Buy },
+		"stationBSell": func(t *sde.MarketType) float64 { return stationBPrices[t.ID].Sell },
+	}
+
+	s.renderView(w, r, "dashboard", funcs, map[string]interface{}{
 		"BuyTotal":      buyTotal,
 		"Favorites":     favorites,
 		"FavoriteTypes": favoriteTypes,

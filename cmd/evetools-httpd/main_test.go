@@ -248,6 +248,10 @@ func (*testDB) GetCharactersForUser(userID int) (map[int]*model.Character, error
 
 func (*testDB) GetLatestTxnID() (int, error) { return 0, ErrNotImplemented }
 
+func (*testDB) GetPricesForStation(int) (map[int]esi.Price, error) {
+	return nil, ErrNotImplemented
+}
+
 func (*testDB) GetTokenForCharacter(characterID int) (*model.Token, error) {
 	return &model.Token{
 		ID:           13,
