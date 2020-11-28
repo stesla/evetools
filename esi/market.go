@@ -66,7 +66,7 @@ type MarketOrder struct {
 	TimeRemaining string `json:"time_remaining,omitempty"`
 }
 
-func (c *client) GetMarketOrders(ctx context.Context, characterID int) ([]*MarketOrder, error) {
+func (c *client) GetCharacterOrders(ctx context.Context, characterID int) ([]*MarketOrder, error) {
 	url := fmt.Sprintf("/characters/%d/orders/", characterID)
 	req, err := newESIRequest(ctx, http.MethodGet, url, nil)
 
@@ -81,7 +81,7 @@ func (c *client) GetMarketOrders(ctx context.Context, characterID int) ([]*Marke
 	return orders, err
 }
 
-func (c *client) GetMarketOrderHistory(ctx context.Context, characterID int) ([]*MarketOrder, error) {
+func (c *client) GetCharacterOrderHistory(ctx context.Context, characterID int) ([]*MarketOrder, error) {
 	url := fmt.Sprintf("/characters/%d/orders/history/", characterID)
 	req, err := newESIRequest(ctx, http.MethodGet, url, nil)
 
@@ -96,13 +96,13 @@ func (c *client) GetMarketOrderHistory(ctx context.Context, characterID int) ([]
 	return orders, err
 }
 
-func (c *client) GetMarketPrices(ctx context.Context, stationID, regionID, typeID int) (*Price, error) {
-	var buy, sell float64
+func (c *client) GetMarketPriceForType(stationID, regionID, typeID int) (*Price, error) {
 	var page = 1
+	var price Price
 
 	for {
 		url := fmt.Sprintf("/markets/%d/orders/", regionID)
-		req, err := newESIRequest(ctx, http.MethodGet, url, nil)
+		req, err := newESIRequest(context.Background(), http.MethodGet, url, nil)
 
 		q := req.URL.Query()
 		q.Add("order_type", "all")
@@ -116,11 +116,7 @@ func (c *client) GetMarketPrices(ctx context.Context, stationID, regionID, typeI
 		}
 		defer resp.Body.Close()
 
-		var orders []struct {
-			IsBuyOrder bool    `json:"is_buy_order"`
-			Price      float64 `json:"price"`
-			LocationID int     `json:"location_id"`
-		}
+		var orders []MarketOrder
 		err = json.NewDecoder(resp.Body).Decode(&orders)
 		if err != nil {
 			return nil, err
@@ -130,10 +126,10 @@ func (c *client) GetMarketPrices(ctx context.Context, stationID, regionID, typeI
 			if order.LocationID != stationID {
 				continue
 			}
-			if order.IsBuyOrder && order.Price > buy {
-				buy = order.Price
-			} else if !order.IsBuyOrder && (sell == 0 || order.Price < sell) {
-				sell = order.Price
+			if order.IsBuyOrder && order.Price > price.Buy {
+				price.Buy = order.Price
+			} else if !order.IsBuyOrder && (price.Sell == 0 || order.Price < price.Sell) {
+				price.Sell = order.Price
 			}
 		}
 
@@ -142,9 +138,10 @@ func (c *client) GetMarketPrices(ctx context.Context, stationID, regionID, typeI
 		} else if i, _ := strconv.Atoi(str); page >= i {
 			break
 		}
+		page++
 	}
 
-	return &Price{Buy: buy, Sell: sell}, nil
+	return &price, nil
 }
 
 func (c *client) OpenMarketWindow(ctx context.Context, typeID int) (crr error) {

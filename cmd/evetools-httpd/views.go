@@ -50,9 +50,9 @@ func (s *Server) ShowDashboard(w http.ResponseWriter, r *http.Request) {
 	}
 
 	var buyTotal, sellTotal float64
-	orders, err := s.esi.GetMarketOrders(r.Context(), user.ActiveCharacterID)
+	orders, err := s.esi.GetCharacterOrders(r.Context(), user.ActiveCharacterID)
 	if err != nil {
-		log.Println("API Error: GetMarketOrders:", err)
+		log.Println("API Error: GetCharacterOrders:", err)
 	} else {
 		for _, o := range orders {
 			if o.IsBuyOrder {
@@ -147,7 +147,7 @@ func (s *Server) ShowGroupDetails(w http.ResponseWriter, r *http.Request) {
 func (s *Server) ShowMarketOrdersCurrent(w http.ResponseWriter, r *http.Request) {
 	user := currentUser(r)
 
-	orders, err := s.esi.GetMarketOrders(r.Context(), user.ActiveCharacterID)
+	orders, err := s.esi.GetCharacterOrders(r.Context(), user.ActiveCharacterID)
 	if err != nil {
 		log.Println("API Error: fetching orders:", err)
 	}
@@ -167,7 +167,7 @@ func (s *Server) ShowMarketOrdersCurrent(w http.ResponseWriter, r *http.Request)
 func (s *Server) ShowMarketOrdersHistory(w http.ResponseWriter, r *http.Request) {
 	user := currentUser(r)
 
-	orders, err := s.esi.GetMarketOrderHistory(r.Context(), user.ActiveCharacterID)
+	orders, err := s.esi.GetCharacterOrderHistory(r.Context(), user.ActiveCharacterID)
 	if err != nil {
 		apiInternalServerError(w, "fetching orders", err)
 		return
@@ -413,7 +413,7 @@ func (s *Server) stationInfo(ctx context.Context, characterID, typeID, stationID
 		return nil, fmt.Errorf("GetCharacterStandings: %v", err)
 	}
 
-	price, err := s.esi.GetMarketPrices(ctx, station.ID, solarSystem.RegionID, typeID)
+	price, err := s.esi.GetMarketPriceForType(station.ID, solarSystem.RegionID, typeID)
 	if err != nil {
 		return nil, fmt.Errorf("GetMarketPrices: %v", err)
 	}
