@@ -27,6 +27,7 @@ import (
 	"github.com/stesla/evetools/config"
 	"github.com/stesla/evetools/esi"
 	"github.com/stesla/evetools/model"
+	"github.com/stesla/evetools/sde"
 	"github.com/stretchr/testify/assert"
 	"golang.org/x/oauth2"
 )
@@ -208,6 +209,8 @@ type testDB struct{}
 
 var ErrNotImplemented = errors.New("not implemented")
 
+func (*testDB) AllUserStations() ([]*sde.Station, error) { return nil, ErrNotImplemented }
+
 func (*testDB) GetFavoriteTypes(int) ([]int, error) {
 	return []int{587, 10244, 11198, 603}, nil
 }
@@ -264,6 +267,7 @@ func (m *testDB) GetUser(userID int) (*model.User, error) {
 
 func (*testDB) RemoveCharacterForUser(int, int) error           { return ErrNotImplemented }
 func (*testDB) SaveActiveCharacterHash(int, string) error       { return ErrNotImplemented }
+func (*testDB) SavePrice(int, int, esi.Price) error             { return ErrNotImplemented }
 func (*testDB) SaveTokenForCharacter(int, string, string) error { return nil }
 func (*testDB) SaveUserStationA(userID, stationID int) error    { return ErrNotImplemented }
 func (*testDB) SaveUserStationB(userID, stationID int) error    { return ErrNotImplemented }

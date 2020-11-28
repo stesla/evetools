@@ -5,6 +5,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"log"
 	"net/http"
 	"os"
 
@@ -14,6 +15,7 @@ import (
 	"github.com/spf13/viper"
 	"github.com/stesla/evetools/config"
 	"github.com/stesla/evetools/esi"
+	"github.com/stesla/evetools/model"
 	"github.com/stesla/evetools/sde"
 )
 
@@ -61,22 +63,27 @@ func init() {
 		Run: listStructuresCmd,
 	}
 	structuresCmd.AddCommand(cmd)
+
+	// market
+	marketCmd := &cobra.Command{Use: "market"}
+	rootCmd.AddCommand(marketCmd)
+
+	cmd = &cobra.Command{
+		Use: "fetchPrices",
+		Run: fetchPricesCommand,
+	}
+	marketCmd.AddCommand(cmd)
 }
 
 func initConfig() {
 	if err := config.Initialize(cfgFile); err != nil {
-		die("error initializing config; %v", err)
+		log.Fatalln("error initializing config:", err)
 	}
-}
-
-func die(msg string, args ...interface{}) {
-	fmt.Fprintf(os.Stderr, msg+"\n", args...)
-	os.Exit(1)
 }
 
 func main() {
 	if err := rootCmd.Execute(); err != nil {
-		die(err.Error())
+		log.Fatalln(err.Error())
 	}
 }
 
@@ -129,17 +136,17 @@ func saveToken(token string) error {
 func saveTokenCmd(cmd *cobra.Command, args []string) {
 	token, err := refreshToken(context.Background(), args[0])
 	if err != nil {
-		die("error refreshing token: %v", err)
+		log.Fatalln("error refreshing token:", err)
 	}
 	if err = saveToken(token.RefreshToken); err != nil {
-		die("error saving token: %v", err)
+		log.Fatalln("error saving token:", err)
 	}
 }
 
 func refreshTokenCmd(cmd *cobra.Command, args []string) {
 	token, err := getToken()
 	if err != nil {
-		die("error loading token:", err)
+		log.Fatalln("error loading token:", err)
 	}
 	json.NewEncoder(os.Stdout).Encode(&token)
 }
@@ -147,7 +154,7 @@ func refreshTokenCmd(cmd *cobra.Command, args []string) {
 func listStructuresCmd(cmd *cobra.Command, args []string) {
 	token, err := getToken()
 	if err != nil {
-		die("error loading token: %v", err)
+		log.Fatalln("error loading token:", err)
 	}
 
 	var client http.Client
@@ -155,7 +162,7 @@ func listStructuresCmd(cmd *cobra.Command, args []string) {
 
 	ids, err := eclient.GetStructures()
 	if err != nil {
-		die("error fetching structures: %v", err)
+		log.Fatalln("error fetching structures:", err)
 	}
 
 	ctx := context.Background()
@@ -164,11 +171,40 @@ func listStructuresCmd(cmd *cobra.Command, args []string) {
 	for _, id := range ids {
 		station, err := eclient.GetStructure(ctx, id)
 		if err != nil {
-			die("error fetching structure:", err)
+			log.Fatalln("error fetching structure:", err)
 		}
 		station.ID = id
 		system := sde.SolarSystems[station.SystemID]
 		station.RegionID = system.RegionID
 		encoder.Encode(&station)
+	}
+}
+
+func fetchPricesCommand(cmd *cobra.Command, args []string) {
+	db, err := model.Initialize(config.DatabaseFile())
+	if err != nil {
+		log.Fatalln("error initializing model:", err)
+	}
+
+	stations, err := db.AllUserStations()
+	if err != nil {
+		log.Fatalln("error fetching stations:", err)
+	}
+
+	var client http.Client
+	eclient := esi.NewClient(&client)
+
+	for _, s := range stations {
+		log.Println("Fetching", s.Name)
+		prices, err := eclient.GetMarketPrices(s.ID, s.RegionID)
+		if err != nil {
+			log.Fatalln("error fetching prices:", err)
+		}
+
+		for id, price := range prices {
+			if err := db.SavePrice(s.ID, id, price); err != nil {
+				log.Fatalln(err)
+			}
+		}
 	}
 }

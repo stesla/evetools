@@ -96,9 +96,18 @@ func (c *client) GetCharacterOrderHistory(ctx context.Context, characterID int) 
 	return orders, err
 }
 
-func (c *client) GetMarketPriceForType(stationID, regionID, typeID int) (*Price, error) {
+func (c *client) GetMarketPriceForType(stationID, regionID, typeID int) (Price, error) {
+	prices, err := c.getMarketPrices(stationID, regionID, typeID)
+	return prices[typeID], err
+}
+
+func (c *client) GetMarketPrices(stationID, regionID int) (map[int]Price, error) {
+	return c.getMarketPrices(stationID, regionID, 0)
+}
+
+func (c *client) getMarketPrices(stationID, regionID, typeID int) (map[int]Price, error) {
 	var page = 1
-	var price Price
+	var result = map[int]Price{}
 
 	for {
 		url := fmt.Sprintf("/markets/%d/orders/", regionID)
@@ -106,8 +115,10 @@ func (c *client) GetMarketPriceForType(stationID, regionID, typeID int) (*Price,
 
 		q := req.URL.Query()
 		q.Add("order_type", "all")
-		q.Add("type_id", strconv.Itoa(typeID))
 		q.Add("page", strconv.Itoa(page))
+		if typeID != 0 {
+			q.Add("type_id", strconv.Itoa(typeID))
+		}
 		req.URL.RawQuery = q.Encode()
 
 		resp, err := c.http.Do(req)
@@ -126,11 +137,13 @@ func (c *client) GetMarketPriceForType(stationID, regionID, typeID int) (*Price,
 			if order.LocationID != stationID {
 				continue
 			}
+			var price = result[order.TypeID]
 			if order.IsBuyOrder && order.Price > price.Buy {
 				price.Buy = order.Price
 			} else if !order.IsBuyOrder && (price.Sell == 0 || order.Price < price.Sell) {
 				price.Sell = order.Price
 			}
+			result[order.TypeID] = price
 		}
 
 		if str := resp.Header.Get("X-Pages"); str == "" {
@@ -141,7 +154,7 @@ func (c *client) GetMarketPriceForType(stationID, regionID, typeID int) (*Price,
 		page++
 	}
 
-	return &price, nil
+	return result, nil
 }
 
 func (c *client) OpenMarketWindow(ctx context.Context, typeID int) (crr error) {

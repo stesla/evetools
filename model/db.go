@@ -3,12 +3,15 @@ package model
 import (
 	"database/sql"
 	"errors"
+	"fmt"
 
 	_ "github.com/mattn/go-sqlite3"
 	"github.com/stesla/evetools/esi"
+	"github.com/stesla/evetools/sde"
 )
 
 type DB interface {
+	AllUserStations() ([]*sde.Station, error)
 	FindOrCreateCharacterForUser(int, esi.VerifyOK) (*Character, error)
 	FindOrCreateUserAndCharacter(esi.VerifyOK) (*User, *Character, error)
 	GetCharacterByUserAndCharacterID(int, int) (*Character, error)
@@ -21,6 +24,7 @@ type DB interface {
 	IsFavorite(userID, typeID int) (bool, error)
 	RemoveCharacterForUser(int, int) error
 	SaveActiveCharacterHash(int, string) error
+	SavePrice(int, int, esi.Price) error
 	SaveTokenForCharacter(int, string, string) error
 	SaveUserStationA(userID, stationID int) error
 	SaveUserStationB(userID, stationID int) error
@@ -42,6 +46,36 @@ func Initialize(dbfilename string) (DB, error) {
 		return nil, err
 	}
 	return &databaseModel{db: db}, nil
+}
+
+func (m *databaseModel) AllUserStations() ([]*sde.Station, error) {
+	query := `SELECT stationA FROM users UNION SELECT stationB FROM users`
+	rows, err := m.db.Query(query)
+	if err != nil {
+		return nil, err
+	}
+	ids := map[int]bool{}
+	for rows.Next() {
+		var id int
+		if err = rows.Scan(&id); err != nil {
+			return nil, err
+		}
+		ids[id] = true
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+
+	result := []*sde.Station{}
+	for id, _ := range ids {
+		station, found := sde.Stations[id]
+		if !found {
+			return nil, fmt.Errorf("no station for id %d", id)
+		}
+		result = append(result, station)
+	}
+
+	return result, nil
 }
 
 func (m *databaseModel) GetFavoriteTypes(userID int) ([]int, error) {
@@ -311,6 +345,12 @@ func (m *databaseModel) RemoveCharacterForUser(userID int, characterID int) (err
 func (m *databaseModel) SaveActiveCharacterHash(userID int, hash string) (err error) {
 	const query = `UPDATE users SET activeCharacterHash = ? WHERE id = ?`
 	_, err = m.db.Exec(query, hash, userID)
+	return
+}
+
+func (m *databaseModel) SavePrice(stationID, typeID int, price esi.Price) (err error) {
+	const query = `INSERT INTO prices (stationID, typeID, buy, sell) VALUES (?, ?, ?, ?)`
+	_, err = m.db.Exec(query, stationID, typeID, price.Buy, price.Sell)
 	return
 }
 
