@@ -27,6 +27,8 @@ func init() {
 	cobra.OnInitialize(initConfig)
 
 	rootCmd.PersistentFlags().StringVar(&cfgFile, "config", "./evetools.yaml", "config file")
+	rootCmd.PersistentFlags().BoolP("quiet", "q", false, "suppress output")
+	viper.BindPFlag("cli.quiet", rootCmd.PersistentFlags().Lookup("quiet"))
 	viper.SetDefault("cli.token", "./evetools.token")
 
 	var cmd *cobra.Command
@@ -195,7 +197,9 @@ func fetchPricesCommand(cmd *cobra.Command, args []string) {
 	eclient := esi.NewClient(&client)
 
 	for _, s := range stations {
-		log.Println("Fetching", s.Name)
+		if !viper.GetBool("cli.quiet") {
+			log.Println("Fetching", s.Name)
+		}
 		prices, err := eclient.GetMarketPrices(s.ID, s.RegionID)
 		if err != nil {
 			log.Fatalln("error fetching prices:", err)
