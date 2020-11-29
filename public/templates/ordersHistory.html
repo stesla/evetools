@@ -1,11 +1,5 @@
-{{ define "javascripts" }}
-<script src="/js/orders.js"></script>
-{{ end }}
-
 {{ define "content" }}
-<main class="mt-10 mb-10 container mx-auto max-w-screen-md"
-      x-data="viewData"
-      x-init="initialize()">
+<main class="mt-10 mb-10 container mx-auto max-w-screen-md">
 {{ template "orders" dict "Section" "Sell Orders" "Orders" .Sell "IsHistory" .IsHistory}}
 {{ template "orders" dict "Section" "Buy Orders" "Orders" .Buy "IsHistory" .IsHistory}}
 </main>
@@ -13,8 +7,8 @@
 
 {{ define "orders" }}
 <div>
-  <h1 class="mt-10 mb-10 text-3xl text-center text-gray-700 font-bold">{{ .Section }}</h1>
-  <div class="mx-4 flex flex-col">
+  <h1 class="mt-10 text-3xl text-center text-gray-700 font-bold">{{ .Section }}</h1>
+  <div class="mt-4 mx-4 flex flex-col">
     <div class="py-2 align-middle inline-block w-full sm:px-6 lg:px-8">
       <div class="sm:hidden shadow overflow-hidden border border-gray-500 rounded-lg">
         {{ range .Orders }}

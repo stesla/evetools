@@ -1,0 +1,106 @@
+{{ define "content" }}
+<main class="mt-10 mb-10 container mx-auto max-w-screen-md">
+{{ template "orders" dict "Section" "Sell Orders" "Orders" .Sell "IsHistory" .IsHistory}}
+{{ template "orders" dict "Section" "Buy Orders" "Orders" .Buy "IsHistory" .IsHistory}}
+</main>
+{{ end }}
+
+{{ define "orders" }}
+<div>
+  <h1 class="mt-10 text-3xl text-center text-gray-700 font-bold">{{ .Section }}</h1>
+  {{ if .Orders }}
+  <div class="mx-4 flex flex-col">
+    <div class="py-2 align-middle inline-block w-full sm:px-6 lg:px-8">
+      <div class="sm:hidden">
+        {{ range $station, $orders := .Orders }}
+        <h2 class="mt-6 mb-2 text-center text-lg font-semibold">{{ $station }}</h2>
+        <div class="shadow overflow-hidden border border-gray-500 rounded-lg">
+          {{ range $orders }}
+          <div class="px-4 py-2 border-b border-gray-500 bg-gray-100">
+            <div class="flex items-center">
+              <div class="flex-shrink-0 h-10 w-10">
+                <img class="h-10 w-10" src="{{ .Type | iconURL }}" alt="{{ .Type.Name }}">
+              </div>
+              <div class="ml-4 text-sm leading-6">
+                <div class="flex">
+                  <a href="/types/{{ .Type.ID }}">
+                    <div class="font-bold text-gray-900">{{ .Type.Name }}</div>
+                  </a>
+                  <button @click="openTypeInEVE(order.type_id)" class="ml-2 focus:outline-none">
+                    <svg class="h-4 w-4 stroke-current text-gray-500 hover:text-blue-500"
+                         xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                    </svg>
+                  </button>
+                </div>
+                <div class="text-gray-900 italic">{{ .Station.Name }}</div>
+                <div class="text-xs">{{ if $.IsHistory }}{{ .Order.State | capitalize }}{{ else }}{{ .Order.TimeRemaining }}{{ end }}</div>
+                <div class="flex items-center justify-between">
+                  <span class="font-bold" x-text="formatISK({{ .Order.Price }})"></span>
+                  <div class="flex flex-row-reverse items-center text-xs">
+                    <div class="ml-1">
+                      <span>{{ .Order.VolumeRemain }}</span>/<span>{{ .Order.VolumeTotal }}</span>
+                    </div>
+                    <span>Volume:</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+          {{ end }}
+        </div>
+        {{ end }}
+      </div>
+      <div class="hidden sm:block">
+        {{ range $station, $orders := .Orders }}
+        <h2 class="mt-6 mb-2 text-center text-lg font-semibold">{{ $station }}</h2>
+        <div class="shadow overflow-hidden border border-gray-500 rounded-lg">
+         <table class="table-auto w-full divide-y divide-gray-500">
+            <tbody class="bg-white divide-y divide-gray-500">
+              {{ range $orders }}
+              <tr>
+                <td class="px-4 py-4 flex items-center">
+                  <div class="flex-shrink-0 h-10 w-10">
+                    <img class="h-10 w-10" src="{{ .Type | iconURL }}" alt="{{ .Type.Name }}">
+                  </div>
+                  <div>
+                    <div class="flex">
+                      <a href="/types/{{ .Type.ID }}">
+                        <div class="ml-4 text-sm leading-5 font-bold text-gray-900">{{ .Type.Name }}</div>
+                      </a>
+                      <button @click="openTypeInEVE({{ .Type.ID }})" class="ml-2 focus:outline-none">
+                        <svg class="h-4 w-4 stroke-current text-gray-500 hover:text-blue-500"
+                             xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                        </svg>
+                      </button>
+                    </div>
+                    <div class="ml-4 text-sm leading-5 text-gray-900 italic">{{ .Station.Name }}</div>
+                    <div class="ml-4 text-xs">{{ if $.IsHistory }}{{ .Order.State | capitalize }}{{ else }}{{ .Order.TimeRemaining }}{{ end }}</div>
+                  </div>
+                </td>
+                <td class="w-40 px-4 py-4 text-right">
+                  <span class="ml-2 font-bold" x-text="formatISK({{ .Order.Price }})"></span>
+                  <div class="flex flex-row-reverse items-center text-xs">
+                    <div class="ml-2">
+                      <span>{{ .Order.VolumeRemain }}</span>/<span>{{ .Order.VolumeTotal }}</span>
+                    </div>
+                    <span>Volume:</span>
+                  </div>
+                </td>
+              </tr>
+              {{ end }}
+            </tbody>
+          </table>
+        </div>
+        {{ end }}
+      </div>
+    </div>
+  </div>
+  {{ else }}
+  <p class="mt-4 mx-4 sm:mx-10 lg:mx-12 px-4 py-4 rounded-md border border-gray-500 text-center text-gray-500">
+    There were no orders found.    
+  </p>
+  {{ end }}
+</div>
+{{ end }}

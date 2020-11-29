@@ -208,13 +208,27 @@ func (s *Server) ShowMarketOrdersCurrent(w http.ResponseWriter, r *http.Request)
 		return
 	}
 
-	sort.Sort(byTypeName{buy})
-	sort.Sort(byTypeName{sell})
+	buyByStation := sortByStation(buy)
+	sellByStation := sortByStation(sell)
 
-	s.renderView(w, r, "orders", nil, map[string]interface{}{
-		"Buy":  buy,
-		"Sell": sell,
+	s.renderView(w, r, "ordersCurrent", nil, map[string]interface{}{
+		"Buy":  buyByStation,
+		"Sell": sellByStation,
 	})
+}
+
+func sortByStation(orders []*displayOrder) map[string][]*displayOrder {
+	sort.Sort(byTypeName{orders})
+	result := map[string][]*displayOrder{}
+	for _, o := range orders {
+		s, ok := result[o.Station.Name]
+		if !ok {
+			s = []*displayOrder{}
+		}
+		s = append(s, o)
+		result[o.Station.Name] = s
+	}
+	return result
 }
 
 func (s *Server) ShowMarketOrdersHistory(w http.ResponseWriter, r *http.Request) {
@@ -235,7 +249,7 @@ func (s *Server) ShowMarketOrdersHistory(w http.ResponseWriter, r *http.Request)
 	sort.Sort(sort.Reverse(byOrderID{buy}))
 	sort.Sort(sort.Reverse(byOrderID{sell}))
 
-	s.renderView(w, r, "orders", nil, map[string]interface{}{
+	s.renderView(w, r, "ordersHistory", nil, map[string]interface{}{
 		"Buy":       buy,
 		"Sell":      sell,
 		"IsHistory": true,
