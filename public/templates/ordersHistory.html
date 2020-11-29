@@ -1,7 +1,9 @@
+{{ define "title" }} - Order History{{ end }}
+
 {{ define "content" }}
 <main class="mt-10 mb-10 container mx-auto max-w-screen-md">
-{{ template "orders" dict "Section" "Sell Orders" "Orders" .Sell "IsHistory" .IsHistory}}
-{{ template "orders" dict "Section" "Buy Orders" "Orders" .Buy "IsHistory" .IsHistory}}
+{{ template "orders" dict "Section" "Sell Orders" "Orders" .Sell }}
+{{ template "orders" dict "Section" "Buy Orders" "Orders" .Buy }}
 </main>
 {{ end }}
 
@@ -30,7 +32,7 @@
                 </button>
               </div>
               <div class="text-gray-900 italic">{{ .Station.Name }}</div>
-              <div class="text-xs">{{ if $.IsHistory }}{{ .Order.State | capitalize }}{{ else }}{{ .Order.TimeRemaining }}{{ end }}</div>
+              <div class="text-xs">{{ .Order.State | capitalize }}</div>
               <div class="flex items-center justify-between">
                 <span class="font-bold" x-text="formatISK({{ .Order.Price }})"></span>
                 <div class="flex flex-row-reverse items-center text-xs">
@@ -67,7 +69,7 @@
                     </button>
                   </div>
                   <div class="ml-4 text-sm leading-5 text-gray-900 italic">{{ .Station.Name }}</div>
-                  <div class="ml-4 text-xs">{{ if $.IsHistory }}{{ .Order.State | capitalize }}{{ else }}{{ .Order.TimeRemaining }}{{ end }}</div>
+                  <div class="ml-4 text-xs">{{ .Order.State | capitalize }}</div>
                 </div>
               </td>
               <td class="w-40 px-4 py-4 text-right">

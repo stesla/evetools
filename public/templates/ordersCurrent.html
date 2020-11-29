@@ -1,7 +1,9 @@
+{{ define "title" }} - Current Orders{{ end }}
+
 {{ define "content" }}
 <main class="mt-10 mb-10 container mx-auto max-w-screen-md">
-{{ template "orders" dict "Section" "Sell Orders" "Orders" .Sell "IsHistory" .IsHistory}}
-{{ template "orders" dict "Section" "Buy Orders" "Orders" .Buy "IsHistory" .IsHistory}}
+{{ template "orders" dict "Section" "Sell Orders" "Orders" .Sell }}
+{{ template "orders" dict "Section" "Buy Orders" "Orders" .Buy }}
 </main>
 {{ end }}
 
@@ -74,7 +76,7 @@
                         </svg>
                       </button>
                     </div>
-                    <div class="ml-4 text-xs">{{ if $.IsHistory }}{{ .Order.State | capitalize }}{{ else }}{{ .Order.TimeRemaining }}{{ end }}</div>
+                    <div class="ml-4 text-xs">{{ .Order.TimeRemaining }}</div>
                   </div>
                 </td>
                 <td class="w-40 px-4 py-4 text-right">

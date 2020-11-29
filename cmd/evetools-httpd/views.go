@@ -250,9 +250,8 @@ func (s *Server) ShowMarketOrdersHistory(w http.ResponseWriter, r *http.Request)
 	sort.Sort(sort.Reverse(byOrderID{sell}))
 
 	s.renderView(w, r, "ordersHistory", nil, map[string]interface{}{
-		"Buy":       buy,
-		"Sell":      sell,
-		"IsHistory": true,
+		"Buy":  buy,
+		"Sell": sell,
 	})
 }
 
