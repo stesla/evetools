@@ -434,12 +434,19 @@ func (s *Server) ShowTypeDetails(w http.ResponseWriter, r *http.Request) {
 
 	marketGroup, _ := sde.MarketGroups[marketType.MarketGroupID]
 
-	parentGroups := []*sde.MarketGroup{}
+	parentGroupsReverse := []*sde.MarketGroup{}
 	parentID := marketGroup.ParentID
 	for parentID != 0 {
 		g, _ := sde.MarketGroups[parentID]
 		parentID = g.ParentID
-		parentGroups = append(parentGroups, g)
+		parentGroupsReverse = append(parentGroupsReverse, g)
+	}
+	// Because we're appending to the list from the item up, the groups end up
+	// in it backwards, so we need to switch them around.
+	parentGroups := make([]*sde.MarketGroup, len(parentGroupsReverse))
+	for i := range parentGroups {
+		k := len(parentGroupsReverse) - i - 1
+		parentGroups[i] = parentGroupsReverse[k]
 	}
 
 	favorite, err := s.db.IsFavorite(user.ID, typeID)
