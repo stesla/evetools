@@ -63,6 +63,7 @@ func (s *Server) ShowDashboard(w http.ResponseWriter, r *http.Request) {
 	}
 
 	var buyTotal, sellTotal float64
+	var myPrices = map[int]esi.Price{}
 	orders, err := s.esi.GetCharacterOrders(r.Context(), user.ActiveCharacterID)
 	if err != nil {
 		log.Println("API Error: GetCharacterOrders:", err)
@@ -73,6 +74,14 @@ func (s *Server) ShowDashboard(w http.ResponseWriter, r *http.Request) {
 			} else {
 				sellTotal += float64(o.VolumeRemain) * o.Price
 			}
+
+			price := myPrices[o.TypeID]
+			if o.IsBuyOrder && o.Price > price.Buy {
+				price.Buy = o.Price
+			} else if price.Sell == 0 || o.Price < price.Sell {
+				price.Sell = o.Price
+			}
+			myPrices[o.TypeID] = price
 		}
 	}
 
@@ -93,13 +102,14 @@ func (s *Server) ShowDashboard(w http.ResponseWriter, r *http.Request) {
 	}
 
 	funcs := template.FuncMap{
-		"systemA":      func() string { return systemA.Name },
+		"myBuy":        func(t *sde.MarketType) float64 { return myPrices[t.ID].Buy },
+		"mySell":       func(t *sde.MarketType) float64 { return myPrices[t.ID].Sell },
 		"stationABuy":  func(t *sde.MarketType) float64 { return stationAPrices[t.ID].Buy },
 		"stationASell": func(t *sde.MarketType) float64 { return stationAPrices[t.ID].Sell },
-
-		"systemB":      func() string { return systemB.Name },
 		"stationBBuy":  func(t *sde.MarketType) float64 { return stationBPrices[t.ID].Buy },
 		"stationBSell": func(t *sde.MarketType) float64 { return stationBPrices[t.ID].Sell },
+		"systemA":      func() string { return systemA.Name },
+		"systemB":      func() string { return systemB.Name },
 	}
 
 	s.renderView(w, r, "dashboard", funcs, map[string]interface{}{
