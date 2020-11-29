@@ -208,6 +208,9 @@ func (s *Server) ShowMarketOrdersCurrent(w http.ResponseWriter, r *http.Request)
 		return
 	}
 
+	sort.Sort(byTypeName{buy})
+	sort.Sort(byTypeName{sell})
+
 	s.renderView(w, r, "orders", nil, map[string]interface{}{
 		"Buy":  buy,
 		"Sell": sell,
@@ -228,6 +231,9 @@ func (s *Server) ShowMarketOrdersHistory(w http.ResponseWriter, r *http.Request)
 		apiInternalServerError(w, "processOrders", err)
 		return
 	}
+
+	sort.Sort(sort.Reverse(byOrderID{buy}))
+	sort.Sort(sort.Reverse(byOrderID{sell}))
 
 	s.renderView(w, r, "orders", nil, map[string]interface{}{
 		"Buy":       buy,
@@ -251,6 +257,12 @@ type byOrderID struct{ displayOrders }
 
 func (s byOrderID) Less(i, j int) bool {
 	return s.displayOrders[i].Order.OrderID < s.displayOrders[j].Order.OrderID
+}
+
+type byTypeName struct{ displayOrders }
+
+func (s byTypeName) Less(i, j int) bool {
+	return s.displayOrders[i].Type.Name < s.displayOrders[j].Type.Name
 }
 
 func (s *Server) processOrders(orders []*esi.MarketOrder, days time.Duration) (buy, sell []*displayOrder, _ error) {
@@ -296,8 +308,6 @@ func (s *Server) processOrders(orders []*esi.MarketOrder, days time.Duration) (b
 			sell = append(sell, do)
 		}
 	}
-	sort.Sort(sort.Reverse(byOrderID{buy}))
-	sort.Sort(sort.Reverse(byOrderID{sell}))
 	return
 }
 
