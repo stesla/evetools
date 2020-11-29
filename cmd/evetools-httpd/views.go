@@ -6,6 +6,7 @@ import (
 	"html/template"
 	"log"
 	"net/http"
+	"sort"
 	"strconv"
 	"strings"
 	"time"
@@ -241,6 +242,17 @@ type displayOrder struct {
 	Station *sde.Station
 }
 
+type displayOrders []*displayOrder
+
+func (s displayOrders) Len() int      { return len(s) }
+func (s displayOrders) Swap(i, j int) { s[i], s[j] = s[j], s[i] }
+
+type byOrderID struct{ displayOrders }
+
+func (s byOrderID) Less(i, j int) bool {
+	return s.displayOrders[i].Order.OrderID < s.displayOrders[j].Order.OrderID
+}
+
 func (s *Server) processOrders(orders []*esi.MarketOrder, days time.Duration) (buy, sell []*displayOrder, _ error) {
 	buy = []*displayOrder{}
 	sell = []*displayOrder{}
@@ -284,6 +296,8 @@ func (s *Server) processOrders(orders []*esi.MarketOrder, days time.Duration) (b
 			sell = append(sell, do)
 		}
 	}
+	sort.Sort(sort.Reverse(byOrderID{buy}))
+	sort.Sort(sort.Reverse(byOrderID{sell}))
 	return
 }
 
