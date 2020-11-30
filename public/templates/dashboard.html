@@ -27,7 +27,7 @@
 
 
   <h1 class="mt-10 text-3xl text-center text-gray-700 font-bold">Favorites</h1>
-  <div class="relative flex items-center justify-around">
+  <div class="mt-4 mb-4 relative flex items-center justify-around">
     <div x-data="{ open: false }">
       <button class="px-4 py-2 bg-blue-500 text-gray-100 rounded-md" @click="open = true">Import</button>
       <div x-show="open" class="fixed z-10 inset-0 bg-gray-800 bg-opacity-75">
@@ -44,6 +44,7 @@
         </div>
       </div>
     </div>
+    <button class="px-4 py-2 bg-blue-500 text-gray-100 rounded-md" id="clipboard">Copy to Clipboard</button>
     <div x-data="{ open: false }">
       <button class="px-4 py-2 bg-blue-500 text-gray-100 rounded-md" @click="open = true">Delete All</button>
       <div x-show="open" class="fixed z-10 inset-0 bg-gray-800 bg-opacity-75">
@@ -121,4 +122,17 @@
     {{ end }}
   </div>
 </main>
+<script src="/js/clipboard.min.js"></script>
+<script>
+  new ClipboardJS("#clipboard", {
+    text: function() {
+      let items = document.querySelectorAll('h2');
+      let text = "";
+      for (let item of items) {
+        text += "\n"+item.innerText;
+      }
+      return text.trim()
+    },
+  });
+</script>
 {{ end }}
