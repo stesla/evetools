@@ -44,7 +44,7 @@
     </div>
     <button class="px-4 py-2 bg-blue-500 text-gray-100 rounded-md" @click="deleteFavorites()">Clear Favorites</button>
   </div>
-  <div class="mx-4 grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+  <div class="mx-4 mb-10 grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
     {{ range .FavoriteTypes }}
     <div class="mt-4 py-4 w-full sm:w-1/2 md:w-full mx-auto flex flex-col justify-between border border-gray-500 rounded-xl shadow-xl bg-gray-100">
       <a class="px-4 flex items-center" href="/types/{{ .ID }}">
@@ -71,11 +71,15 @@
           </div>
           <div>
             <dt>My Buy</dt>
-            <dd class="font-bold" x-text="formatISK({{ . | myBuy}})"></dt>
+            <dd class="font-bold"
+                :class="{'text-red-500': {{.|myBuy}} && {{.|myBuy}} < {{.|stationABuy}}}"
+                x-text="formatISK({{ . | myBuy}})"></dt>
           </div>
           <div class="text-right">
             <dt>My Sell</dt>
-            <dd class="font-bold" x-text="formatISK({{ . | mySell }})"></dd>
+            <dd class="font-bold" 
+                :class="{'text-red-500': {{.|stationBSell}} && {{.|mySell}} > {{.|stationBSell}}}"
+                x-text="formatISK({{ . | mySell }})"></dd>
           </div>
         </div>
       </div>
