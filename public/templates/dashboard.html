@@ -76,14 +76,6 @@
             <dd class="font-bold" x-text="formatISK({{ . | stationABuy }})"></dd>
           </div>
           <div class="text-right">
-            <dt>{{ systemA }} Sell</dt>
-            <dd class="font-bold" x-text="formatISK({{ . | stationASell }})"></dd>
-          </div>
-          <div>
-            <dt>{{ systemB }} Buy</dt>
-            <dd class="font-bold" x-text="formatISK({{ . | stationBBuy }})"></dt>
-          </div>
-          <div class="text-right">
             <dt>{{ systemB }} Sell</dt>
             <dd class="font-bold" x-text="formatISK({{ . | stationBSell }})"></dd>
           </div>
@@ -100,7 +92,7 @@
                 x-text="formatISK({{ . | mySell }})"></dd>
           </div>
           <div>
-            <dt>My Margin</dt>
+            <dt>Margin</dt>
             <dd class="font-bold"
                 :class="{'text-red-500': {{.|marginAtoB}} < 0.2}"
                 x-text="formatPercent({{ . | marginAtoB }})"></dd>
