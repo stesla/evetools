@@ -94,7 +94,7 @@
           <div>
             <dt>Margin</dt>
             <dd class="font-bold"
-                :class="{'text-red-500': {{.|marginAtoB}} < 0.2}"
+                :class="{'text-red-500': ({{.|marginAtoB}} !== 0 && {{.|marginAtoB}} < 0.2)}"
                 x-text="formatPercent({{ . | marginAtoB }})"></dd>
           </div>
         </div>
