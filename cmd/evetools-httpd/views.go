@@ -102,6 +102,11 @@ func (s *Server) ShowDashboard(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	location, err := s.esi.GetCharacterLocation(r.Context(), user.ActiveCharacterID)
+	if err != nil {
+		internalServerError(w, "GetCharacterLocation", err)
+	}
+
 	funcs := template.FuncMap{
 		"marginAtoB": func(t *sde.MarketType) float64 {
 			buy := stationAPrices[t.ID].Buy
@@ -125,6 +130,7 @@ func (s *Server) ShowDashboard(w http.ResponseWriter, r *http.Request) {
 		"BuyTotal":      buyTotal,
 		"Favorites":     favorites,
 		"FavoriteTypes": favoriteTypes,
+		"Location":      location,
 		"SellTotal":     sellTotal,
 		"WalletBalance": wallet,
 	})

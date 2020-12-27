@@ -10,6 +10,7 @@ import (
 )
 
 type Client interface {
+	GetCharacterLocation(ctx context.Context, characterID int) (string, error)
 	GetCharacterName(characterID int) (string, error)
 	GetCharacterSkills(ctx context.Context, characterID int) ([]Skill, error)
 	GetCharacterStandings(ctx context.Context, characterID int) ([]Standing, error)
