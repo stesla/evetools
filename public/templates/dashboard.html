@@ -94,10 +94,20 @@
                 x-text="formatISK({{ . | mySell }})"></dd>
           </div>
           <div>
-            <dt>Margin</dt>
+            <dt>Margin (Buy)</dt>
+            {{ with $margin := . | marginBuy }}
             <dd class="font-bold"
-                :class="{'text-red-500': ({{.|marginAtoB}} !== 0 && {{.|marginAtoB}} < 0.2)}"
-                x-text="formatPercent({{ . | marginAtoB }})"></dd>
+                :class="{'text-red-500': ({{ $margin }} !== 0 && {{ $margin }} < 0.2)}"
+                x-text="formatPercent({{ $margin }})"></dd>
+            {{ end }}
+          </div>
+          <div class="text-right">
+            <dt>Margin (Sell)</dt>
+            {{ with $margin := . | marginSell }}
+            <dd class="font-bold"
+                :class="{'text-red-500': ({{ $margin }} !== 0 && {{ $margin }} < 0.2)}"
+                x-text="formatPercent({{ $margin }})"></dd>
+            {{ end }}
           </div>
         </div>
       </div>

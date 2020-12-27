@@ -108,8 +108,16 @@ func (s *Server) ShowDashboard(w http.ResponseWriter, r *http.Request) {
 	}
 
 	funcs := template.FuncMap{
-		"marginAtoB": func(t *sde.MarketType) float64 {
+		"marginBuy": func(t *sde.MarketType) float64 {
 			buy := stationAPrices[t.ID].Buy
+			if buy == 0 {
+				return 0
+			}
+			sell := stationBPrices[t.ID].Sell
+			return (sell - buy) / buy
+		},
+		"marginSell": func(t *sde.MarketType) float64 {
+			buy := stationAPrices[t.ID].Sell
 			if buy == 0 {
 				return 0
 			}
